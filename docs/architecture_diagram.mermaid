@@ -1,0 +1,39 @@
+graph TD
+    User[Manager / User] --> UI[Manager Context UI / Next.js]
+    UI --> API[API / Agent Gateway - FastAPI]
+    
+    subgraph Agent Control Plane
+        API --> Orchestrator[Agent Orchestrator - LangGraph]
+        Orchestrator --> ManagerAgent[Manager Agent - Supervisor]
+        ManagerAgent --> RiskAgent[Risk Agent]
+        ManagerAgent --> DecisionAgent[Decision Agent]
+        ManagerAgent --> ProjectAgent[Project Agent]
+        ManagerAgent --> IncidentAgent[Incident Agent]
+        ManagerAgent --> MeetingAgent[Meeting Agent]
+    end
+    
+    subgraph Context Intelligence Layer
+        Orchestrator --> ContextEngine[Context Engine]
+        ContextEngine --> Intent[Intent Recognizer]
+        ContextEngine --> Retriever[Hybrid Retriever]
+        ContextEngine --> Ranker[Authority Ranker]
+        ContextEngine --> Detector[Contradiction Detector]
+    end
+    
+    subgraph Organizational Memory Data Plane
+        Retriever --> PGVector[(PostgreSQL + pgvector)]
+        PGVector --> Semantic[Semantic Memory]
+        PGVector --> Episodic[Episodic Memory]
+        PGVector --> Procedural[Procedural Memory]
+        PGVector --> DecisionMem[Decision Memory - DEC-ID]
+        PGVector --> Experiential[Experiential Memory]
+    end
+    
+    subgraph Governed MCP Action Gateway
+        ManagerAgent --> PolicyEngine[Governance Policy Engine]
+        PolicyEngine --> HITL[Human Approval Queue]
+        HITL --> MCP[MCP Tool Executor]
+        MCP --> Jira[Jira Tool]
+        MCP --> Git[Git Tool]
+        MCP --> AWS[AWS Tool]
+    end
