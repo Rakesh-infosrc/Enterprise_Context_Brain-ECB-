@@ -14,6 +14,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Project, Evidence } from '../../types';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 interface ProjectIntelligenceViewProps {
   project: Project;
@@ -65,14 +66,14 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
             <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#ffffff', marginTop: '0.1rem' }}>
               {project.owner_name}
             </div>
-            <button
+            <RippleButton rippleColor="rgba(192,132,252,0.35)" duration="600ms"
               className="glass-btn glass-btn-ai"
               onClick={() => onAskQuestion(`Why is ${project.name} delayed?`)}
               style={{ marginTop: '0.75rem', fontSize: '0.8rem', padding: '0.45rem 0.9rem' }}
             >
               <Sparkles size={14} />
               <span>Analyze Delay Drivers</span>
-            </button>
+            </RippleButton>
           </div>
         </div>
       </div>

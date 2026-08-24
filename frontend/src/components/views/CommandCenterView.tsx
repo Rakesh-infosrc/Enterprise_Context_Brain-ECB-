@@ -19,6 +19,7 @@ import { Project, Risk, Decision, DashboardStats } from '../../types';
 import { NavItem } from '../Sidebar';
 import { WelcomeBanner } from '../WelcomeBanner';
 import { Tooltip } from '../Tooltip';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 interface CommandCenterViewProps {
   stats: DashboardStats | null;
@@ -40,38 +41,38 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
   onStartTour,
 }) => {
   const [isBannerDismissed, setIsBannerDismissed] = useState(false);
-  const aegis = projects.find((p) => p.id === 'prj-aegis') || projects[0];
+  const activeProject = projects[0];
 
   const quickPrompts = [
     {
-      title: 'Analyze Project Delays',
-      prompt: 'Why is Project Aegis delayed and what is the root cause?',
+      title: 'Analyze Project Health',
+      prompt: activeProject ? `What is the health status of ${activeProject.name}?` : 'What projects are currently active?',
       category: 'Project Intelligence',
-      badge: 'High Impact',
+      badge: 'Live Status',
       icon: TrendingUp,
       color: '#5ca8ff',
     },
     {
-      title: 'Inspect ADR Supersession',
-      prompt: 'Why was synchronous REST replaced with Kafka in ADR-002?',
+      title: 'Inspect ADR Decisions',
+      prompt: 'What architecture decisions have been recorded?',
       category: 'Decision Intelligence',
       badge: 'Architecture',
       icon: GitPullRequest,
       color: '#9b7cff',
     },
     {
-      title: 'Audit PCI-DSS 4.0 Risks',
-      prompt: 'What are the critical open risks for Project Aegis and PCI-DSS 4.0 sign-off?',
+      title: 'Audit Open Risks',
+      prompt: 'What are the critical open risks across all projects?',
       category: 'Risk Intelligence',
       badge: 'Compliance',
       icon: ShieldAlert,
       color: '#fb923c',
     },
     {
-      title: 'Review Incident INC-892',
-      prompt: 'What happened during Incident INC-892 and how was it resolved?',
-      category: 'Incident Post-Mortem',
-      badge: 'Episodic Memory',
+      title: 'Search Evidence Logs',
+      prompt: 'Show all recent commits and Jira issue updates.',
+      category: 'Evidence Explorer',
+      badge: 'Live Sync',
       icon: Zap,
       color: '#35d07f',
     },
@@ -181,44 +182,44 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
 
       {/* 3. Main Grid: Featured Project Execution Health vs Quick Prompts */}
       <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1.1fr', gap: '1.5rem' }}>
-        {/* Left: Project Aegis Execution Health */}
-        {aegis && (
+        {/* Left: Active Project Execution Health */}
+        {activeProject && (
           <div className="glass-panel" style={{ padding: '1.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.25rem' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
                   <span className="glass-pill active" style={{ fontSize: '0.75rem' }}>
-                    {aegis.code}
+                    {activeProject.code}
                   </span>
                   <span
                     className="glass-pill"
                     style={{
                       fontSize: '0.75rem',
-                      background: 'rgba(251, 146, 60, 0.15)',
-                      color: '#fb923c',
-                      borderColor: 'rgba(251, 146, 60, 0.3)',
+                      background: 'rgba(53, 208, 127, 0.15)',
+                      color: '#35d07f',
+                      borderColor: 'rgba(53, 208, 127, 0.3)',
                     }}
                   >
-                    ● Delayed by 45 days
+                    ● {activeProject.status.replace('_', ' ').toUpperCase()}
                   </span>
                 </div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
-                  {aegis.name}
+                  {activeProject.name}
                 </h3>
               </div>
 
-              <button
-                onClick={() => onAskQuestion(`Why is ${aegis.name} delayed?`)}
+              <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
+                onClick={() => onAskQuestion(`What is the current status of ${activeProject.name}?`)}
                 className="glass-btn glass-btn-primary"
                 style={{ fontSize: '0.78rem', padding: '0.45rem 0.9rem' }}
               >
                 <Sparkles size={13} />
-                <span>Ask ECB About Aegis</span>
-              </button>
+                <span>Ask ECB</span>
+              </RippleButton>
             </div>
 
             <p style={{ fontSize: '0.825rem', color: '#cbd5e1', lineHeight: 1.5, marginBottom: '1.25rem' }}>
-              {aegis.description}
+              {activeProject.description}
             </p>
 
             {/* Milestones Progress Gating */}
@@ -227,7 +228,7 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
                 Milestone Execution Progress
               </div>
 
-              {aegis.milestones?.map((m) => {
+              {activeProject.milestones?.map((m) => {
                 const isDelayed = m.status === 'delayed' || m.status === 'blocked';
                 const progress = m.progress_percentage ?? m.progress_pct ?? 50;
                 return (

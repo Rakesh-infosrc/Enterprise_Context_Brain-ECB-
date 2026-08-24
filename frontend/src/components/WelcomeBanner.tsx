@@ -10,6 +10,7 @@ import {
   ArrowRight,
   X,
 } from 'lucide-react';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 interface WelcomeBannerProps {
   onStartTour: () => void;
@@ -71,7 +72,7 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
       />
 
       {/* Dismiss Button */}
-      <button
+      <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
         onClick={onDismiss}
         style={{
           position: 'absolute',
@@ -92,7 +93,7 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
         onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
       >
         <X size={16} />
-      </button>
+      </RippleButton>
 
       {/* Top Welcome Text & Action */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
@@ -113,14 +114,14 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
           </p>
         </div>
 
-        <button
+        <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
           onClick={onStartTour}
           className="glass-btn glass-btn-primary"
           style={{ padding: '0.55rem 1.15rem', fontSize: '0.825rem' }}
         >
           <HelpCircle size={15} />
           <span>Interactive Guided Tour</span>
-        </button>
+        </RippleButton>
       </div>
 
       {/* 3 Persona Cards Grid */}

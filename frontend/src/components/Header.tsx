@@ -3,17 +3,15 @@
 import React from 'react';
 import {
   Search,
-  Sliders,
-  Sparkles,
   HelpCircle,
-  Activity,
-  Layers,
   ChevronDown,
   Compass,
   Cpu,
 } from 'lucide-react';
 import { Project } from '../types';
 import { Tooltip } from './Tooltip';
+import { AnimatedThemeToggler } from './ui/animated-theme-toggler';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 interface HeaderProps {
   title: string;
@@ -26,6 +24,8 @@ interface HeaderProps {
   userMode: 'guided' | 'pro';
   onToggleUserMode: () => void;
   onStartTour: () => void;
+  theme?: 'dark' | 'light';
+  onThemeChange?: (theme: 'dark' | 'light') => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -39,13 +39,15 @@ export const Header: React.FC<HeaderProps> = ({
   userMode,
   onToggleUserMode,
   onStartTour,
+  theme = 'dark',
+  onThemeChange,
 }) => {
   const activeProject = projects.find((p) => p.id === activeProjectId) || projects[0];
 
   return (
     <header
+      className="ecb-header"
       style={{
-        height: '72px',
         minHeight: '72px',
         position: 'sticky',
         top: 0,
@@ -56,50 +58,43 @@ export const Header: React.FC<HeaderProps> = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 2rem',
+        gap: '1rem',
+        flexWrap: 'wrap',
+        padding: '0.6rem 1.25rem',
+        rowGap: '0.75rem',
       }}
     >
       {/* Title & View Subtitle */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
-        <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem', minWidth: 0, flex: '1 1 200px' }}>
+        <h1 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {title}
         </h1>
         {subtitle && (
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400 }}>
+          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {subtitle}
           </span>
         )}
       </div>
 
-      {/* Center Spotlight Search (Ctrl+K) */}
-      <div
+      {/* Center Spotlight Search (Ctrl+K) — keyboard accessible */}
+      <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
+        type="button"
+        aria-label="Search decisions, risks, Jira, Git. Press Ctrl K to open command palette"
         onClick={onOpenCommandPalette}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-          background: 'rgba(13, 27, 42, 0.75)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '10px',
-          padding: '0.45rem 1rem',
-          cursor: 'pointer',
-          width: '320px',
-          transition: 'all 0.2s ease',
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onOpenCommandPalette();
+          }
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(92, 168, 255, 0.4)';
-          e.currentTarget.style.boxShadow = '0 0 12px rgba(92, 168, 255, 0.15)';
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-          e.currentTarget.style.boxShadow = 'none';
-        }}
+        className="ecb-header-search"
       >
-        <Search size={15} color="#64748b" />
-        <span style={{ fontSize: '0.8rem', color: '#64748b', flex: 1 }}>
+        <Search size={15} color="#64748b" aria-hidden="true" />
+        <span style={{ fontSize: '0.8rem', color: '#64748b', flex: 1, textAlign: 'left' as const }}>
           Search decisions, risks, Jira, Git...
         </span>
         <span
+          aria-hidden="true"
           style={{
             fontSize: '0.68rem',
             fontWeight: 700,
@@ -113,13 +108,63 @@ export const Header: React.FC<HeaderProps> = ({
         >
           Ctrl K
         </span>
-      </div>
+      </RippleButton>
 
-      {/* Right Controls: Mode Toggle, Guided Tour & Project Selector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+      {/* Right Controls: Animated Theme, Mode Toggle, Guided Tour & Project Selector */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', flexShrink: 0 }}>
+        <Tooltip content={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} position="bottom">
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+            <AnimatedThemeToggler
+              theme={theme}
+              onThemeChange={onThemeChange}
+              variant="circle"
+              duration={600}
+              aria-label={theme === 'dark' ? 'Activate light mode' : 'Activate dark mode'}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+              className="theme-toggler-btn"
+              style={
+                theme === 'dark'
+                  ? {
+                      width: '42px',
+                      height: '42px',
+                      minWidth: '42px',
+                      minHeight: '42px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '9999px',
+                      background: 'rgba(255,255,255,0.14)',
+                      border: '1.5px solid rgba(255,255,255,0.28)',
+                      color: '#fde68a',
+                      boxShadow: '0 0 16px rgba(251,191,36,0.28), 0 2px 10px rgba(0,0,0,0.28)',
+                      opacity: 1,
+                      visibility: 'visible',
+                      zIndex: 2,
+                    } as React.CSSProperties
+                  : {
+                      width: '42px',
+                      height: '42px',
+                      minWidth: '42px',
+                      minHeight: '42px',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '9999px',
+                      background: '#0f172a',
+                      border: '1.5px solid #1e293b',
+                      color: '#fde68a',
+                      boxShadow: '0 4px 14px rgba(0,0,0,0.18), 0 0 0 1px rgba(15,23,42,0.06)',
+                      opacity: 1,
+                      visibility: 'visible',
+                      zIndex: 2,
+                    } as React.CSSProperties
+              }
+            />
+          </div>
+        </Tooltip>
         {/* Mode Switcher Pill */}
-        <Tooltip content={userMode === 'guided' ? "Guided Mode: Streamlined view for essential insights. Click to switch to Pro Mode." : "Pro Mode: Deep diagnostics, LangGraph DAGs & vector indices active."}>
-          <button
+        <Tooltip content={userMode === 'guided' ? "Guided Mode: Streamlined view for essential insights. Click to switch to Pro Mode." : "Pro Mode: Deep diagnostics, LangGraph DAGs & vector indices active."} position="bottom">
+          <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
             onClick={onToggleUserMode}
             className="glass-pill"
             style={{
@@ -132,18 +177,19 @@ export const Header: React.FC<HeaderProps> = ({
           >
             {userMode === 'guided' ? <Compass size={13} /> : <Cpu size={13} />}
             <span>{userMode === 'guided' ? 'Guided View' : 'Pro Power Mode'}</span>
-          </button>
+          </RippleButton>
         </Tooltip>
 
         {/* Guided Tour Trigger */}
-        <Tooltip content="Launch interactive 60-second onboarding walkthrough">
-          <button
+        <Tooltip content="Launch interactive 60-second onboarding walkthrough" position="bottom">
+          <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
             onClick={onStartTour}
             className="glass-btn"
             style={{ padding: '0.45rem 0.65rem' }}
+            aria-label="Launch guided tour"
           >
-            <HelpCircle size={15} color="#5ca8ff" />
-          </button>
+            <HelpCircle size={15} color="#5ca8ff" aria-hidden="true" />
+          </RippleButton>
         </Tooltip>
 
         {/* Project Selector Dropdown */}
@@ -153,6 +199,7 @@ export const Header: React.FC<HeaderProps> = ({
               value={activeProjectId}
               onChange={(e) => onSelectProject(e.target.value)}
               className="glass-input"
+              aria-label="Select project"
               style={{
                 fontSize: '0.8rem',
                 fontWeight: 600,
@@ -164,6 +211,9 @@ export const Header: React.FC<HeaderProps> = ({
                 minWidth: '180px',
               }}
             >
+              <option value="all" style={{ background: '#07111f', color: '#ffffff' }}>
+                All Connected Projects
+              </option>
               {projects.map((p) => (
                 <option key={p.id} value={p.id} style={{ background: '#07111f', color: '#ffffff' }}>
                   {p.code} — {p.name.split('-')[0].trim()}
@@ -173,6 +223,7 @@ export const Header: React.FC<HeaderProps> = ({
             <ChevronDown
               size={14}
               color="#94a3b8"
+              aria-hidden="true"
               style={{ position: 'absolute', right: '0.65rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}
             />
           </div>

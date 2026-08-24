@@ -14,6 +14,7 @@ import {
   GitMerge,
   Cpu,
 } from 'lucide-react';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 interface OnboardingTourProps {
   isOpen: boolean;
@@ -117,7 +118,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
         }}
       >
         {/* Close Button */}
-        <button
+        <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
           onClick={onClose}
           style={{
             position: 'absolute',
@@ -139,7 +140,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
           onMouseLeave={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
         >
           <X size={16} />
-        </button>
+        </RippleButton>
 
         {/* Step Indicator Pill */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
@@ -218,24 +219,24 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
 
           <div style={{ display: 'flex', gap: '0.75rem' }}>
             {currentStep > 0 && (
-              <button
+              <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                 onClick={handlePrev}
                 className="glass-btn"
                 style={{ padding: '0.55rem 1rem', fontSize: '0.825rem' }}
               >
                 <ArrowLeft size={14} />
                 <span>Back</span>
-              </button>
+              </RippleButton>
             )}
 
-            <button
+            <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
               onClick={handleNext}
               className="glass-btn glass-btn-primary"
               style={{ padding: '0.55rem 1.35rem', fontSize: '0.825rem' }}
             >
               <span>{currentStep === steps.length - 1 ? 'Start Asking ECB' : 'Next'}</span>
               <ArrowRight size={14} />
-            </button>
+            </RippleButton>
           </div>
         </div>
       </div>

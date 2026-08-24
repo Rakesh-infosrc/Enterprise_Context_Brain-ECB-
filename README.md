@@ -1,23 +1,36 @@
 # Enterprise Context Brain (ECB) v2.2
 
 > **GenAI Decision Intelligence & Governed Organizational Memory Operating Console**  
-> Built with **LangGraph**, **Mem0**, **Qdrant**, **Llama Guard 3**, **Agent-to-Agent (A2A)**, **Model Context Protocol (MCP)**, **SKILL.md**, and **Chain-of-Verification (CoVe)**.
+> Built with **FastAPI**, **LangGraph**, **Mem0**, **Qdrant**, **Llama Guard 3**, **Model Context Protocol (MCP)**, **Atlassian Jira REST API & Webhooks**, **GitHub API**, **HuggingFace PEFT QLoRA Fine-Tuning**, and **Chain-of-Verification (CoVe)**.
 
 ---
 
-## 🌟 Advanced Modern GenAI Stack
+## 🔐 Testing Credentials & User Login
+
+Use the pre-configured enterprise credentials below to log into the **Glassmorphic Operating Console**:
+
+| Role / User Profile | Email | Password | Primary Permissions & Responsibilities |
+| :--- | :--- | :--- | :--- |
+| **Lead Executive / Project Manager** | `sarah.jenkins@acmefin.com` | `password123` | High-level portfolio oversight, risk heatmaps, final MCP tool approvals |
+| **Engineering Lead** | `alex.mercer@acmefin.com` | `password123` | Live Jira sprint tracking, Git commit & PR analysis, ADR decisions |
+| **System Administrator / Security Lead** | `admin@acmefin.com` | `password123` | System configuration, Llama Guard safety rules, MCP gateway management |
+
+> **Note**: Authentication uses OAuth2 Bearer Tokens (JWT). Logging in with any valid email automatically generates a signed session token.
+
+---
+
+## 🌟 Architecture & Stack
 
 ```mermaid
 flowchart TB
-    subgraph UI ["Glassmorphic Operating Console (Port 3000)"]
+    subgraph UI ["Glassmorphic Operating Console (Vite React Port 3000)"]
         CC["Command Center"]
         ASK["Ask ECB (AI Console)"]
-        SKILLS_UI["Skills & Mem0 Explorer"]
-        RISK_UI["5x5 Risk Heatmap"]
+        RISK_UI["5x5 Risk Exposure Heatmap"]
         ADR_UI["ADR Supersession Tree"]
         APP_UI["Governed Approval Center"]
-        TRACE_UI["LangGraph DAG Trace"]
-        EVAL_UI["Golden Evaluation Suite"]
+        MCP_UI["MCP Dataset & Fine-Tuning View"]
+        SKILLS_UI["Skills & Mem0 Explorer"]
     end
 
     subgraph SAFETY ["Guardrails & Moderation"]
@@ -33,11 +46,17 @@ flowchart TB
         POL["Policy Classifier & Human Interruption Checkpoint"]
     end
 
-    subgraph BACKEND ["Tools, Vectors & Memory (FastAPI Port 8001)"]
-        MCP["Model Context Protocol (MCP Gateway)"]
-        M0["Mem0 Long-Term Memory Store"]
-        QD["Qdrant Vector Database (Cosine Distance)"]
-        STORE["Canonical Relational & Audit Ledger"]
+    subgraph BACKEND ["FastAPI Server & MCP Gateway (Port 8001)"]
+        MCP["Model Context Protocol (MCP Gateway & Extractor)"]
+        LORA["PEFT / QLoRA Fine-Tuning Pipeline"]
+        M0["Mem0 Dynamic Long-Term Memory"]
+        QD["Qdrant Vector Database (Dense + BM25)"]
+        STORE["Canonical Relational DB & Audit Ledger"]
+    end
+
+    subgraph LIVE ["Live External Connectors"]
+        JIRA["Atlassian Jira Cloud (https://reenams.atlassian.net)"]
+        GIT["GitHub REST API & Webhooks"]
     end
 
     UI --> LG3 --> CP --> RET
@@ -45,55 +64,119 @@ flowchart TB
     RET --> A2A <--> SKILLS
     A2A --> COVE --> POL --> APP_UI
     APP_UI -->|Human Approval| MCP
+    MCP <--> JIRA & GIT
     MCP --> M0
+    MCP --> LORA
 ```
 
 ---
 
-## 🚀 Key Modern Capabilities
+## 💻 Backend Setup & Virtual Environment
 
-1. **LangGraph Stateful Orchestration**:
-   - Cyclic multi-agent graph with `StateGraph`, checkpoints, and human interruption nodes (`interrupt_before=["mcp_execution_node"]`).
-2. **Model Context Protocol (MCP)**:
-   - JSON-RPC standard tool & resource gateway (`jira_update_issue`, `jira_create_issue`, `git_tag_release`, `slack_send_briefing`).
-3. **Agent-to-Agent (A2A) Collaboration**:
-   - Structured subtask delegation between Manager Agent and domain specialists (Project, Risk, Decision, Security).
-4. **Mem0 Dynamic Long-Term Memory**:
-   - Personalized continuous learning store capturing resolution patterns and human approval context.
-5. **Qdrant Vector Database**:
-   - 384-dimensional dense embeddings + BM25 sparse keyword overlap with metadata payload filtering.
-6. **Llama Guard 3 Safety Layer**:
-   - Real-time scanning against prompt injection, jailbreaks, PII leakage, and malicious tool invocations.
-7. **`SKILL.md` Modular Playbooks**:
-   - Dynamic discovery of domain playbooks from `backend/skills/*/SKILL.md` with YAML frontmatter.
-8. **Chain-of-Verification (CoVe)**:
-   - Factual claim decomposition and NLI entailment validation ($>95\%$ groundedness gate).
+### 1. Create & Activate Virtual Environment
+```powershell
+# Navigate to backend directory
+cd d:\InfoServices\ECB\backend
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment (PowerShell)
+.\venv\Scripts\Activate.ps1
+```
+
+### 2. Install Backend Dependencies
+```powershell
+# Upgrade pip and install all required libraries
+.\venv\Scripts\python.exe -m pip install --upgrade pip
+.\venv\Scripts\pip.exe install -r requirements.txt
+```
 
 ---
 
-## 🏃 Quick Start
+## 🏃 Quick Start (One-Click Launch)
 
-### Start Everything (One-Click)
+To start both the FastAPI backend server (Port `8001`) and the Vite React frontend console (Port `3000`):
+
 ```powershell
-.\start.ps1
+# Run startup script
+.\start.bat
 ```
-Or double-click `start.bat`.
+or run `.\start.ps1` in PowerShell.
 
-- **Frontend Operating Console**: [http://localhost:3000](http://localhost:3000)
-- **FastAPI Backend & Swagger Docs**: [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
+- **Frontend Glassmorphic Console**: [http://localhost:3000](http://localhost:3000)
+- **FastAPI OpenAPI / Swagger Docs**: [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs)
 
 ---
 
-## 🧪 Testing
+## 🌐 Live ngrok Tunnel & Webhook Configuration
 
-Run backend tests:
+To allow external webhooks (Jira Cloud & GitHub) to reach the local FastAPI server in real time:
+
+### Start Tunnel Command
 ```powershell
-cd backend
-python -m pytest tests/
+ngrok http 8001
 ```
 
-Run frontend build validation:
+### Active Live Tunnel & Webhook Endpoints
+| Component / Target | URL / Address | Notes |
+| :--- | :--- | :--- |
+| **Public HTTPS Base URL** | `https://conjoined-trough-chrome.ngrok-free.dev` | Live public ingress URL |
+| **Local Target Port** | `http://localhost:8001` | Forwards to FastAPI Backend |
+| **Jira Cloud Webhook** | `https://conjoined-trough-chrome.ngrok-free.dev/api/v1/webhooks/jira` | Ingests Jira issue updates & sprints |
+| **GitHub Webhook** | `https://conjoined-trough-chrome.ngrok-free.dev/api/v1/webhooks/github` | Ingests Git commits, PRs & ADRs |
+| **Public OpenAPI Docs** | `https://conjoined-trough-chrome.ngrok-free.dev/docs` | Live API documentation |
+
+> 💡 **Troubleshooting `ERR_NGROK_8012` (502 Bad Gateway)**:  
+> If ngrok returns a `502 Bad Gateway (ERR_NGROK_8012)` error, verify that the FastAPI backend server is running on port `8001` (`http://127.0.0.1:8001/api/v1/health`).
+
+---
+
+## 🛠️ Data Source Integrations & MCP Protocol
+
+### 1. Live Atlassian Jira Integration
+- **Workspace**: `https://reenams.atlassian.net` (Space `ECB` / Project Key `KAN`)
+- **Capabilities**: Real-time two-way synchronization via Atlassian ADF (Atlassian Document Format), webhooks, sprint/epic mapping, and risk/ticket extraction.
+
+### 2. Live GitHub Integration
+- **Repositories**: `testing842/clara-V2`, `Databricks_dataplan`
+- **Capabilities**: Commits, PRs, branch activity, release tags, ADR architecture markdown parsing, and code diff analysis.
+
+### 3. Model Context Protocol (MCP) Tools
+- `jira_get_issue_details`: Deep query Jira issue state and history.
+- `jira_create_issue`: Create new tickets with automated risk classification.
+- `jira_update_issue`: Update ticket status, summary, and severity.
+- `git_get_commit_history`: Stream commit graphs and author contributions.
+- `git_tag_release`: Tag release milestones after human approval.
+- `slack_send_briefing`: Dispatch executive notifications.
+
+---
+
+## 🤖 LLM Fine-Tuning & LoRA Pipeline
+
+The system includes a dedicated QLoRA training engine ([`backend/app/domain/fine_tuning/train_lora.py`](file:///d:/InfoServices/ECB/backend/app/domain/fine_tuning/train_lora.py)) for fine-tuning `meta-llama/Llama-3.2-3B-Instruct` over extracted MCP `.jsonl` datasets.
+
+### Fine-Tuning Endpoints:
+- `POST /api/v1/mcp/finetune/start`: Trigger fine-tuning job with custom hyperparameters ($r=16, \alpha=32$).
+- `GET /api/v1/mcp/finetune/status`: Monitor loss convergence ($2.50 \rightarrow 1.06 \rightarrow 0.70$) and epoch progress.
+
+---
+
+## 🧪 System Verification & Automated Testing
+
+### Run Comprehensive Backend Test Suite:
 ```powershell
-cd frontend
+cd d:\InfoServices\ECB\backend
+.\venv\Scripts\python.exe -m pytest tests/
+```
+
+### Run Full System End-to-End Test Harness:
+```powershell
+python d:\InfoServices\ECB\scratch\test_all_tools_and_llm.py
+```
+
+### Validate Frontend Production Build:
+```powershell
+cd d:\InfoServices\ECB\frontend
 npm run build
 ```

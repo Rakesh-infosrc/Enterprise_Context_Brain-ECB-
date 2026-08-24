@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { ActionPreview, ActionStatus } from '../../types';
 import { api } from '../../lib/api';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 interface ApprovalCenterViewProps {
   actions: ActionPreview[];
@@ -31,8 +32,8 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
   const handleApprove = async (id: string) => {
     setIsProcessing(true);
     try {
-      const res = await api.approveAction(id, 'usr-sarah-jenkins', comment);
-      setOutcomeMessage(`Action approved and executed successfully via MCP Gateway! Tool result: ${res.execution?.execution_result?.operation || 'COMPLETED'}`);
+      const res = await api.approveAction(id, comment, 'usr-sarah-jenkins');
+      setOutcomeMessage(`Action approved and executed successfully via MCP Gateway! Tool result: ${res.execution?.message || 'COMPLETED'}`);
       onRefresh();
     } catch (err) {
       console.error('Approval failed:', err);
@@ -44,7 +45,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
   const handleReject = async (id: string) => {
     setIsProcessing(true);
     try {
-      await api.rejectAction(id, 'usr-sarah-jenkins', comment || 'Rejected by operator');
+      await api.rejectAction(id, comment || 'Rejected by operator', 'usr-sarah-jenkins');
       setOutcomeMessage('Action was rejected. No changes were made to downstream systems.');
       onRefresh();
     } catch (err) {
@@ -265,7 +266,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
                 </div>
 
                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                  <button
+                  <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
                     disabled={isProcessing}
                     onClick={() => handleApprove(selectedAction.id)}
                     className="glass-btn glass-btn-primary"
@@ -273,9 +274,9 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
                   >
                     {isProcessing ? <RefreshCw size={15} className="animate-spin" /> : <CheckCircle2 size={16} />}
                     <span>Approve &amp; Execute</span>
-                  </button>
+                  </RippleButton>
 
-                  <button
+                  <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                     disabled={isProcessing}
                     onClick={() => handleReject(selectedAction.id)}
                     className="glass-btn glass-btn-danger"
@@ -283,7 +284,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
                   >
                     <XCircle size={16} />
                     <span>Reject Action</span>
-                  </button>
+                  </RippleButton>
                 </div>
               </div>
             ) : (

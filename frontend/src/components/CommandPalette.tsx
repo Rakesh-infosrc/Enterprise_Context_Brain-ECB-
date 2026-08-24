@@ -15,6 +15,7 @@ import {
   X,
 } from 'lucide-react';
 import { NavItem } from './Sidebar';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   onAskQuestion,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -45,6 +47,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -76,6 +84,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Command palette"
       style={{
         position: 'fixed',
         inset: 0,
@@ -90,6 +101,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       onClick={onClose}
     >
       <div
+        role="document"
         style={{
           width: '640px',
           maxWidth: '90vw',
@@ -105,7 +117,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         <div style={{ display: 'flex', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
           <Search size={20} color="#5ca8ff" style={{ marginRight: '0.75rem' }} />
           <input
+            ref={inputRef}
             autoFocus
+            aria-label="Search views and questions"
             type="text"
             placeholder="Type a question for ECB or search views..."
             value={searchTerm}
@@ -127,12 +141,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             }}
           />
           {searchTerm && (
-            <button
+            <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
               onClick={() => setSearchTerm('')}
               style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
             >
               <X size={18} />
-            </button>
+            </RippleButton>
           )}
         </div>
 
@@ -144,7 +158,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#9b7cff', textTransform: 'uppercase', padding: '0.25rem 0.5rem' }}>
                 Ask ECB Intelligence
               </div>
-              <button
+              <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                 onClick={() => {
                   onAskQuestion(searchTerm);
                   onClose();
@@ -170,7 +184,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   <span>Synthesize answer for: &quot;<strong>{searchTerm}</strong>&quot;</span>
                 </div>
                 <ArrowRight size={15} color="#c084fc" />
-              </button>
+              </RippleButton>
             </div>
           )}
 
@@ -180,7 +194,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
               Golden Benchmark Questions
             </div>
             {filteredQuestions.map((q, i) => (
-              <button
+              <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                 key={i}
                 onClick={() => {
                   onAskQuestion(q);
@@ -210,7 +224,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   <span>{q}</span>
                 </div>
                 <kbd style={{ fontSize: '0.65rem', color: '#64748b' }}>Enter</kbd>
-              </button>
+              </RippleButton>
             ))}
           </div>
 
@@ -222,7 +236,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
             {filteredNav.map((n) => {
               const Icon = n.icon;
               return (
-                <button
+                <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                   key={n.id}
                   onClick={() => {
                     onSelectView(n.id);
@@ -258,7 +272,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     <span>{n.label}</span>
                   </div>
                   <ArrowRight size={14} color="#64748b" />
-                </button>
+                </RippleButton>
               );
             })}
           </div>

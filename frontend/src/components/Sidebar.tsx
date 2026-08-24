@@ -8,22 +8,26 @@ import {
   ShieldAlert,
   GitPullRequest,
   FileSearch,
+  Database,
   CheckCircle2,
   Activity,
   Award,
   Settings,
-  BrainCircuit,
   BookOpen,
   ChevronRight,
 } from 'lucide-react';
+import { ECBKineticBrand } from './ECBKineticBrand';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 export type NavItem =
   | 'command_center'
   | 'ask_ecb'
   | 'project_intelligence'
   | 'risk_intelligence'
+  | 'contradictions'
   | 'decision_intelligence'
   | 'evidence_explorer'
+  | 'mcp_dataset'
   | 'skills_mem0'
   | 'approval_center'
   | 'agent_trace'
@@ -50,71 +54,49 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'ask_ecb' as NavItem, label: 'Ask ECB (AI Console)', icon: Sparkles, isPrimaryAi: true },
     { id: 'project_intelligence' as NavItem, label: 'Project Intelligence', icon: Layers },
     { id: 'risk_intelligence' as NavItem, label: 'Risk Intelligence', icon: ShieldAlert, badge: openRisksCount, badgeColor: '#fb923c' },
+    { id: 'contradictions' as NavItem, label: 'Timeline Contradictions', icon: ShieldAlert, badge: 3, badgeColor: '#ef4444' },
     { id: 'decision_intelligence' as NavItem, label: 'Decision Intelligence', icon: GitPullRequest },
     { id: 'approval_center' as NavItem, label: 'Approval Center', icon: CheckCircle2, badge: pendingApprovalsCount, badgeColor: '#5ca8ff' },
   ];
 
-  const advancedNavItems = [
+  const deepDiagnosticsItems = [
     { id: 'evidence_explorer' as NavItem, label: 'Evidence Explorer', icon: FileSearch },
+    { id: 'mcp_dataset' as NavItem, label: 'MCP LLM Training Datasets', icon: Database, badge: '92%', badgeColor: '#35d07f' },
     { id: 'skills_mem0' as NavItem, label: 'Skills & Mem0 Memory', icon: BookOpen },
     { id: 'agent_trace' as NavItem, label: 'LangGraph DAG Trace', icon: Activity },
     { id: 'ai_eval' as NavItem, label: 'AI Evaluation Suite', icon: Award },
-    { id: 'settings' as NavItem, label: 'Settings & Connectors', icon: Settings },
   ];
+
+  const settingsItem = { id: 'settings' as NavItem, label: 'Settings & Connectors', icon: Settings };
 
   return (
     <aside
+      className="ecb-sidebar"
       style={{
         width: '265px',
         minWidth: '265px',
-        height: '100vh',
+        height: '100dvh',
         position: 'sticky',
         top: 0,
+        alignSelf: 'flex-start',
+        flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',
         borderRight: '1px solid rgba(255, 255, 255, 0.08)',
         background: 'rgba(7, 17, 31, 0.88)',
         backdropFilter: 'blur(24px)',
         padding: '1.25rem 0.85rem',
+        paddingBottom: '1rem',
         zIndex: 40,
         overflowY: 'auto',
+        overflowX: 'hidden',
+        overscrollBehavior: 'contain',
+        scrollbarWidth: 'thin',
       }}
     >
-      {/* Brand Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.65rem', marginBottom: '1.5rem' }}>
-        <div
-          style={{
-            width: '38px',
-            height: '38px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #5ca8ff 0%, #9b7cff 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 0 18px rgba(92, 168, 255, 0.45)',
-          }}
-        >
-          <BrainCircuit size={22} color="#ffffff" />
-        </div>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-            <span>ECB</span>
-            <span
-              style={{
-                fontSize: '0.65rem',
-                padding: '0.1rem 0.35rem',
-                background: 'rgba(92, 168, 255, 0.2)',
-                color: '#5ca8ff',
-                borderRadius: '4px',
-                border: '1px solid rgba(92, 168, 255, 0.4)',
-                fontWeight: 700,
-              }}
-            >
-              v2.2
-            </span>
-          </div>
-          <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontWeight: 500 }}>Enterprise Context Brain</div>
-        </div>
+      {/* Brand Header — Kinetic ECB POC (v2.2 removed) */}
+      <div style={{ padding: '0.35rem 0.45rem', marginBottom: '1.35rem' }}>
+        <ECBKineticBrand size="md" showIcon={true} showSublabel={true} />
       </div>
 
       {/* Core Insights Section */}
@@ -127,126 +109,112 @@ export const Sidebar: React.FC<SidebarProps> = ({
           const Icon = item.icon;
           const isActive = activeView === item.id;
           return (
-            <button
+            <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
               key={item.id}
               onClick={() => onSelectView(item.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.65rem 0.85rem',
-                borderRadius: '10px',
-                background: isActive
-                  ? item.isPrimaryAi
-                    ? 'linear-gradient(90deg, rgba(155, 124, 255, 0.25) 0%, rgba(92, 168, 255, 0.18) 100%)'
-                    : 'rgba(92, 168, 255, 0.14)'
-                  : 'transparent',
-                border: isActive
-                  ? item.isPrimaryAi
-                    ? '1px solid rgba(155, 124, 255, 0.45)'
-                    : '1px solid rgba(92, 168, 255, 0.35)'
-                  : '1px solid transparent',
-                color: isActive ? (item.isPrimaryAi ? '#c084fc' : '#ffffff') : '#94a3b8',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                fontFamily: 'inherit',
-                fontSize: '0.85rem',
-                fontWeight: isActive ? 700 : 500,
-                textAlign: 'left',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.color = '#f1f5f9';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#94a3b8';
-                }
-              }}
+              className="ecb-nav-btn"
+              data-active={isActive}
+              data-variant={item.isPrimaryAi ? 'ai' : undefined}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, flex: 1 }}>
                 <Icon
                   size={18}
                   color={isActive ? (item.isPrimaryAi ? '#c084fc' : '#5ca8ff') : '#64748b'}
+                  style={{ flexShrink: 0 } as React.CSSProperties}
                 />
-                <span>{item.label}</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
               </div>
-              {item.badge !== undefined && item.badge > 0 && (
+              {(item as any).badge !== undefined && (item as any).badge !== null && (typeof (item as any).badge === 'string' ? String((item as any).badge).length > 0 : Number((item as any).badge) > 0) && (
                 <span
                   style={{
                     fontSize: '0.7rem',
                     fontWeight: 700,
                     padding: '0.15rem 0.5rem',
                     borderRadius: '9999px',
-                    background: item.badgeColor || '#5ca8ff',
+                    background: (item as any).badgeColor || '#5ca8ff',
                     color: '#07111f',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  {item.badge}
+                  {(item as any).badge}
                 </span>
               )}
-            </button>
+            </RippleButton>
           );
         })}
       </nav>
 
-      {/* Advanced & Observability Section */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.65rem', marginBottom: '0.4rem' }}>
-        <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          Deep Diagnostics
-        </span>
-        {userMode === 'guided' && (
-          <span style={{ fontSize: '0.65rem', color: '#5ca8ff' }}>Pro</span>
-        )}
-      </div>
+      {/* Advanced & Observability Section — hidden in Guided View */}
+      {userMode === 'pro' && (
+        <>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.65rem', marginBottom: '0.4rem' }}>
+            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Deep Diagnostics
+            </span>
+          </div>
 
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: 1 }}>
-        {advancedNavItems.map((item) => {
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', flex: 1 }}>
+            {deepDiagnosticsItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeView === item.id;
           return (
-            <button
+            <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
               key={item.id}
               onClick={() => onSelectView(item.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '0.6rem 0.85rem',
-                borderRadius: '10px',
-                background: isActive ? 'rgba(92, 168, 255, 0.14)' : 'transparent',
-                border: isActive ? '1px solid rgba(92, 168, 255, 0.35)' : '1px solid transparent',
-                color: isActive ? '#ffffff' : '#94a3b8',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-                fontFamily: 'inherit',
-                fontSize: '0.825rem',
-                fontWeight: isActive ? 700 : 500,
-                textAlign: 'left',
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.color = '#f1f5f9';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#94a3b8';
-                }
-              }}
+              className="ecb-nav-btn"
+              data-active={isActive}
+              style={{ fontSize: '0.825rem' }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Icon size={17} color={isActive ? '#5ca8ff' : '#64748b'} />
-                <span>{item.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, flex: 1 }}>
+                <Icon size={17} color={isActive ? '#5ca8ff' : '#64748b'} style={{ flexShrink: 0 } as React.CSSProperties} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>{item.label}</span>
               </div>
-            </button>
+              {/* @ts-ignore - badge may be string like '92%' */}
+              {(item as any).badge !== undefined && (item as any).badge !== null && (typeof (item as any).badge === 'string' ? String((item as any).badge).length > 0 : Number((item as any).badge) > 0) && (
+                <span
+                  style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    padding: '0.15rem 0.5rem',
+                    borderRadius: '9999px',
+                    background: (item as any).badgeColor || '#5ca8ff',
+                    color: '#07111f',
+                    flexShrink: 0,
+                    whiteSpace: 'nowrap',
+                    marginLeft: '0.5rem',
+                  }}
+                >
+                  {(item as any).badge}
+                </span>
+              )}
+            </RippleButton>
           );
-        })}
+            })}
+          </nav>
+        </>
+      )}
+
+      {/* Settings — always visible even in Guided View */}
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', marginTop: '0.75rem' }}>
+        {(() => {
+          const Icon = settingsItem.icon;
+          const isActive = activeView === settingsItem.id;
+          return (
+            <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
+              key={settingsItem.id}
+              onClick={() => onSelectView(settingsItem.id)}
+              className="ecb-nav-btn"
+              data-active={isActive}
+              style={{ fontSize: '0.825rem' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, flex: 1 }}>
+                <Icon size={17} color={isActive ? '#5ca8ff' : '#64748b'} style={{ flexShrink: 0 } as React.CSSProperties} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>{settingsItem.label}</span>
+              </div>
+            </RippleButton>
+          );
+        })()}
       </nav>
 
       {/* System Status Banner */}

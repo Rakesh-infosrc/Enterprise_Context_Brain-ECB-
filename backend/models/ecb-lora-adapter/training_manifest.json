@@ -1,0 +1,38 @@
+{
+  "job_id": "ft-job-1787498251",
+  "status": "COMPLETED",
+  "base_model": "meta-llama/Llama-3.2-3B-Instruct",
+  "dataset_size": 11,
+  "hyperparameters": {
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "target_modules": [
+      "q_proj",
+      "v_proj",
+      "k_proj",
+      "o_proj"
+    ],
+    "learning_rate": 0.0002,
+    "epochs": 3,
+    "batch_size": 4
+  },
+  "training_loss_history": [
+    {
+      "epoch": 1,
+      "step": 3,
+      "loss": 2.5
+    },
+    {
+      "epoch": 2,
+      "step": 6,
+      "loss": 1.0664
+    },
+    {
+      "epoch": 3,
+      "step": 9,
+      "loss": 0.7056
+    }
+  ],
+  "adapter_output_path": "d:/InfoServices/ECB/backend/models/ecb-lora-adapter",
+  "completed_at": "2026-08-23T15:17:31.222054"
+}

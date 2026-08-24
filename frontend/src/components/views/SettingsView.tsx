@@ -12,6 +12,7 @@ import {
   Radio,
   ExternalLink,
 } from 'lucide-react';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 export const SettingsView: React.FC = () => {
   const [policyProfile, setPolicyProfile] = useState('enterprise_strict');
@@ -71,10 +72,10 @@ export const SettingsView: React.FC = () => {
             <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>
               Canonical Ingestion Connectors
             </h3>
-            <button className="glass-btn" style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}>
+            <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms" className="glass-btn" style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem' }}>
               <RefreshCw size={12} />
               <span>Sync All</span>
-            </button>
+            </RippleButton>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
@@ -141,13 +142,13 @@ export const SettingsView: React.FC = () => {
             ))}
           </div>
 
-          <button
+          <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
             onClick={handleSave}
             className="glass-btn glass-btn-primary"
             style={{ width: '100%', padding: '0.65rem' }}
           >
             Save Configuration
-          </button>
+          </RippleButton>
         </div>
       </div>
     </div>

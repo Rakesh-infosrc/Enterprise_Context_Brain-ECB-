@@ -1,6 +1,7 @@
 """
 Enterprise Context Brain (ECB) v2.2 - FastAPI Application Server
-Runs on port 8000. Provides complete REST and OpenAPI interface.
+Runs on port 8001. Provides complete REST and OpenAPI interface.
+Added User/UserRole module import fix in mcp.py.
 """
 
 from fastapi import FastAPI

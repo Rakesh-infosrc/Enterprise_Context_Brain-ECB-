@@ -10,6 +10,7 @@ import {
   Shield,
 } from 'lucide-react';
 import { Project, SourceType, AgentWorkflow } from '../types';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 interface ContextScopeBarProps {
   projects: Project[];
@@ -50,6 +51,35 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
     { id: 'decision_intelligence', label: 'Decision Specialist' },
   ];
 
+  // Dynamically filter projects in the dropdown list based on active selected sources
+  const filteredProjects = projects.filter((p) => {
+    // Completely exclude any example projects
+    if (p.name.toLowerCase().includes('(example)') || p.id === 'prj-sam1') {
+      return false;
+    }
+
+    const nameLower = p.name.toLowerCase();
+    const isJiraSelected = selectedSources.includes('jira');
+    const isGitSelected = selectedSources.includes('git');
+
+    // If both Jira and Git are selected or neither is selected, show all active non-example projects
+    if ((isJiraSelected && isGitSelected) || (!isJiraSelected && !isGitSelected)) {
+      return true;
+    }
+
+    // If only Jira is selected: show Jira projects
+    if (isJiraSelected && !isGitSelected) {
+      return nameLower.includes('jira') || nameLower.includes('kan') || p.id.includes('kan');
+    }
+
+    // If only Git is selected: show Git projects
+    if (isGitSelected && !isJiraSelected) {
+      return nameLower.includes('git') || nameLower.includes('github') || nameLower.includes('clara') || nameLower.includes('databricks') || p.id.includes('clara') || p.id.includes('databricks') || p.id.includes('ecb');
+    }
+
+    return true;
+  });
+
   return (
     <div
       style={{
@@ -86,8 +116,11 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
               outline: 'none',
             }}
           >
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
+            <option value="all" style={{ background: '#07111f', color: '#ffffff' }}>
+              All Connected Projects
+            </option>
+            {filteredProjects.map((p) => (
+              <option key={p.id} value={p.id} style={{ background: '#07111f', color: '#ffffff' }}>
                 {p.name}
               </option>
             ))}
@@ -101,7 +134,7 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
           <Clock size={14} color="#94a3b8" />
           <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>Temporal Scope:</span>
           {[7, 30, 90].map((days) => (
-            <button
+            <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
               key={days}
               onClick={() => onSelectTimeRange(days)}
               style={{
@@ -117,7 +150,7 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
               }}
             >
               {days}d
-            </button>
+            </RippleButton>
           ))}
         </div>
 
@@ -130,7 +163,7 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
           {allSources.map((src) => {
             const isSelected = selectedSources.includes(src.id);
             return (
-              <button
+              <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                 key={src.id}
                 onClick={() => onToggleSource(src.id)}
                 style={{
@@ -149,7 +182,7 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
               >
                 {isSelected && <Check size={11} />}
                 <span>{src.label}</span>
-              </button>
+              </RippleButton>
             );
           })}
         </div>

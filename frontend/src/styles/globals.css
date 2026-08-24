@@ -1,13 +1,14 @@
 /* frontend/src/styles/globals.css */
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
 
 :root {
-  --bg-primary: #07111f;
-  --bg-secondary: #0d1b2a;
-  --bg-card: rgba(13, 27, 42, 0.65);
-  --bg-card-hover: rgba(17, 34, 54, 0.85);
-  --bg-input: rgba(10, 20, 32, 0.75);
+  /* Complete dark — true OLED-adjacent navy-black */
+  --bg-primary: #020617;
+  --bg-secondary: #020617;
+  --bg-card: #0f172a;
+  --bg-card-hover: #1e293b;
+  --bg-input: #0f172a;
 
   --accent-blue: #5ca8ff;
   --accent-blue-glow: rgba(92, 168, 255, 0.35);
@@ -51,16 +52,53 @@
 body {
   font-family: var(--font-sans);
   background-color: var(--bg-primary);
+  /* Multicolor linear gradation — highly visible in dark */
   background-image: 
-    radial-gradient(at 0% 0%, rgba(92, 168, 255, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(155, 124, 255, 0.08) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(0, 240, 255, 0.04) 0px, transparent 50%);
+    radial-gradient(at 12% 0%, rgba(99,102,241,0.38) 0px, transparent 42%),
+    radial-gradient(at 88% 2%, rgba(59,130,246,0.32) 0px, transparent 48%),
+    radial-gradient(at 48% -6%, rgba(6,182,212,0.22) 0px, transparent 58%),
+    radial-gradient(at 22% 88%, rgba(168,85,247,0.20) 0px, transparent 52%),
+    radial-gradient(at 92% 82%, rgba(251,146,60,0.14) 0px, transparent 46%),
+    linear-gradient(180deg, #020617 0%, #0a0f1f 42%, #0f172a 100%),
+    linear-gradient(rgba(255,255,255,0.028) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.028) 1px, transparent 1px);
+  background-size: auto, auto, auto, auto, auto, auto, 32px 32px, 32px 32px;
   background-attachment: fixed;
   color: var(--text-primary);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  body { background-attachment: scroll; }
+}
+@media (prefers-reduced-motion: reduce) {
+  body { background-attachment: scroll; }
+}
+
+/* Complete dark — subtle uniform texture, no colorful aurora */
+html.dark body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 1;
+  background: #020617;
+}
+
+html.dark body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.9'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -130,6 +168,46 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+@keyframes ecbGradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes rippling {
+  0% { opacity: 1; }
+  100% { transform: scale(2); opacity: 0; }
+}
+.animate-rippling { animation: rippling var(--duration) ease-out; }
+
+@keyframes aurora {
+  0% {
+    background-position: 0% 50%;
+    transform: rotate(-5deg) scale(0.9);
+  }
+  25% {
+    background-position: 50% 100%;
+    transform: rotate(5deg) scale(1.1);
+  }
+  50% {
+    background-position: 100% 50%;
+    transform: rotate(-3deg) scale(0.95);
+  }
+  75% {
+    background-position: 50% 0%;
+    transform: rotate(3deg) scale(1.05);
+  }
+  100% {
+    background-position: 0% 50%;
+    transform: rotate(-5deg) scale(0.9);
+  }
+}
+
+.animate-aurora {
+  animation: aurora 8s ease-in-out infinite alternate;
+  background-size: 200% auto;
+}
+
 .view-transition-enter {
   animation: fadeInScale 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -138,20 +216,34 @@ h1, h2, h3, h4, h5, h6 {
   animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Glassmorphic Components */
+/* Glassmorphic Components — complete dark = solid, low translucency */
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.55);
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Complete dark panels — solid slate-900, no rainbow, subtle edge */
+html.dark .glass-panel {
+  background: #0f172a !important;
+  border: 1px solid #1e293b !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04) inset !important;
+}
+
+html.dark .glass-panel::before,
+html.dark .glass-panel::after {
+  display: none !important;
 }
 
 .glass-card {
   background: var(--bg-card);
-  backdrop-filter: blur(20px);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
   padding: 1.25rem 1.5rem;
@@ -166,18 +258,41 @@ h1, h2, h3, h4, h5, h6 {
   top: 0;
   left: 0;
   right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+  height: 1px;
+  background: rgba(255,255,255,0.06);
+}
+
+html.dark .glass-card {
+  background: #0f172a !important;
+  border: 1px solid #1e293b !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.04) !important;
+}
+
+html.dark .glass-card::before {
+  background: #1e293b !important;
+  height: 1px !important;
+  opacity: 1 !important;
+}
+
+html.dark .glass-card::after {
+  display: none !important;
 }
 
 .glass-card-hover:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
   background: var(--bg-card-hover);
   border-color: rgba(92, 168, 255, 0.35);
-  box-shadow: 0 12px 32px -8px rgba(92, 168, 255, 0.18);
+  box-shadow: 0 12px 24px -8px rgba(92, 168, 255, 0.18);
 }
 
-/* Buttons with Haptic Micro-Interactions */
+html.dark .glass-card-hover:hover {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06) inset !important;
+  transform: translateY(-2px);
+}
+
+/* Buttons with Haptic Micro-Interactions — complete dark: flat slate */
 .glass-btn {
   background: rgba(255, 255, 255, 0.06);
   border: 1px solid var(--border-subtle);
@@ -193,7 +308,23 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: center;
   gap: 0.5rem;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
 }
+
+html.dark .glass-btn {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #e2e8f0 !important;
+}
+
+html.dark .glass-btn:hover {
+  background: #334155 !important;
+  border-color: #475569 !important;
+  color: #f8fafc !important;
+}
+
+html.dark .glass-btn::before { display: none !important; }
 
 .glass-btn:hover {
   background: rgba(255, 255, 255, 0.12);
@@ -206,11 +337,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glass-btn-primary {
-  background: linear-gradient(135deg, #5ca8ff 0%, #3b82f6 100%);
+  background: #2563eb;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 4px 16px rgba(92, 168, 255, 0.35);
+  border: 1px solid #1d4ed8;
+  box-shadow: 0 4px 14px rgba(37,99,235,0.35);
+  position: relative;
+  overflow: hidden;
 }
+
+html.dark .glass-btn-primary {
+  background: #2563eb !important;
+  border: 1px solid #1d4ed8 !important;
+  box-shadow: 0 4px 14px rgba(37,99,235,0.35) !important;
+}
+
+html.dark .glass-btn-primary::after { display: none !important; }
 
 .glass-btn-primary:hover {
   background: linear-gradient(135deg, #70b4ff 0%, #60a5fa 100%);
@@ -219,10 +360,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .glass-btn-violet {
-  background: linear-gradient(135deg, #9b7cff 0%, #7c3aed 100%);
+  background: #7c3aed;
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 0 4px 16px rgba(155, 124, 255, 0.35);
+  border: 1px solid #6d28d9;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.35);
+}
+
+html.dark .glass-btn-violet {
+  background: #7c3aed !important;
+  border: 1px solid #6d28d9 !important;
 }
 
 .glass-btn-violet:hover {
@@ -241,7 +387,7 @@ h1, h2, h3, h4, h5, h6 {
   border-color: #35d07f;
 }
 
-/* Pills & Badges */
+/* Pills & Badges — complete dark flat */
 .glass-pill {
   padding: 0.25rem 0.65rem;
   border-radius: var(--radius-full);
@@ -256,6 +402,12 @@ h1, h2, h3, h4, h5, h6 {
   transition: all 0.15s ease;
 }
 
+html.dark .glass-pill {
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #cbd5e1 !important;
+}
+
 .glass-pill.active {
   background: rgba(92, 168, 255, 0.15);
   border-color: rgba(92, 168, 255, 0.45);
@@ -263,7 +415,7 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: 0 0 10px rgba(92, 168, 255, 0.2);
 }
 
-/* Input Fields */
+/* Input Fields — complete dark solid */
 .glass-input {
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
@@ -275,6 +427,12 @@ h1, h2, h3, h4, h5, h6 {
   outline: none;
   width: 100%;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html.dark .glass-input {
+  background: #0f172a !important;
+  border: 1px solid #1e293b !important;
+  color: #f8fafc !important;
 }
 
 .glass-input:focus {
@@ -295,7 +453,7 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: var(--radius-sm);
 }
 
-/* Tooltip Styling */
+/* Tooltip Styling — portal fixed so it escapes header overflow */
 .tooltip-popover {
   background: rgba(13, 27, 42, 0.95);
   backdrop-filter: blur(16px);
@@ -306,7 +464,7 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.75rem;
   line-height: 1.4;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  z-index: 100;
+  z-index: 9999;
   max-width: 260px;
   pointer-events: none;
 }
@@ -337,21 +495,478 @@ h1, h2, h3, h4, h5, h6 {
   transform: translateY(-1px);
 }
 
-/* Custom Scrollbars */
+/* Custom Scrollbars — complete dark flat */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #020617;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: #334155;
   border-radius: 10px;
+  border: 1px solid #1e293b;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: #475569;
 }
+
+html:not(.dark) ::-webkit-scrollbar-thumb {
+  background: rgba(148,163,184,0.45);
+}
+
+html:not(.dark) ::-webkit-scrollbar-thumb:hover {
+  background: rgba(100,116,139,0.65);
+}
+
+/* ==========================================================================
+   Complete dark — header / sidebar solid dark (no aurora)
+   ========================================================================== */
+html.dark header {
+  background: #020617 !important;
+  border-bottom: 1px solid #1e293b !important;
+  box-shadow: none !important;
+}
+
+html.dark header::after { display: none !important; }
+
+html.dark aside {
+  background: #020617 !important;
+  border-right: 1px solid #1e293b !important;
+  box-shadow: none !important;
+}
+
+html.dark aside::before { display: none !important; }
+
+/* Pills — complete dark solid */
+html.dark .glass-pill.active {
+  background: #1e293b !important;
+  border-color: #334155 !important;
+  color: #93c5fd !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   Theme Toggler — guaranteed visibility (fixes Tailwind purge / opacity bugs)
+   ========================================================================== */
+.theme-toggler-btn {
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  flex-shrink: 0 !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.18s ease, background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+  position: relative;
+  z-index: 5;
+}
+
+.theme-toggler-btn:hover {
+  transform: scale(1.06);
+}
+
+.theme-toggler-btn:active {
+  transform: scale(0.96);
+}
+
+.theme-toggler-btn svg {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  flex-shrink: 0;
+  stroke-width: 2.1;
+}
+
+.theme-toggler-btn:focus-visible {
+  outline: 2px solid #5ca8ff !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(92,168,255,0.35) !important;
+}
+
+html.dark .theme-toggler-btn {
+  /* extra glow in dark */
+  box-shadow: 0 0 16px rgba(251,191,36,0.22), 0 2px 10px rgba(0,0,0,0.28) !important;
+}
+
+html:not(.dark) .theme-toggler-btn {
+  box-shadow: 0 4px 14px rgba(0,0,0,0.16), 0 1px 3px rgba(0,0,0,0.08) !important;
+}
+
+/* ==========================================================================
+   Comprehensive dark polish — WCAG, transitions, hover/focus, form controls
+   ========================================================================== */
+/* Smooth theme switch (respects reduced motion) */
+html { color-scheme: dark; }
+html.light-mode, html:not(.dark) { color-scheme: light; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html, body, header, aside,
+  .glass-panel, .glass-card, .glass-btn, .glass-input, .glass-pill, .citation-badge {
+    transition: background-color 0.28s ease, color 0.28s ease, border-color 0.28s ease, box-shadow 0.28s ease, filter 0.28s ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html, body, *, *::before, *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Focus visible — AA compliant */
+*:focus-visible {
+  outline: 2px solid #5ca8ff;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+html.dark *:focus-visible {
+  outline-color: #70b4ff;
+  box-shadow: 0 0 0 3px rgba(92,168,255,0.32);
+}
+
+html:not(.dark) *:focus-visible {
+  outline-color: #1d9bf0;
+}
+
+button:focus:not(:focus-visible), a:focus:not(:focus-visible), select:focus:not(:focus-visible), input:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* WCAG AA — ensure text contrast on dark */
+html.dark {
+  --text-primary: #f8fafc; /* 18.5:1 on #07111f */
+  --text-secondary: #e2e8f0; /* ~14:1 */
+  --text-muted: #cbd5e1; /* ~10:1 */
+  --text-faint: #94a3b8; /* ~6.5:1 — AA for small text passes, large text AA */
+}
+
+/* Dark adaptive — images / decorative */
+html.dark img {
+  filter: brightness(0.96) contrast(1.04);
+}
+
+html.dark img.no-dark-filter {
+  filter: none;
+}
+
+/* Dark form controls — ensure all adapt */
+html.dark input, html.dark textarea, html.dark select {
+  color-scheme: dark;
+}
+
+html.dark select option {
+  background: #0b1422;
+  color: #f8fafc;
+}
+
+html:not(.dark) select option {
+  background: #ffffff;
+  color: #0f172a;
+}
+
+/* Header spotlight search — dark vs light */
+html.dark header > div:nth-child(2) {
+  background: rgba(13,27,42,0.78) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+html:not(.dark) header > div:nth-child(2),
+html.light-mode header > div:nth-child(2) {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: none !important;
+}
+html:not(.dark) header > div:nth-child(2) span,
+html.light-mode header > div:nth-child(2) span {
+  color: #64748b !important;
+}
+
+/* Disabled states visible in dark */
+html.dark button:disabled, html.dark input:disabled, html.dark select:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  filter: saturate(0.8);
+}
+
+/* Hover/active — ensure distinct */
+html.dark .glass-btn:hover {
+  background: rgba(255,255,255,0.10) !important;
+  border-color: rgba(92,168,255,0.28) !important;
+}
+html.dark .glass-btn:active {
+  background: rgba(255,255,255,0.14) !important;
+  transform: scale(0.98);
+}
+
+/* Dark modal / popover polish */
+html.dark [role="dialog"], html.dark .modal, html.dark .popover {
+  background: rgba(13,27,42,0.98);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 20px 50px rgba(0,0,0,0.55);
+}
+
+/* Selection for dark */
+html.dark ::selection {
+  background: rgba(92,168,255,0.30);
+  color: #f8fafc;
+}
+
+/* Ensure decorative gradients not jarring in dark — reduce saturation if needed */
+html.dark hr, html.dark .divider {
+  border-color: rgba(255,255,255,0.08) !important;
+}
+
+/* Ensure third-party / chart tooltips readable */
+html.dark .recharts-tooltip-wrapper, html.dark .recharts-default-tooltip {
+  background: rgba(13,27,42,0.96) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  color: #f8fafc !important;
+}
+
+/* ==========================================================================
+   Light Mode — activated via html:not(.dark) or .light-mode (for View Transition)
+   Magic UI AnimatedThemeToggler toggles .dark on <html>
+   ========================================================================== */
+html:not(.dark), html.light-mode {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-card-hover: #f1f5f9;
+  --bg-input: #f1f5f9;
+
+  --accent-blue: #1d9bf0;
+  --accent-blue-glow: rgba(29, 155, 240, 0.25);
+  --accent-violet: #6366f1;
+  --accent-violet-glow: rgba(99, 102, 241, 0.2);
+  --accent-cyan: #0ea5e9;
+  --accent-emerald: #10b981;
+  --accent-emerald-glow: rgba(16, 185, 129, 0.2);
+  --accent-amber: #f59e0b;
+  --accent-amber-glow: rgba(245, 158, 11, 0.2);
+  --accent-rose: #ef4444;
+  --accent-rose-glow: rgba(239, 68, 68, 0.25);
+
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+
+  --border-subtle: #e2e8f0;
+  --border-medium: #cbd5e1;
+  --border-focus: #1d9bf0;
+}
+
+html:not(.dark) body,
+html.light-mode body {
+  background-color: #f8fafc !important;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(29, 155, 240, 0.08) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.06) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.04) 0px, transparent 50%) !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) header, html.light-mode header {
+  background: rgba(255, 255, 255, 0.92) !important;
+  backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+html:not(.dark) header h1, html.light-mode header h1,
+html:not(.dark) header select {
+  color: #0f172a !important;
+}
+
+html:not(.dark) aside, html.light-mode aside {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(20px) !important;
+  border-right: 1px solid #e2e8f0 !important;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.02) !important;
+}
+
+html:not(.dark) aside span,
+html:not(.dark) aside p,
+html:not(.dark) aside div,
+html.light-mode aside span,
+html.light-mode aside p,
+html.light-mode aside div {
+  color: #0f172a;
+}
+
+html:not(.dark) .glass-panel, html.light-mode .glass-panel {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 4px 10px -2px rgba(0, 0, 0, 0.02) !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .glass-panel h2,
+html:not(.dark) .glass-panel h3,
+html:not(.dark) .glass-panel h4,
+html.light-mode .glass-panel h2,
+html.light-mode .glass-panel h3,
+html.light-mode .glass-panel h4 {
+  color: #0f172a !important;
+}
+
+html:not(.dark) .glass-card, html.light-mode .glass-card {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03) !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .glass-card-hover:hover, html.light-mode .glass-card-hover:hover {
+  background: #f8fafc !important;
+  border-color: #1d9bf0 !important;
+  box-shadow: 0 8px 24px -4px rgba(29, 155, 240, 0.18) !important;
+}
+
+html:not(.dark) .glass-btn, html.light-mode .glass-btn {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .glass-btn:hover, html.light-mode .glass-btn:hover {
+  background: #e2e8f0 !important;
+  color: #1d9bf0 !important;
+  border-color: #1d9bf0 !important;
+}
+
+html:not(.dark) .glass-btn-primary, html.light-mode .glass-btn-primary {
+  background: linear-gradient(135deg, #1d9bf0 0%, #0284c7 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #1d9bf0 !important;
+  box-shadow: 0 4px 14px rgba(29, 155, 240, 0.35) !important;
+}
+
+html:not(.dark) .glass-input, html.light-mode .glass-input {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) .glass-input:focus, html.light-mode .glass-input:focus {
+  border-color: #1d9bf0 !important;
+  box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.25) !important;
+  background: #ffffff !important;
+}
+
+html:not(.dark) .glass-pill, html.light-mode .glass-pill {
+  background: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  color: #475569 !important;
+}
+
+html:not(.dark) .glass-pill.active, html.light-mode .glass-pill.active {
+  background: rgba(29, 155, 240, 0.12) !important;
+  border-color: rgba(29, 155, 240, 0.4) !important;
+  color: #1d9bf0 !important;
+}
+
+/* ==========================================================================
+   Magic UI AnimatedThemeToggler — View Transition
+   ========================================================================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 9999;
+}
+
+/* While Magic UI transition is active, pin duration via CSS var */
+html[data-magicui-theme-vt="active"]::view-transition-old(root),
+html[data-magicui-theme-vt="active"]::view-transition-new(root) {
+  animation-duration: var(--magicui-theme-toggle-vt-duration, 400ms);
+}
+
+/* Firefox fallback — keep new theme clipped until JS animation starts */
+html[data-magicui-theme-vt="active"]::view-transition-new(root) {
+  clip-path: var(--magicui-theme-vt-clip-from, circle(0% at 50% 50%));
+}
+
+/* ==========================================================================
+   Nav Bar Responsiveness Fixes — header + sidebar
+   Addresses: truncated sidebar, sticky header clipped, search overflow
+   ========================================================================== */
+.ecb-header {
+  /* ensure sticky stays visible within scrolling main column */
+  position: sticky;
+  top: 0;
+  overflow: visible !important;
+}
+
+@media (max-width: 1100px) {
+  .ecb-header {
+    padding: 0.6rem 1rem !important;
+    gap: 0.75rem !important;
+  }
+  .ecb-header h1 {
+    font-size: 1.05rem !important;
+  }
+}
+
+@media (max-width: 860px) {
+  /* Stack header: title full width, search full width, controls wrap */
+  .ecb-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  .ecb-header > div:first-child {
+    flex: 1 1 100% !important;
+  }
+  .ecb-header > div:nth-child(2) {
+    max-width: none !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
+/* Sidebar scroll & mobile collapse */
+.ecb-sidebar {
+  scrollbar-gutter: stable;
+}
+
+@media (max-width: 768px) {
+  .ecb-app-root {
+    flex-direction: column !important;
+  }
+  .ecb-sidebar {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    max-height: 45vh;
+    position: relative !important;
+    flex-shrink: 0 !important;
+  }
+  .ecb-main-column {
+    height: auto !important;
+    min-height: 55vh;
+    overflow-y: visible !important;
+  }
+}
+
+/* Prevent flex parent overflow:hidden from clipping sticky */
+#root {
+  overflow: visible !important;
+}
+
+

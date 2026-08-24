@@ -38,12 +38,17 @@ class ContextPlanner:
         resolved_project_ids = []
         if project_id:
             resolved_project_ids.append(project_id)
-        elif "aegis" in q_lower or "payment" in q_lower:
-            resolved_project_ids.append("prj-aegis")
-        elif "orion" in q_lower or "banking" in q_lower or "cloud" in q_lower:
-            resolved_project_ids.append("prj-orion")
         else:
-            resolved_project_ids.append("prj-aegis") # default to primary MVP project
+            from ...infrastructure.db.store import CanonicalStore
+            store_projects = CanonicalStore.get_instance().get_projects()
+            matched = False
+            for p in store_projects:
+                if p.name.lower() in q_lower or p.code.lower() in q_lower:
+                    resolved_project_ids.append(p.id)
+                    matched = True
+                    break
+            if not matched and store_projects:
+                resolved_project_ids.append(store_projects[0].id)
 
         # 2. Extract Intent & Select Specialist Agent Workflow
         planned_agent = AgentWorkflow.MANAGER

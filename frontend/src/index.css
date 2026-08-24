@@ -109,3 +109,9 @@ code {
   padding: 4px 8px;
   background: var(--code-bg);
 }
+
+.heatmap-cell-hover:hover {
+  transform: translateY(-3px) scale(1.04) !important;
+  filter: brightness(1.25);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
+}

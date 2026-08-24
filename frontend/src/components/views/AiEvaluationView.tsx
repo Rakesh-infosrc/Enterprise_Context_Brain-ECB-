@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { BenchmarkSummary } from '../../types';
 import { api } from '../../lib/api';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 export const AiEvaluationView: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
@@ -53,7 +54,7 @@ export const AiEvaluationView: React.FC = () => {
             </p>
           </div>
 
-          <button
+          <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
             onClick={handleRunBenchmarks}
             disabled={isRunning}
             className="glass-btn glass-btn-primary"
@@ -61,7 +62,7 @@ export const AiEvaluationView: React.FC = () => {
           >
             {isRunning ? <RefreshCw size={16} className="animate-spin" /> : <Play size={16} />}
             <span>{isRunning ? 'Evaluating 5 Gold Benchmarks...' : 'Run Golden Benchmark Suite'}</span>
-          </button>
+          </RippleButton>
         </div>
       </div>
 

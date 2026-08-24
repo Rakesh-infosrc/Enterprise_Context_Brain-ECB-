@@ -46,6 +46,7 @@ class DBRisk(Base):
     project_id = Column(String, nullable=True)
     description = Column(String, nullable=True)
     mitigation = Column(String, nullable=True)
+    status = Column(String, nullable=False, default="identified")
 
 class DBDecision(Base):
     __tablename__ = "decisions"
@@ -72,6 +73,13 @@ class DBEvidence(Base):
     excerpt = Column(String, nullable=False)
     is_conflicting = Column(Boolean, default=False)
     is_superseded = Column(Boolean, default=False)
+    source_type = Column(String, nullable=True)
+    source_title = Column(String, nullable=True)
+    external_id = Column(String, nullable=True)
+    project_id = Column(String, nullable=True)
+    authority = Column(String, nullable=True)
+    url = Column(String, nullable=True)
+    author = Column(String, nullable=True)
 
 class DBMemoryItem(Base):
     __tablename__ = "memory_items"

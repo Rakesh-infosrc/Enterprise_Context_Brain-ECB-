@@ -6,6 +6,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Enterprise Context Brain (ECB) — GenAI Decision Intelligence</title>
     <meta name="description" content="Governed organizational memory, evidence provenance, and agentic decision intelligence platform." />
+    <script>
+      (function() {
+        try {
+          var t = localStorage.getItem('ecb_theme') || localStorage.getItem('theme');
+          if (t !== 'dark' && t !== 'light') {
+            try {
+              if (window.matchMedia('(prefers-color-scheme: light)').matches) t = 'light';
+              else if (window.matchMedia('(prefers-color-scheme: dark)').matches) t = 'dark';
+              else t = 'dark';
+            } catch (e) { t = 'dark'; }
+          }
+          var h = document.documentElement;
+          if (t === 'light') {
+            h.classList.remove('dark');
+            h.classList.add('light-mode');
+            h.style.colorScheme = 'light';
+          } else {
+            h.classList.add('dark');
+            h.classList.remove('light-mode');
+            h.style.colorScheme = 'dark';
+          }
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

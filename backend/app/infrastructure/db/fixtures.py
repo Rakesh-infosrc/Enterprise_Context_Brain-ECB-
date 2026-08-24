@@ -214,6 +214,25 @@ def generate_fixtures() -> Dict[str, Any]:
                 ),
             ],
         ),
+        Project(
+            id="prj-clara-v3",
+            org_id=org.id,
+            name="Project Clara-v3",
+            code="CLARA",
+            description="Clara-v3 repository integration project.",
+            status=ProjectStatus.ON_TRACK,
+            health_score=100,
+            owner_id="usr-sarah-jenkins",
+            owner_name="Sarah Jenkins",
+            target_completion_date=day_ago(-30),
+            estimated_delay_days=0,
+            created_at=day_ago(1),
+            updated_at=now,
+            active_risks_count=0,
+            open_tickets_count=0,
+            recent_decisions_count=0,
+            milestones=[],
+        ),
     ]
 
     # 5. Decisions (ADRs)

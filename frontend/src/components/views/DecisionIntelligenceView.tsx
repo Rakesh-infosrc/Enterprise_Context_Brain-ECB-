@@ -12,6 +12,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { Decision } from '../../types';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 interface DecisionIntelligenceViewProps {
   decisions: Decision[];
@@ -42,13 +43,13 @@ export const DecisionIntelligenceView: React.FC<DecisionIntelligenceViewProps> =
               Decision Intelligence Engine
             </h2>
           </div>
-          <button
+          <RippleButton rippleColor="rgba(192,132,252,0.35)" duration="600ms"
             className="glass-btn glass-btn-ai"
             onClick={() => onAskQuestion('Why was synchronous REST replaced with Kafka in ADR-002?')}
           >
             <Sparkles size={15} />
             <span>Trace ADR Evolution</span>
-          </button>
+          </RippleButton>
         </div>
       </div>
 

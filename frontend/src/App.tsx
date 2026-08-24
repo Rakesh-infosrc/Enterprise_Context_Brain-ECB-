@@ -1,24 +1,37 @@
 // frontend/src/App.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Sidebar, NavItem } from './components/Sidebar';
 import { Header } from './components/Header';
 import { CommandPalette } from './components/CommandPalette';
 import { OnboardingTour } from './components/OnboardingTour';
-import { CommandCenterView } from './components/views/CommandCenterView';
-import { AskECBView } from './components/views/AskECBView';
-import { ProjectIntelligenceView } from './components/views/ProjectIntelligenceView';
-import { RiskIntelligenceView } from './components/views/RiskIntelligenceView';
-import { DecisionIntelligenceView } from './components/views/DecisionIntelligenceView';
-import { EvidenceExplorerView } from './components/views/EvidenceExplorerView';
-import { SkillsMem0View } from './components/views/SkillsMem0View';
-import { ApprovalCenterView } from './components/views/ApprovalCenterView';
-import { AgentTraceView } from './components/views/AgentTraceView';
-import { AiEvaluationView } from './components/views/AiEvaluationView';
-import { SettingsView } from './components/views/SettingsView';
+
+// Code-split heavy views — initial paint only needs CommandCenter
+const CommandCenterView = lazy(() => import('./components/views/CommandCenterView').then(m => ({ default: m.CommandCenterView })));
+const AskECBView = lazy(() => import('./components/views/AskECBView').then(m => ({ default: m.AskECBView })));
+const ProjectIntelligenceView = lazy(() => import('./components/views/ProjectIntelligenceView').then(m => ({ default: m.ProjectIntelligenceView })));
+const RiskIntelligenceView = lazy(() => import('./components/views/RiskIntelligenceView').then(m => ({ default: m.RiskIntelligenceView })));
+const ContradictionsView = lazy(() => import('./components/views/ContradictionsView').then(m => ({ default: m.ContradictionsView })));
+const DecisionIntelligenceView = lazy(() => import('./components/views/DecisionIntelligenceView').then(m => ({ default: m.DecisionIntelligenceView })));
+const EvidenceExplorerView = lazy(() => import('./components/views/EvidenceExplorerView').then(m => ({ default: m.EvidenceExplorerView })));
+const McpDatasetView = lazy(() => import('./components/views/McpDatasetView').then(m => ({ default: m.McpDatasetView })));
+const SkillsMem0View = lazy(() => import('./components/views/SkillsMem0View').then(m => ({ default: m.SkillsMem0View })));
+const ApprovalCenterView = lazy(() => import('./components/views/ApprovalCenterView').then(m => ({ default: m.ApprovalCenterView })));
+const AgentTraceView = lazy(() => import('./components/views/AgentTraceView').then(m => ({ default: m.AgentTraceView })));
+const AiEvaluationView = lazy(() => import('./components/views/AiEvaluationView').then(m => ({ default: m.AiEvaluationView })));
+const SettingsView = lazy(() => import('./components/views/SettingsView').then(m => ({ default: m.SettingsView })));
+
+const ViewFallback: React.FC = () => (
+  <div style={{ padding: '2rem' }}>
+    <div className="skeleton-shimmer" style={{ height: '18px', width: '40%', marginBottom: '1rem' }} />
+    <div className="skeleton-shimmer" style={{ height: '12px', width: '100%', marginBottom: '0.6rem' }} />
+    <div className="skeleton-shimmer" style={{ height: '12px', width: '92%' }} />
+  </div>
+);
 
 import { Project, Risk, Decision, Evidence, ActionPreview, AgentRun, DashboardStats } from './types';
 import { api } from './lib/api';
+import { LightRays } from './components/ui/light-rays';
 
 export function App() {
   const [activeView, setActiveView] = useState<NavItem>('command_center');
@@ -27,11 +40,97 @@ export function App() {
   const [userMode, setUserMode] = useState<'guided' | 'pro'>(() => {
     return (localStorage.getItem('ecb_user_mode') as 'guided' | 'pro') || 'guided';
   });
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = (localStorage.getItem('ecb_theme') as 'dark' | 'light') || (localStorage.getItem('theme') as 'dark' | 'light');
+      if (saved === 'dark' || saved === 'light') return saved;
+    } catch {
+      // localStorage blocked (private mode) — fall through to system preference
+    }
+    try {
+      if (typeof window !== 'undefined' && window.matchMedia) {
+        if (window.matchMedia('(prefers-color-scheme: light)').matches) return 'light';
+        if (window.matchMedia('(prefers-color-scheme: dark)').matches) return 'dark';
+      }
+    } catch {}
+    // Default to dark for ECB's signature glass aesthetic
+    return 'dark';
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const body = document.body;
+    try {
+      if (theme === 'light') {
+        root.classList.remove('dark');
+        root.classList.add('light-mode');
+        body.classList.add('light-mode');
+        body.classList.remove('dark');
+        root.style.colorScheme = 'light';
+      } else {
+        root.classList.add('dark');
+        root.classList.remove('light-mode');
+        body.classList.remove('light-mode');
+        body.classList.remove('dark');
+        // body dark class not needed but keep for compat
+        root.style.colorScheme = 'dark';
+      }
+      localStorage.setItem('ecb_theme', theme);
+      localStorage.setItem('theme', theme);
+    } catch (e) {
+      console.warn('Theme persistence blocked:', e);
+    }
+  }, [theme]);
+
+  // Respect system prefers-color-scheme when no explicit user choice exists
+  useEffect(() => {
+    let hasExplicit = false;
+    try {
+      hasExplicit = !!localStorage.getItem('ecb_theme') || !!localStorage.getItem('theme');
+    } catch {}
+    if (hasExplicit) return;
+    const mql = window.matchMedia?.('(prefers-color-scheme: dark)');
+    if (!mql) return;
+    const onChange = (e: MediaQueryListEvent | MediaQueryList) => {
+      const next = (e as MediaQueryListEvent).matches ? 'dark' : 'light';
+      setTheme(next as 'dark' | 'light');
+    };
+    // Modern browsers
+    try {
+      mql.addEventListener('change', onChange as (e: Event) => void);
+      return () => mql.removeEventListener('change', onChange as (e: Event) => void);
+    } catch {
+      // Safari fallback
+      // @ts-ignore
+      mql.addListener(onChange);
+      // @ts-ignore
+      return () => mql.removeListener(onChange);
+    }
+  }, []);
+
+  const handleThemeChange = (next: 'light' | 'dark') => {
+    try {
+      setTheme(next);
+    } catch (e) {
+      console.error('Theme change failed:', e);
+    }
+  };
+
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  useEffect(() => {
+    try {
+      const mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+      setPrefersReducedMotion(mql.matches);
+      const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+      mql.addEventListener('change', handler);
+      return () => mql.removeEventListener('change', handler);
+    } catch {}
+  }, []);
 
   const [promptToAsk, setPromptToAsk] = useState<string>('');
 
   const [projects, setProjects] = useState<Project[]>([]);
-  const [activeProjectId, setActiveProjectId] = useState<string>('prj-aegis');
+  const [activeProjectId, setActiveProjectId] = useState<string>('prj-kan');
   const [risks, setRisks] = useState<Risk[]>([]);
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [evidenceList, setEvidenceList] = useState<Evidence[]>([]);
@@ -53,7 +152,17 @@ export function App() {
         api.getStats(),
       ]);
 
-      if (projData.status === 'fulfilled') setProjects(projData.value);
+      if (projData.status === 'fulfilled') {
+        setProjects(projData.value);
+        if (projData.value.length > 0) {
+          setActiveProjectId((prev) => {
+            if (!projData.value.some((p: Project) => p.id === prev)) {
+              return projData.value[0].id;
+            }
+            return prev;
+          });
+        }
+      }
       if (riskData.status === 'fulfilled') setRisks(riskData.value);
       if (decData.status === 'fulfilled') setDecisions(decData.value);
       if (eviData.status === 'fulfilled') setEvidenceList(eviData.value);
@@ -67,10 +176,49 @@ export function App() {
     }
   };
 
+  // Visibility-aware polling with backoff, no fetch when tab hidden
   useEffect(() => {
+    let cancelled = false;
+    let timeoutId: number | undefined;
+
+    const schedule = (delay = 10000) => {
+      if (cancelled) return;
+      timeoutId = window.setTimeout(async () => {
+        if (cancelled) return;
+        if (typeof document !== 'undefined' && document.visibilityState !== 'visible') {
+          schedule(delay);
+          return;
+        }
+        if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          schedule(delay);
+          return;
+        }
+        try {
+          await loadData();
+        } catch {}
+        if (!cancelled) schedule(10000);
+      }, delay);
+    };
+
     loadData();
-    const interval = setInterval(loadData, 10000); // 10s polling for background updates
-    return () => clearInterval(interval);
+    schedule(10000);
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && !cancelled) {
+        loadData();
+      }
+    };
+    const onOnline = () => {
+      if (!cancelled) loadData();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('online', onOnline);
+    return () => {
+      cancelled = true;
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('online', onOnline);
+    };
   }, []);
 
   const handleToggleUserMode = () => {
@@ -78,6 +226,16 @@ export function App() {
     setUserMode(nextMode);
     localStorage.setItem('ecb_user_mode', nextMode);
   };
+
+  // Guided View: hide Deep Diagnostics — auto-redirect if active view is a deep diagnostics view (Settings stays visible)
+  useEffect(() => {
+    if (userMode === 'guided') {
+      const deepViews: NavItem[] = ['evidence_explorer', 'mcp_dataset', 'skills_mem0', 'agent_trace', 'ai_eval'];
+      if (deepViews.includes(activeView)) {
+        setActiveView('command_center');
+      }
+    }
+  }, [userMode, activeView]);
 
   const handleAskQuestionFromAnywhere = (question: string) => {
     setPromptToAsk(question);
@@ -120,7 +278,52 @@ export function App() {
   const { title, subtitle } = getViewTitle();
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#07111f' }}>
+    <div className="ecb-app-root" style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)', position: 'relative', isolation: 'isolate', overflowX: 'hidden', overflowY: 'visible' }}>
+      {/* Multicolor linear gradation + Light Rays — dark only, respects reduced-motion */}
+      {theme === 'dark' && !prefersReducedMotion && (
+        <>
+          {/* Base multicolor wash */}
+          <div
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 0,
+              pointerEvents: 'none',
+              background:
+                'linear-gradient(135deg, rgba(99,102,241,0.16) 0%, transparent 38%, rgba(59,130,246,0.13) 52%, transparent 78%, rgba(6,182,212,0.11) 100%)',
+              opacity: 1,
+            }}
+          />
+          <LightRays
+            count={9}
+            color="rgba(99, 102, 241, 0.34)"
+            blur={22}
+            speed={11}
+            length="98vh"
+            className="opacity-100"
+            style={{ zIndex: 0 } as React.CSSProperties}
+          />
+          <LightRays
+            count={6}
+            color="rgba(59, 130, 246, 0.30)"
+            blur={24}
+            speed={14}
+            length="92vh"
+            className="opacity-95"
+            style={{ zIndex: 0, transform: 'translateX(14%)' } as React.CSSProperties}
+          />
+          <LightRays
+            count={5}
+            color="rgba(6, 182, 212, 0.24)"
+            blur={26}
+            speed={13}
+            length="88vh"
+            className="opacity-90"
+            style={{ zIndex: 0, transform: 'translateX(-12%)' } as React.CSSProperties}
+          />
+        </>
+      )}
       {/* Navigation Sidebar */}
       <Sidebar
         activeView={activeView}
@@ -130,8 +333,8 @@ export function App() {
         userMode={userMode}
       />
 
-      {/* Main Content Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      {/* Main Content Area — above Light Rays */}
+      <div className="ecb-main-column" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative', zIndex: 1, height: '100dvh', overflowY: 'auto', overflowX: 'hidden', scrollbarGutter: 'stable' } as React.CSSProperties}>
         {/* Top Header */}
         <Header
           title={title}
@@ -144,72 +347,85 @@ export function App() {
           userMode={userMode}
           onToggleUserMode={handleToggleUserMode}
           onStartTour={() => setIsTourOpen(true)}
+          theme={theme}
+          onThemeChange={handleThemeChange}
         />
 
-        {/* View Router */}
-        <main style={{ flex: 1, padding: '1.75rem 2rem', overflowY: 'auto' }}>
-          {activeView === 'command_center' && (
-            <CommandCenterView
-              stats={stats}
-              projects={projects}
-              risks={risks}
-              decisions={decisions}
-              onSelectView={setActiveView}
-              onAskQuestion={handleAskQuestionFromAnywhere}
-              onStartTour={() => setIsTourOpen(true)}
-            />
-          )}
+        {/* View Router — lazy with Suspense */}
+        <main style={{ flex: 1, padding: '1.75rem 2rem' }}>
+          <Suspense fallback={<ViewFallback />}>
+            {activeView === 'command_center' && (
+              <CommandCenterView
+                stats={stats}
+                projects={projects}
+                risks={risks}
+                decisions={decisions}
+                onSelectView={setActiveView}
+                onAskQuestion={handleAskQuestionFromAnywhere}
+                onStartTour={() => setIsTourOpen(true)}
+              />
+            )}
 
-          {activeView === 'ask_ecb' && (
-            <AskECBView
-              projects={projects}
-              activeProjectId={activeProjectId}
-              onSelectProject={setActiveProjectId}
-              initialQuestion={promptToAsk}
-              onSelectView={setActiveView}
-              onRefreshStats={loadData}
-            />
-          )}
+            {activeView === 'ask_ecb' && (
+              <AskECBView
+                projects={projects}
+                activeProjectId={activeProjectId}
+                onSelectProject={setActiveProjectId}
+                initialQuestion={promptToAsk}
+                onSelectView={setActiveView}
+                onRefreshStats={loadData}
+              />
+            )}
 
-          {activeView === 'project_intelligence' && currentProject && (
-            <ProjectIntelligenceView
-              project={currentProject}
-              evidenceList={evidenceList.filter((e) => e.project_id === activeProjectId)}
-              onAskQuestion={handleAskQuestionFromAnywhere}
-            />
-          )}
+            {activeView === 'project_intelligence' && currentProject && (
+              <ProjectIntelligenceView
+                project={currentProject}
+                evidenceList={evidenceList.filter((e) => e.project_id === activeProjectId)}
+                onAskQuestion={handleAskQuestionFromAnywhere}
+              />
+            )}
 
-          {activeView === 'risk_intelligence' && (
-            <RiskIntelligenceView
-              risks={risks}
-              onAskQuestion={handleAskQuestionFromAnywhere}
-            />
-          )}
+            {activeView === 'risk_intelligence' && (
+              <RiskIntelligenceView
+                risks={risks}
+                onAskQuestion={handleAskQuestionFromAnywhere}
+              />
+            )}
 
-          {activeView === 'decision_intelligence' && (
-            <DecisionIntelligenceView
-              decisions={decisions}
-              onAskQuestion={handleAskQuestionFromAnywhere}
-            />
-          )}
+            {activeView === 'contradictions' && (
+              <ContradictionsView
+                evidenceList={evidenceList}
+                onAskQuestion={handleAskQuestionFromAnywhere}
+              />
+            )}
 
-          {activeView === 'evidence_explorer' && (
-            <EvidenceExplorerView evidenceList={evidenceList} />
-          )}
+            {activeView === 'decision_intelligence' && (
+              <DecisionIntelligenceView
+                decisions={decisions}
+                onAskQuestion={handleAskQuestionFromAnywhere}
+              />
+            )}
 
-          {activeView === 'skills_mem0' && <SkillsMem0View />}
+            {activeView === 'evidence_explorer' && (
+              <EvidenceExplorerView evidenceList={evidenceList} />
+            )}
 
-          {activeView === 'approval_center' && (
-            <ApprovalCenterView actions={actions} onRefresh={loadData} />
-          )}
+            {activeView === 'mcp_dataset' && <McpDatasetView />}
 
-          {activeView === 'agent_trace' && (
-            <AgentTraceView agentRuns={agentRuns} />
-          )}
+            {activeView === 'skills_mem0' && <SkillsMem0View />}
 
-          {activeView === 'ai_eval' && <AiEvaluationView />}
+            {activeView === 'approval_center' && (
+              <ApprovalCenterView actions={actions} onRefresh={loadData} />
+            )}
 
-          {activeView === 'settings' && <SettingsView />}
+            {activeView === 'agent_trace' && (
+              <AgentTraceView agentRuns={agentRuns} />
+            )}
+
+            {activeView === 'ai_eval' && <AiEvaluationView />}
+
+            {activeView === 'settings' && <SettingsView />}
+          </Suspense>
         </main>
       </div>
 

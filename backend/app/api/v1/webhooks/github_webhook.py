@@ -30,6 +30,34 @@ class GitHubWebhookHandler:
         commit_msg = head_commit.get("message", payload.get("message", "feat(kafka): adjust consumer partition rebalance timeouts to Oct 30"))
 
         evidence_id = f"evi-git-{commit_sha.lower()}"
+        
+        project_id = "prj-aegis"
+        if "clara-v3" in repo_name.lower():
+            project_id = "prj-clara-v3"
+        elif "orion" in repo_name.lower():
+            project_id = "prj-orion"
+        else:
+            project_id = f"prj-{repo_name.replace('/', '-').lower()}"
+
+        # Ensure project exists
+        existing_project = self.store.get_project(project_id)
+        if not existing_project:
+            from ....domain.schemas import Project, ProjectStatus
+            project = Project(
+                id=project_id,
+                org_id="org-acme-fintech",
+                name=repo_name,
+                code=repo_name.split("/")[-1][:5].upper(),
+                description=f"Auto-generated project for {repo_name} from webhook",
+                status=ProjectStatus.ON_TRACK,
+                health_score=100,
+                owner_id="usr-system",
+                owner_name="System",
+                target_completion_date=datetime.utcnow(),
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+            )
+            self.store.add_project(project)
 
         evidence = Evidence(
             id=evidence_id,
@@ -45,7 +73,7 @@ class GitHubWebhookHandler:
             freshness_score=1.0,
             relevance_score=0.95,
             is_conflicting=False,
-            project_id="prj-aegis",
+            project_id=project_id,
         )
         self.store.add_evidence(evidence)
 

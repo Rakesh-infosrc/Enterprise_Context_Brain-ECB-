@@ -13,6 +13,14 @@ jira_handler = JiraWebhookHandler()
 slack_handler = SlackWebhookHandler()
 store = CanonicalStore.get_instance()
 
+@router.get("/github")
+async def github_webhook_info():
+    return {
+        "status": "online",
+        "service": "GitHub Webhook Receiver",
+        "message": "Send HTTP POST payloads from GitHub to this URL to trigger automated ingestion."
+    }
+
 @router.post("/github")
 async def handle_github_webhook(
     payload: Dict[str, Any],

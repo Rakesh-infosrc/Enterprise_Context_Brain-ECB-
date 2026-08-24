@@ -20,6 +20,8 @@ class SourceType(str, Enum):
     ADR = "adr"
     SLACK = "slack"
     MEETING = "meeting"
+    CONFLUENCE = "confluence"
+    DOC = "doc"
 
 
 class AuthorityLevel(str, Enum):
@@ -108,7 +110,23 @@ class StepStage(str, Enum):
     AUDITED = "AUDITED"
 
 
+class UserRole(str, Enum):
+    PROJECT_MANAGER = "project_manager"
+    ENGINEERING_LEAD = "engineering_lead"
+    SYSTEM_ADMINISTRATOR = "system_administrator"
+    ARCHITECT = "architect"
+
+
 # --- Canonical Entity Models ---
+
+class User(BaseModel):
+    id: str
+    org_id: str = "org-acme-fintech"
+    name: str
+    email: str
+    role: str = "engineering_lead"
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 
 class Organization(BaseModel):
     id: str

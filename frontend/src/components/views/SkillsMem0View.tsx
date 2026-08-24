@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { SkillMetadata, Mem0MemoryItem } from '../../types';
 import { api } from '../../lib/api';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 export const SkillsMem0View: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'skills' | 'mem0' | 'qdrant'>('skills');
@@ -60,30 +61,30 @@ export const SkillsMem0View: React.FC = () => {
 
         {/* Sub-tab Navigation */}
         <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem' }}>
-          <button
+          <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
             onClick={() => setActiveTab('skills')}
             className={`glass-pill ${activeTab === 'skills' ? 'active' : ''}`}
             style={{ cursor: 'pointer', padding: '0.45rem 1rem', fontSize: '0.825rem' }}
           >
             <BookOpen size={14} style={{ marginRight: '0.35rem', verticalAlign: 'middle' }} />
             SKILL.md Playbooks ({skills.length})
-          </button>
-          <button
+          </RippleButton>
+          <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
             onClick={() => setActiveTab('mem0')}
             className={`glass-pill ${activeTab === 'mem0' ? 'active' : ''}`}
             style={{ cursor: 'pointer', padding: '0.45rem 1rem', fontSize: '0.825rem' }}
           >
             <BrainCircuit size={14} style={{ marginRight: '0.35rem', verticalAlign: 'middle' }} />
             Mem0 Long-Term Memory ({memories.length})
-          </button>
-          <button
+          </RippleButton>
+          <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
             onClick={() => setActiveTab('qdrant')}
             className={`glass-pill ${activeTab === 'qdrant' ? 'active' : ''}`}
             style={{ cursor: 'pointer', padding: '0.45rem 1rem', fontSize: '0.825rem' }}
           >
             <Database size={14} style={{ marginRight: '0.35rem', verticalAlign: 'middle' }} />
             Qdrant Vector Engine
-          </button>
+          </RippleButton>
         </div>
       </div>
 

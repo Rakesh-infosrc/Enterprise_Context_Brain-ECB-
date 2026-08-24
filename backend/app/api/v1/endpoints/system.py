@@ -9,6 +9,7 @@ from ....infrastructure.llm.llama_guard import LlamaGuardService, GuardResult
 from ....application.intelligence.skill_loader import SkillLoader, SkillMetadata
 from ....application.safety.eval_suite import EvalSuite
 from ....core.config import get_settings
+from ....infrastructure.integration.live_sync_service import LiveDataIntegrationService
 
 router = APIRouter(tags=["System & Observability"])
 store = CanonicalStore.get_instance()
@@ -16,6 +17,12 @@ qdrant_service = QdrantVectorService(store)
 llama_guard = LlamaGuardService()
 skill_loader = SkillLoader()
 eval_suite = EvalSuite()
+live_sync_service = LiveDataIntegrationService()
+
+@router.post("/sync")
+def sync_live_data():
+    """Trigger live synchronization with external APIs (GitHub, Jira)."""
+    return live_sync_service.sync_all_sources()
 
 @router.get("/skills", response_model=List[SkillMetadata])
 def list_skills():

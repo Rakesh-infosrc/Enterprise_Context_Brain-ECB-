@@ -37,6 +37,151 @@ import { api } from '../../lib/api';
 import { ContextScopeBar } from '../ContextScopeBar';
 import { NavItem } from '../Sidebar';
 import { Tooltip } from '../Tooltip';
+import { RippleButton } from "@/components/ui/ripple-button";
+
+const FormattedMarkdown: React.FC<{ text: string }> = ({ text }) => {
+  if (!text) return null;
+
+  const lines = text.split('\n');
+
+  const renderInline = (lineText: string) => {
+    // Split by inline code `...`
+    const codeParts = lineText.split(/(`[^`]+`)/g);
+
+    return codeParts.map((part, pIdx) => {
+      if (part.startsWith('`') && part.endsWith('`') && part.length > 1) {
+        const codeContent = part.slice(1, -1);
+        return (
+          <code
+            key={pIdx}
+            style={{
+              background: 'rgba(92, 168, 255, 0.15)',
+              color: '#5ca8ff',
+              border: '1px solid rgba(92, 168, 255, 0.3)',
+              borderRadius: '4px',
+              padding: '0.12rem 0.45rem',
+              fontSize: '0.78rem',
+              fontFamily: 'JetBrains Mono, monospace',
+              fontWeight: 600,
+            }}
+          >
+            {codeContent}
+          </code>
+        );
+      }
+
+      // Split by **bold**
+      const boldParts = part.split(/(\*\*[^*]+\*\*)/g);
+      return boldParts.map((bPart, bIdx) => {
+        if (bPart.startsWith('**') && bPart.endsWith('**') && bPart.length > 3) {
+          const boldContent = bPart.slice(2, -2);
+          if (boldContent.startsWith('*') && boldContent.endsWith('*') && boldContent.length > 1) {
+            return (
+              <strong key={bIdx} style={{ color: '#ffffff', fontWeight: 700, fontStyle: 'italic' }}>
+                {boldContent.slice(1, -1)}
+              </strong>
+            );
+          }
+          return (
+            <strong key={bIdx} style={{ color: '#ffffff', fontWeight: 700 }}>
+              {boldContent}
+            </strong>
+          );
+        }
+
+        // Split by *italic*
+        const italicParts = bPart.split(/(\*[^*]+\*)/g);
+        return italicParts.map((iPart, iIdx) => {
+          if (iPart.startsWith('*') && iPart.endsWith('*') && iPart.length > 1) {
+            return (
+              <span key={iIdx} style={{ fontStyle: 'italic', color: '#94a3b8' }}>
+                {iPart.slice(1, -1)}
+              </span>
+            );
+          }
+          return iPart;
+        });
+      });
+    });
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem', lineHeight: 1.65, color: '#e2e8f0' }}>
+      {lines.map((line, idx) => {
+        const trimmed = line.trim();
+
+        if (!trimmed) {
+          return <div key={idx} style={{ height: '0.35rem' }} />;
+        }
+
+        // Headings (### or ##)
+        if (trimmed.startsWith('### ')) {
+          return (
+            <h3
+              key={idx}
+              style={{
+                fontSize: '1.08rem',
+                fontWeight: 800,
+                color: '#ffffff',
+                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                paddingBottom: '0.35rem',
+                marginTop: idx === 0 ? 0 : '0.9rem',
+                marginBottom: '0.35rem',
+              }}
+            >
+              {renderInline(trimmed.replace(/^###\s+/, ''))}
+            </h3>
+          );
+        }
+
+        if (trimmed.startsWith('## ')) {
+          return (
+            <h2
+              key={idx}
+              style={{
+                fontSize: '1.2rem',
+                fontWeight: 800,
+                color: '#ffffff',
+                borderBottom: '1px solid rgba(92, 168, 255, 0.2)',
+                paddingBottom: '0.45rem',
+                marginTop: idx === 0 ? 0 : '1.1rem',
+                marginBottom: '0.45rem',
+              }}
+            >
+              {renderInline(trimmed.replace(/^##\s+/, ''))}
+            </h2>
+          );
+        }
+
+        // Unordered List Items (- or *)
+        if (/^[-*]\s+/.test(trimmed)) {
+          return (
+            <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem', paddingLeft: '0.4rem' }}>
+              <span style={{ color: '#5ca8ff', fontSize: '0.85rem', lineHeight: 1.5 }}>•</span>
+              <div style={{ flex: 1 }}>{renderInline(trimmed.replace(/^[-*]\s+/, ''))}</div>
+            </div>
+          );
+        }
+
+        // Ordered List Items (1., 2., etc.)
+        const numMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+        if (numMatch) {
+          return (
+            <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem', paddingLeft: '0.4rem' }}>
+              <span style={{ color: '#35d07f', fontWeight: 700, fontSize: '0.82rem', minWidth: '18px' }}>
+                {numMatch[1]}.
+              </span>
+              <div style={{ flex: 1 }}>{renderInline(numMatch[2])}</div>
+            </div>
+          );
+        }
+
+        // Regular Paragraph
+        return <p key={idx} style={{ margin: 0 }}>{renderInline(line)}</p>;
+      })}
+    </div>
+  );
+};
 
 interface AskECBViewProps {
   projects: Project[];
@@ -55,7 +200,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
   onSelectView,
   onRefreshStats,
 }) => {
-  const [query, setQuery] = useState(initialQuestion || 'Why is Project Aegis delayed?');
+  const [query, setQuery] = useState(initialQuestion || 'What are the critical risks and live Jira issues for clara-v3?');
   const [timeRangeDays, setTimeRangeDays] = useState(30);
   const [selectedSources, setSelectedSources] = useState<SourceType[]>([
     'jira',
@@ -69,8 +214,9 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
     const [isStreaming, setIsStreaming] = useState(false);
   const [streamedAnswer, setStreamedAnswer] = useState('');
   const [agentSteps, setAgentSteps] = useState<any[]>([]);
-const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [response, setResponse] = useState<QueryResponse | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [activeEvidenceTab, setActiveEvidenceTab] = useState<'supporting' | 'conflicting' | 'superseded'>('supporting');
   const [selectedEvidenceDetail, setSelectedEvidenceDetail] = useState<Evidence | null>(null);
 
@@ -93,34 +239,62 @@ const [isLoading, setIsLoading] = useState(false);
     setStreamedAnswer('');
     setAgentSteps([]);
     setResponse(null);
+    setErrorMsg(null);
     setActionSuccessMsg(null);
     setSelectedEvidenceDetail(null);
 
+    const targetProject = activeProjectId && activeProjectId !== 'all' ? activeProjectId : (projects[0]?.id || 'prj-kan');
+
     try {
-      await api.queryStream({
+      // Primary: Fast, stateful REST query execution
+      const resData = await api.query({
         query: q,
-        project_id: activeProjectId,
+        project_id: targetProject,
         time_range_days: timeRangeDays,
         source_filters: selectedSources,
         workflow: selectedWorkflow,
-      }, (event) => {
-        setIsLoading(false); // Hide shimmer once stream starts
-        if (event.type === 'step') {
-          setAgentSteps(prev => [...prev, event.data]);
-        } else if (event.type === 'token') {
-          setStreamedAnswer(prev => prev + event.content);
-        } else if (event.type === 'complete') {
-          setResponse(event.data);
-          setIsStreaming(false);
-          if (event.data.conflicting_evidence && event.data.conflicting_evidence.length > 0) {
-            setActiveEvidenceTab('conflicting');
-          } else {
-            setActiveEvidenceTab('supporting');
-          }
-        }
       });
-    } catch (err) {
-      console.error('Query execution failed:', err);
+
+      if (resData && resData.answer) {
+        setResponse(resData);
+        if (resData.steps) setAgentSteps(resData.steps);
+        if (resData.conflicting_evidence && resData.conflicting_evidence.length > 0) {
+          setActiveEvidenceTab('conflicting');
+        } else {
+          setActiveEvidenceTab('supporting');
+        }
+      } else {
+        throw new Error("No response data returned from query execution.");
+      }
+    } catch (err: any) {
+      console.warn('Standard REST query failed, attempting SSE stream fallback:', err);
+      try {
+        let received = false;
+        await api.queryStream({
+          query: q,
+          project_id: targetProject,
+          time_range_days: timeRangeDays,
+          source_filters: selectedSources,
+          workflow: selectedWorkflow,
+        }, (event) => {
+          if (event.type === 'step') {
+            setAgentSteps(prev => [...prev, event.data]);
+          } else if (event.type === 'token') {
+            setStreamedAnswer(prev => prev + event.content);
+          } else if (event.type === 'complete') {
+            received = true;
+            setResponse(event.data);
+          }
+        });
+
+        if (!received && !streamedAnswer) {
+          setErrorMsg(err?.message || 'Query execution failed to retrieve an answer from the backend API server.');
+        }
+      } catch (streamErr: any) {
+        console.error('All query execution methods failed:', streamErr);
+        setErrorMsg(err?.message || streamErr?.message || 'Failed to communicate with the ECB backend API server.');
+      }
+    } finally {
       setIsLoading(false);
       setIsStreaming(false);
     }
@@ -143,10 +317,10 @@ const [isLoading, setIsLoading] = useState(false);
   };
 
   const starterChips = [
-    { label: 'Project Aegis Delay', query: 'Why is Project Aegis delayed and what is the root cause?' },
-    { label: 'ADR-002 Kafka Rationale', query: 'Why was synchronous REST replaced with Kafka in ADR-002?' },
-    { label: 'Critical Risks', query: 'What are the critical open risks for Project Aegis?' },
-    { label: 'Postgres vs Mongo Rationale', query: 'Why did we choose PostgreSQL with pgvector over MongoDB or graph databases?' },
+    { label: 'clara-v3 Live Risks', query: 'What are the critical open risks and blockers for clara-v3?' },
+    { label: 'Jira KAN Board Summary', query: 'Summarize all 10 live Jira issues currently in progress for project KAN.' },
+    { label: 'Git Commit Evidence', query: 'What recent Git commits have been pushed for clara-v3 backend refactoring?' },
+    { label: 'ADR-002 Architecture Rationale', query: 'Why was synchronous REST replaced with Kafka event streams in ADR-002?' },
   ];
 
   return (
@@ -206,7 +380,7 @@ const [isLoading, setIsLoading] = useState(false);
             style={{ fontSize: '0.9rem', padding: '0.75rem 1.15rem' }}
           />
 
-          <button
+          <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
             className="glass-btn glass-btn-primary"
             onClick={() => handleExecuteQuery()}
             disabled={isLoading || isStreaming || !query.trim()}
@@ -214,14 +388,14 @@ const [isLoading, setIsLoading] = useState(false);
           >
             {isLoading ? <RefreshCw size={16} className="animate-spin" /> : <Send size={16} />}
             <span>{(isLoading || isStreaming) ? 'Synthesizing...' : 'Execute Query'}</span>
-          </button>
+          </RippleButton>
         </div>
 
         {/* Starter Prompt Quick Chips */}
         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>Try asking:</span>
           {starterChips.map((chip, idx) => (
-            <button
+            <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
               key={idx}
               onClick={() => {
                 setQuery(chip.query);
@@ -249,10 +423,23 @@ const [isLoading, setIsLoading] = useState(false);
               }}
             >
               {chip.label}
-            </button>
+            </RippleButton>
           ))}
         </div>
       </div>
+
+      {/* 2.5 Error Banner */}
+      {errorMsg && (
+        <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', border: '1px solid rgba(255, 107, 122, 0.4)', background: 'rgba(255, 107, 122, 0.08)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#ff6b7a', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem' }}>
+            <AlertTriangle size={18} />
+            <span>Query Execution Warning</span>
+          </div>
+          <p style={{ fontSize: '0.82rem', color: '#cbd5e1', margin: 0 }}>
+            {errorMsg}
+          </p>
+        </div>
+      )}
 
       {/* 3. Loading Shimmer & Agent Trace State */}
       {(isLoading || isStreaming) && !response && (
@@ -288,8 +475,8 @@ const [isLoading, setIsLoading] = useState(false);
           )}
 
           {streamedAnswer && (
-            <div style={{ fontSize: '0.9rem', lineHeight: 1.65, color: '#e2e8f0', whiteSpace: 'pre-line' }}>
-              {streamedAnswer}
+            <div>
+              <FormattedMarkdown text={streamedAnswer} />
               <span className="animate-pulse" style={{ display: 'inline-block', width: '6px', height: '14px', backgroundColor: '#5ca8ff', marginLeft: '4px', verticalAlign: 'middle' }}></span>
             </div>
           )}
@@ -325,16 +512,7 @@ const [isLoading, setIsLoading] = useState(false);
               </div>
 
               {/* Markdown Synthesized Body */}
-              <div
-                style={{
-                  fontSize: '0.9rem',
-                  lineHeight: 1.65,
-                  color: '#e2e8f0',
-                  whiteSpace: 'pre-line',
-                }}
-              >
-                {response.answer}
-              </div>
+              <FormattedMarkdown text={response.answer} />
 
               {/* Citations Footer Row */}
               <div
@@ -350,14 +528,14 @@ const [isLoading, setIsLoading] = useState(false);
               >
                 <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Verified Citations:</span>
                 {response.supporting_evidence?.concat(response.conflicting_evidence || []).map((ev, i) => (
-                  <button
+                  <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                     key={ev.id}
                     className="citation-badge"
                     onClick={() => setSelectedEvidenceDetail(ev)}
                     title="Click to inspect source provenance in Evidence Rail"
                   >
                     [E{i + 1}] {ev.source_title}
-                  </button>
+                  </RippleButton>
                 ))}
               </div>
             </div>
@@ -433,7 +611,7 @@ const [isLoading, setIsLoading] = useState(false);
                   </div>
                 ) : (
                   <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                    <button
+                    <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
                       className="glass-btn glass-btn-primary"
                       disabled={isApproving}
                       onClick={() => handleApproveAction(response.recommendation!.id)}
@@ -441,15 +619,15 @@ const [isLoading, setIsLoading] = useState(false);
                     >
                       {isApproving ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                       <span>Approve &amp; Execute via MCP</span>
-                    </button>
-                    <button
+                    </RippleButton>
+                    <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                       className="glass-btn"
                       onClick={() => onSelectView('approval_center')}
                       style={{ fontSize: '0.85rem' }}
                     >
                       <span>Review in Approval Center</span>
                       <ArrowRight size={14} />
-                    </button>
+                    </RippleButton>
                   </div>
                 )}
               </div>
@@ -469,7 +647,7 @@ const [isLoading, setIsLoading] = useState(false);
 
             {/* Evidence Tabs */}
             <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem' }}>
-              <button
+              <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                 onClick={() => setActiveEvidenceTab('supporting')}
                 style={{
                   background: activeEvidenceTab === 'supporting' ? 'rgba(92, 168, 255, 0.2)' : 'transparent',
@@ -483,9 +661,9 @@ const [isLoading, setIsLoading] = useState(false);
                 }}
               >
                 Supporting ({response.supporting_evidence?.length || 0})
-              </button>
+              </RippleButton>
 
-              <button
+              <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                 onClick={() => setActiveEvidenceTab('conflicting')}
                 style={{
                   background: activeEvidenceTab === 'conflicting' ? 'rgba(251, 146, 60, 0.2)' : 'transparent',
@@ -499,9 +677,9 @@ const [isLoading, setIsLoading] = useState(false);
                 }}
               >
                 ⚠️ Conflicting ({response.conflicting_evidence?.length || 0})
-              </button>
+              </RippleButton>
 
-              <button
+              <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                 onClick={() => setActiveEvidenceTab('superseded')}
                 style={{
                   background: activeEvidenceTab === 'superseded' ? 'rgba(155, 124, 255, 0.2)' : 'transparent',
@@ -515,7 +693,7 @@ const [isLoading, setIsLoading] = useState(false);
                 }}
               >
                 Superseded ({response.superseded_evidence?.length || 0})
-              </button>
+              </RippleButton>
             </div>
 
             {/* Evidence Items List */}

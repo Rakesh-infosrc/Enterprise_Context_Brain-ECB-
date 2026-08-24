@@ -15,6 +15,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { Evidence, SourceType } from '../../types';
+import { RippleButton } from "@/components/ui/ripple-button";
 
 interface EvidenceExplorerViewProps {
   evidenceList: Evidence[];
@@ -102,7 +103,7 @@ export const EvidenceExplorerView: React.FC<EvidenceExplorerViewProps> = ({ evid
         </div>
 
         {/* Conflict Filter Toggle */}
-        <button
+        <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
           onClick={() => setOnlyConflicts(!onlyConflicts)}
           style={{
             background: onlyConflicts ? 'rgba(255, 107, 122, 0.2)' : 'rgba(255, 255, 255, 0.05)',
@@ -120,7 +121,7 @@ export const EvidenceExplorerView: React.FC<EvidenceExplorerViewProps> = ({ evid
         >
           <AlertTriangle size={14} />
           <span>Show Contradictions Only</span>
-        </button>
+        </RippleButton>
       </div>
 
       {/* Main Grid: Evidence Cards List vs Detailed Provenance Box */}
