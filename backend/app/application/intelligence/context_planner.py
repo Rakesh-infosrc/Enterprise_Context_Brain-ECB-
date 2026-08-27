@@ -53,10 +53,12 @@ class ContextPlanner:
         # 2. Extract Intent & Select Specialist Agent Workflow
         planned_agent = AgentWorkflow.MANAGER
         intent = "ORGANIZATIONAL_MEMORY_SYNTHESIS"
+        llm_success = False
         
         if workflow:
             planned_agent = workflow
             intent = f"EXPLICIT_{workflow.value.upper()}_WORKFLOW"
+            llm_success = True
         elif not self.llm.is_simulated():
             # Use real LLM for planning
             system_prompt = """You are the Context Planning Engine. Analyze the user's query and extract the required fields as a JSON object:
@@ -79,9 +81,11 @@ Return ONLY raw JSON, no markdown formatting."""
                 intent = data.get("intent", intent).upper().replace(" ", "_")
                 # Store entities to use later
                 llm_entities = data.get("entities", [])
+                llm_success = True
             except Exception as e:
                 pass # fallback below
-        else:
+        
+        if not llm_success:
             if any(w in q_lower for w in ["delay", "why is", "block", "late", "timeline", "milestone", "sprint", "schedule"]):
                 planned_agent = AgentWorkflow.PROJECT_INTELLIGENCE
                 intent = "PROJECT_DELAY_AND_BLOCKER_ANALYSIS"

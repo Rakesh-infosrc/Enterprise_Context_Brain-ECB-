@@ -167,12 +167,8 @@ The system includes a dedicated QLoRA training engine ([`backend/app/domain/fine
 ### Run Comprehensive Backend Test Suite:
 ```powershell
 cd d:\InfoServices\ECB\backend
-.\venv\Scripts\python.exe -m pytest tests/
-```
-
-### Run Full System End-to-End Test Harness:
-```powershell
-python d:\InfoServices\ECB\scratch\test_all_tools_and_llm.py
+# Verify virtual environment dependencies and run unit test suite
+.\venv\Scripts\pytest -vv
 ```
 
 ### Validate Frontend Production Build:
@@ -180,3 +176,11 @@ python d:\InfoServices\ECB\scratch\test_all_tools_and_llm.py
 cd d:\InfoServices\ECB\frontend
 npm run build
 ```
+
+---
+
+## 🔒 Git Hooks & Security Compliance
+
+To enforce strict linking between code mutations and enterprise tracking logs, the repository has active commit hooks:
+* **Jira Commit Key Validation**: An active Git `commit-msg` hook enforces the presence of a tracked Jira issue key (matching `AEGIS-`, `KAN-`, `CLARA-`, or `INC-`) in every local commit message.
+* **Codebase Integrity Policy**: Code review gates automatically verify that no unreferenced template assets (`react.svg`, `vite.svg`) or dead authentication layouts (`AuthView.tsx`) remain in production builds.

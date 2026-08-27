@@ -4,6 +4,13 @@ Runs on port 8001. Provides complete REST and OpenAPI interface.
 Added User/UserRole module import fix in mcp.py.
 """
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from backend/.env at startup
+env_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env")
+load_dotenv(env_path)
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .api.v1.router import router

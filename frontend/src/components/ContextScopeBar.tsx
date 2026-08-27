@@ -97,21 +97,21 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
       }}
     >
       {/* Left: Project & Temporal Scope */}
-      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--fs-xs)' }}>
         {/* Project Chip */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: '#94a3b8' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>
           <Layers size={15} color="#5ca8ff" />
-          <span style={{ fontWeight: 600, color: '#e2e8f0' }}>Project:</span>
+          <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Project:</span>
           <select
             value={selectedProjectId}
             onChange={(e) => onSelectProject(e.target.value)}
             style={{
               background: 'rgba(7, 17, 31, 0.8)',
               border: '1px solid rgba(92, 168, 255, 0.3)',
-              borderRadius: '6px',
+              borderRadius:'var(--radius-sm)',
               color: '#ffffff',
               padding: '0.25rem 0.5rem',
-              fontSize: '0.78rem',
+              fontSize: 'var(--fs-sm)',
               fontWeight: 600,
               outline: 'none',
             }}
@@ -132,7 +132,7 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
         {/* Time Scope Pills */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <Clock size={14} color="#94a3b8" />
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>Temporal Scope:</span>
+          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', fontWeight: 500 }}>Temporal Scope:</span>
           {[7, 30, 90].map((days) => (
             <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
               key={days}
@@ -140,10 +140,10 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
               style={{
                 background: timeRangeDays === days ? 'rgba(92, 168, 255, 0.2)' : 'rgba(255, 255, 255, 0.04)',
                 border: timeRangeDays === days ? '1px solid #5ca8ff' : '1px solid rgba(255, 255, 255, 0.08)',
-                color: timeRangeDays === days ? '#5ca8ff' : '#94a3b8',
-                borderRadius: '6px',
+                color: timeRangeDays === days ? 'var(--accent-blue)' : 'var(--text-muted)',
+                borderRadius:'var(--radius-sm)',
                 padding: '0.2rem 0.55rem',
-                fontSize: '0.72rem',
+                fontSize: 'var(--fs-xs)',
                 fontWeight: 600,
                 cursor: 'pointer',
                 transition: 'all 0.15s',
@@ -159,7 +159,7 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
         {/* Source Toggles */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
           <Filter size={14} color="#94a3b8" />
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>Sources:</span>
+          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', fontWeight: 500 }}>Sources:</span>
           {allSources.map((src) => {
             const isSelected = selectedSources.includes(src.id);
             return (
@@ -169,10 +169,10 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
                 style={{
                   background: isSelected ? 'rgba(53, 208, 127, 0.15)' : 'rgba(255, 255, 255, 0.03)',
                   border: isSelected ? '1px solid rgba(53, 208, 127, 0.4)' : '1px solid rgba(255, 255, 255, 0.06)',
-                  color: isSelected ? '#35d07f' : '#64748b',
-                  borderRadius: '6px',
+                  color: isSelected ? 'var(--accent-emerald)' : 'var(--text-faint)',
+                  borderRadius:'var(--radius-sm)',
                   padding: '0.2rem 0.5rem',
-                  fontSize: '0.72rem',
+                  fontSize: 'var(--fs-xs)',
                   fontWeight: 500,
                   cursor: 'pointer',
                   display: 'inline-flex',
@@ -191,7 +191,7 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
       {/* Right: Specialist Agent Selector */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
         <Bot size={15} color="#c084fc" />
-        <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 500 }}>Agent:</span>
+        <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', fontWeight: 500 }}>Agent:</span>
         <select
           value={selectedWorkflow || 'auto'}
           onChange={(e) => {
@@ -201,10 +201,10 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
           style={{
             background: 'rgba(155, 124, 255, 0.15)',
             border: '1px solid rgba(155, 124, 255, 0.4)',
-            borderRadius: '6px',
+            borderRadius:'var(--radius-sm)',
             color: '#e9d5ff',
             padding: '0.25rem 0.6rem',
-            fontSize: '0.75rem',
+            fontSize: 'var(--fs-xs)',
             fontWeight: 600,
             outline: 'none',
             cursor: 'pointer',

@@ -27,21 +27,21 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
     {
       role: 'Project Manager',
       icon: TrendingUp,
-      color: '#5ca8ff',
+      color: 'var(--accent-blue)',
       query: 'Why is Project Aegis delayed and what is the root cause?',
       label: 'Inspect Project Aegis Blocker & Roadmap Delay',
     },
     {
       role: 'Lead Architect',
       icon: GitPullRequest,
-      color: '#9b7cff',
+      color: 'var(--accent-violet)',
       query: 'Why was synchronous REST replaced with Kafka in ADR-002?',
       label: 'Trace ADR-001 vs ADR-002 Kafka Supersession',
     },
     {
       role: 'Risk Officer',
       icon: ShieldAlert,
-      color: '#fb923c',
+      color: 'var(--accent-amber)',
       query: 'What are the critical open risks for Project Aegis and PCI-DSS 4.0?',
       label: 'Review Critical 5x5 Risk Heatmap & Audit Gaps',
     },
@@ -80,7 +80,7 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
           right: '1rem',
           background: 'transparent',
           border: 'none',
-          color: '#64748b',
+          color: 'var(--text-faint)',
           cursor: 'pointer',
           padding: '0.35rem',
           borderRadius: '50%',
@@ -89,39 +89,30 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
           justifyContent: 'center',
         }}
         title="Dismiss welcome banner"
-        onMouseEnter={(e) => (e.currentTarget.style.color = '#cbd5e1')}
-        onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
+        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
+        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-faint)')}
       >
         <X size={16} />
       </RippleButton>
 
-      {/* Top Welcome Text & Action */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem' }}>
+      {/* Top Welcome Text — hero Guided Tour removed per heuristics #5,9: single entry point is header Help icon */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.25rem', minHeight:'40px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
-            <span className="glass-pill active" style={{ fontSize: '0.75rem' }}>
+            <span className="glass-pill active" style={{ fontSize: 'var(--fs-xs)' }}>
               <Sparkles size={12} /> Welcome to ECB v2.2
             </span>
-            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
               Governed Context Operating System
             </span>
           </div>
-          <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff' }}>
+          <h2 style={{ fontSize: 'var(--fs-lg)', fontWeight: 800, color: 'var(--text-primary)', lineHeight:1.1 }}>
             What would you like to investigate today?
           </h2>
-          <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '0.2rem' }}>
-            Choose your persona workflow or take a 60-second interactive guided tour.
+          <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+            Choose your persona workflow to begin.
           </p>
         </div>
-
-        <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
-          onClick={onStartTour}
-          className="glass-btn glass-btn-primary"
-          style={{ padding: '0.55rem 1.15rem', fontSize: '0.825rem' }}
-        >
-          <HelpCircle size={15} />
-          <span>Interactive Guided Tour</span>
-        </RippleButton>
       </div>
 
       {/* 3 Persona Cards Grid */}
@@ -145,7 +136,7 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
                   style={{
                     width: '28px',
                     height: '28px',
-                    borderRadius: '8px',
+                    borderRadius:'var(--radius-sm)',
                     background: `${p.color}22`,
                     display: 'flex',
                     alignItems: 'center',
@@ -154,14 +145,14 @@ export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
                 >
                   <Icon size={16} color={p.color} />
                 </div>
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: p.color, textTransform: 'uppercase' }}>
+                <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: p.color, textTransform: 'none', letterSpacing: '-0.01em' }}>
                   {p.role} Path
                 </span>
               </div>
-              <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#ffffff', marginBottom: '0.35rem', lineHeight: 1.3 }}>
+              <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600, color: '#ffffff', marginBottom: '0.35rem', lineHeight: 1.3 }}>
                 {p.label}
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.72rem', color: '#5ca8ff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: 'var(--fs-xs)', color: 'var(--accent-blue)' }}>
                 <span>Launch Ask ECB</span>
                 <ArrowRight size={12} />
               </div>

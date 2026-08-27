@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional
 from .github_webhook import GitHubWebhookHandler
 from .jira_webhook import JiraWebhookHandler
 from .slack_webhook import SlackWebhookHandler
+from .databricks_webhook import DatabricksWebhookHandler
 from ....infrastructure.db.store import CanonicalStore
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
@@ -11,6 +12,7 @@ router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 github_handler = GitHubWebhookHandler()
 jira_handler = JiraWebhookHandler()
 slack_handler = SlackWebhookHandler()
+databricks_handler = DatabricksWebhookHandler()
 store = CanonicalStore.get_instance()
 
 @router.get("/github")
@@ -35,6 +37,10 @@ async def handle_jira_webhook(payload: Dict[str, Any]):
 @router.post("/slack")
 async def handle_slack_webhook(payload: Dict[str, Any]):
     return slack_handler.process_interactivity(payload=payload)
+
+@router.post("/databricks")
+async def handle_databricks_webhook(payload: Dict[str, Any]):
+    return databricks_handler.process_webhook(payload=payload)
 
 @router.get("/slack/card/{action_id}")
 def generate_slack_card(action_id: str):

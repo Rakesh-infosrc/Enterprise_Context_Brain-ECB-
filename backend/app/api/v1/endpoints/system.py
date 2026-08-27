@@ -95,3 +95,87 @@ def health_check():
         "llm_provider": get_settings().active_provider,
         "llm_mode": get_settings().ecb_llm_mode,
     }
+
+
+from pydantic import BaseModel
+import os
+
+class ConnectionSettingsRequest(BaseModel):
+    databricks_host: str
+    databricks_token: str
+    jira_base_url: str
+    jira_user_email: str
+    jira_api_token: str
+    github_token: str
+
+@router.get("/settings/connections")
+def get_connection_settings():
+    """Reads current integration connection settings from the .env file."""
+    env_vars = {}
+    env_path = "D:/InfoServices/ECB/backend/.env"
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            for line in f:
+                trimmed = line.strip()
+                if trimmed and not trimmed.startswith("#") and "=" in trimmed:
+                    key, val = trimmed.split("=", 1)
+                    env_vars[key.strip()] = val.strip()
+
+    return {
+        "databricks_host": env_vars.get("DATABRICKS_HOST", ""),
+        "databricks_token": env_vars.get("DATABRICKS_TOKEN", ""),
+        "jira_base_url": env_vars.get("JIRA_BASE_URL", ""),
+        "jira_user_email": env_vars.get("JIRA_USER_EMAIL", ""),
+        "jira_api_token": env_vars.get("JIRA_API_TOKEN", ""),
+        "github_token": env_vars.get("GITHUB_TOKEN", "")
+    }
+
+@router.post("/settings/connections")
+def save_connection_settings(req: ConnectionSettingsRequest):
+    """Overwrites the backend .env file with new credentials and updates os.environ."""
+    env_path = "D:/InfoServices/ECB/backend/.env"
+
+    existing_lines = []
+    if os.path.exists(env_path):
+        with open(env_path, "r", encoding="utf-8") as f:
+            existing_lines = f.readlines()
+
+    new_keys = {
+        "DATABRICKS_HOST": req.databricks_host,
+        "DATABRICKS_TOKEN": req.databricks_token,
+        "JIRA_BASE_URL": req.jira_base_url,
+        "JIRA_USER_EMAIL": req.jira_user_email,
+        "JIRA_API_TOKEN": req.jira_api_token,
+        "GITHUB_TOKEN": req.github_token
+    }
+
+    updated_keys = set()
+    output_lines = []
+
+    for line in existing_lines:
+        trimmed = line.strip()
+        is_matched = False
+        if trimmed and not trimmed.startswith("#") and "=" in trimmed:
+            key, _ = trimmed.split("=", 1)
+            key = key.strip()
+            if key in new_keys:
+                output_lines.append(f"{key}={new_keys[key]}\n")
+                updated_keys.add(key)
+                is_matched = True
+
+        if not is_matched:
+            output_lines.append(line)
+
+    for key, val in new_keys.items():
+        if key not in updated_keys:
+            if output_lines and not output_lines[-1].endswith("\n"):
+                output_lines.append("\n")
+            output_lines.append(f"{key}={val}\n")
+
+    with open(env_path, "w", encoding="utf-8") as f:
+        f.writelines(output_lines)
+
+    for key, val in new_keys.items():
+        os.environ[key] = val
+
+    return {"status": "SUCCESS", "message": "Connection credentials saved and applied dynamically."}

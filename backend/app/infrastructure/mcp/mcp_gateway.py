@@ -118,6 +118,186 @@ class MCPGateway:
                 "description": "Returns evaluation report of accessible vs locked data sources across Git and Jira MCP.",
                 "inputSchema": {"type": "object", "properties": {}},
             },
+            {
+                "name": "databricks_list_clusters",
+                "description": "List all active and terminated compute clusters in the Databricks workspace.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "limit": {
+                            "type": "integer",
+                            "description": "Maximum number of clusters to return (default is 25).",
+                            "default": 25
+                        }
+                    }
+                }
+            },
+            {
+                "name": "databricks_get_cluster",
+                "description": "Retrieve configuration settings and current execution state for a specific compute cluster.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "cluster_id": {
+                            "type": "string",
+                            "description": "Unique identifier of the Databricks cluster (e.g. 1025-092000-active123)."
+                        }
+                    },
+                    "required": ["cluster_id"]
+                }
+            },
+            {
+                "name": "databricks_list_jobs",
+                "description": "List all registered workflow definitions and data engineering jobs in the workspace.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "limit": {
+                            "type": "integer",
+                            "description": "Maximum number of jobs to return.",
+                            "default": 25
+                        }
+                    }
+                }
+            },
+            {
+                "name": "databricks_run_job",
+                "description": "Trigger an asynchronous run execution of a workflow job. Returns the generated run ID.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "job_id": {
+                            "type": "integer",
+                            "description": "The numeric ID of the job definition to run."
+                        },
+                        "idempotency_token": {
+                            "type": "string",
+                            "description": "Optional token to prevent duplicate runs of the same job action."
+                        }
+                    },
+                    "required": ["job_id"]
+                }
+            },
+            {
+                "name": "databricks_get_job_run",
+                "description": "Retrieve status, lifecycle state, tasks and execution details of a specific job run.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "run_id": {
+                            "type": "integer",
+                            "description": "The unique numeric identifier of the run instance."
+                        }
+                    },
+                    "required": ["run_id"]
+                }
+            },
+            {
+                "name": "databricks_execute_sql",
+                "description": "Run an AST-validated read-only SQL query on a SQL warehouse. Supports SELECT, SHOW, DESCRIBE, and EXPLAIN.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "statement": {
+                            "type": "string",
+                            "description": "The read-only SQL statement to execute."
+                        },
+                        "warehouse_id": {
+                            "type": "string",
+                            "description": "The unique 16-character hexadecimal ID of the SQL Warehouse."
+                        },
+                        "max_rows": {
+                            "type": "integer",
+                            "description": "Maximum number of rows to return in the result.",
+                            "default": 1000
+                        },
+                        "catalog": {
+                            "type": "string",
+                            "description": "Optional default catalog context to use."
+                        },
+                        "schema": {
+                            "type": "string",
+                            "description": "Optional default schema context to use."
+                        }
+                    },
+                    "required": ["statement", "warehouse_id"]
+                }
+            },
+            {
+                "name": "databricks_list_workspace_objects",
+                "description": "List notebooks, files, and directories stored under a given workspace folder path.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "Workspace path to list (e.g. /Users/dev@company.com/notebooks)."
+                        },
+                        "limit": {
+                            "type": "integer",
+                            "description": "Maximum number of items to list.",
+                            "default": 50
+                        }
+                    },
+                    "required": ["path"]
+                }
+            },
+            {
+                "name": "databricks_export_notebook",
+                "description": "Export the source code or content of a notebook/file as base64-encoded text.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "The full workspace path to the notebook to export."
+                        },
+                        "export_format": {
+                            "type": "string",
+                            "description": "File format to export (e.g. SOURCE, HTML, JUPYTER, DBC).",
+                            "default": "SOURCE"
+                        }
+                    },
+                    "required": ["path"]
+                }
+            },
+            {
+                "name": "databricks_list_catalogs",
+                "description": "List all Unity Catalogs available in the workspace metastore.",
+                "inputSchema": {"type": "object", "properties": {}}
+            },
+            {
+                "name": "databricks_list_schemas",
+                "description": "List all schemas inside a specific Unity Catalog.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "catalog_name": {
+                            "type": "string",
+                            "description": "The name of the catalog to query schemas from."
+                        }
+                    },
+                    "required": ["catalog_name"]
+                }
+            },
+            {
+                "name": "databricks_list_tables",
+                "description": "List all tables inside a specific Unity Catalog schema.",
+                "inputSchema": {
+                    "type": "object",
+                    "properties": {
+                        "catalog_name": {
+                            "type": "string",
+                            "description": "The name of the catalog."
+                        },
+                        "schema_name": {
+                            "type": "string",
+                            "description": "The name of the schema to query tables from."
+                        }
+                    },
+                    "required": ["catalog_name", "schema_name"]
+                }
+            },
         ]
 
     def list_resources(self) -> List[Dict[str, Any]]:
@@ -187,6 +367,79 @@ class MCPGateway:
                 "message_id": f"msg-{uuid.uuid4().hex[:6]}",
                 "timestamp": datetime.utcnow().isoformat(),
             }
+        elif "databricks" in tool_name:
+            import urllib.request
+            import urllib.parse
+            import json
+            import os
+
+            host = os.getenv("DATABRICKS_HOST", "").rstrip("/")
+            token = os.getenv("DATABRICKS_TOKEN", "")
+
+            def call_api(endpoint: str, method: str = "GET", payload: Any = None) -> Any:
+                url = f"{host}{endpoint}"
+                data = json.dumps(payload).encode('utf-8') if payload else None
+                req = urllib.request.Request(url, data=data, method=method)
+                req.add_header("Authorization", f"Bearer {token}")
+                req.add_header("Content-Type", "application/json")
+                req.add_header("Accept", "application/json")
+                req.add_header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+                with urllib.request.urlopen(req) as resp:
+                    return json.loads(resp.read().decode())
+
+            try:
+                if "list_clusters" in tool_name:
+                    api_res = call_api("/api/2.0/clusters/list")
+                elif "get_cluster" in tool_name:
+                    cid = params.get("cluster_id", "")
+                    api_res = call_api(f"/api/2.0/clusters/get?cluster_id={cid}")
+                elif "list_jobs" in tool_name:
+                    api_res = call_api("/api/2.1/jobs/list")
+                elif "run_job" in tool_name:
+                    jid = int(params.get("job_id", 0))
+                    api_res = call_api("/api/2.1/jobs/run-now", method="POST", payload={"job_id": jid})
+                elif "get_job_run" in tool_name:
+                    rid = int(params.get("run_id", 0))
+                    api_res = call_api(f"/api/2.1/jobs/runs/get?run_id={rid}")
+                elif "execute_sql" in tool_name:
+                    wid = params.get("warehouse_id", "")
+                    stmt = params.get("statement", "")
+                    api_res = call_api("/api/2.0/sql/statements", method="POST", payload={"warehouse_id": wid, "statement": stmt})
+                elif "list_workspace_objects" in tool_name:
+                    path = params.get("path", "/")
+                    api_res = call_api(f"/api/2.0/workspace/list?path={urllib.parse.quote(path)}")
+                elif "export_notebook" in tool_name:
+                    path = params.get("path", "")
+                    api_res = call_api(f"/api/2.0/workspace/export?path={urllib.parse.quote(path)}&format=SOURCE")
+                elif "list_catalogs" in tool_name:
+                    api_res = call_api("/api/2.1/unity-catalog/catalogs")
+                elif "list_schemas" in tool_name:
+                    cat_name = params.get("catalog_name", "")
+                    api_res = call_api(f"/api/2.1/unity-catalog/schemas?catalog_name={cat_name}")
+                elif "list_tables" in tool_name:
+                    cat_name = params.get("catalog_name", "")
+                    sch_name = params.get("schema_name", "")
+                    api_res = call_api(f"/api/2.1/unity-catalog/tables?catalog_name={cat_name}&schema_name={sch_name}")
+                else:
+                    api_res = {"error": f"Unknown Databricks tool {tool_name}"}
+
+                result_payload = {
+                    "system": "Databricks Workspace API",
+                    "workspace": host,
+                    "operation": "API_CALL",
+                    "status": "COMPLETED",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "execution_result": api_res
+                }
+            except Exception as e:
+                result_payload = {
+                    "system": "Databricks Workspace API",
+                    "workspace": host,
+                    "operation": "API_CALL",
+                    "status": "FAILED",
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "error": str(e)
+                }
         else:
             result_payload = {
                 "system": action.target_system,

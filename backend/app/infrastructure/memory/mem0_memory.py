@@ -7,7 +7,9 @@ memories with continuous learning from user interactions and resolution patterns
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 import uuid
+import os
 from pydantic import BaseModel
+from mem0 import MemoryClient
 from ...domain.schemas import MemoryType, MemoryItem
 from ..db.store import CanonicalStore
 
@@ -31,6 +33,14 @@ class Mem0MemoryService:
     def __init__(self, store: Optional[CanonicalStore] = None):
         self.store = store or CanonicalStore.get_instance()
         self.memories: Dict[str, Mem0MemoryItem] = {}
+        self.api_key = os.getenv("MEM0_API_KEY")
+        if self.api_key:
+            try:
+                self.client = MemoryClient(api_key=self.api_key)
+            except Exception:
+                self.client = None
+        else:
+            self.client = None
         self._init_from_canonical()
 
     def _init_from_canonical(self):
@@ -75,6 +85,38 @@ class Mem0MemoryService:
             metadata=metadata or {},
         )
         self.memories[mem_id] = item
+
+        # Save to live Mem0 cloud client if configured
+        if self.client:
+            try:
+                self.client.add(
+                    content=content,
+                    user_id=user_id or "usr-sarah-jenkins",
+                    metadata={
+                        "type": memory_type.value,
+                        "title": item.title,
+                        "project_id": project_id or "",
+                        "tags": item.tags
+                    }
+                )
+            except Exception:
+                pass
+
+        # Save to database
+        m_item = MemoryItem(
+            id=item.id,
+            org_id="org-acme-fintech",
+            project_id=item.project_id or "",
+            type=item.type,
+            title=item.title,
+            content=item.content,
+            confidence=item.confidence,
+            validity_from=item.validity_from,
+            validity_to=None,
+            metadata=item.metadata
+        )
+        self.store.add_memory(m_item)
+
         return item
 
     def search_memories(
@@ -86,6 +128,38 @@ class Mem0MemoryService:
         limit: int = 5,
     ) -> List[Mem0MemoryItem]:
         """Searches long-term memory matching query terms and scope."""
+        if self.client:
+            try:
+                res = self.client.search(
+                    query=query,
+                    user_id=user_id or "usr-sarah-jenkins",
+                    limit=limit
+                )
+                mem0_items = []
+                for item in res:
+                    m_id = item.get("id", f"mem0-{uuid.uuid4().hex[:8]}")
+                    m_type = MemoryType.EPISODIC
+                    try:
+                        m_type = MemoryType(item.get("metadata", {}).get("type", memory_type.value if memory_type else "episodic"))
+                    except Exception:
+                        pass
+                    
+                    mem0_items.append(Mem0MemoryItem(
+                        id=m_id,
+                        user_id=item.get("user_id", user_id or "usr-sarah-jenkins"),
+                        project_id=item.get("metadata", {}).get("project_id", project_id),
+                        type=m_type,
+                        title=item.get("metadata", {}).get("title", f"Learned {m_type.value.capitalize()} Memory"),
+                        content=item.get("memory", ""),
+                        confidence=0.98,
+                        validity_from=datetime.utcnow(),
+                        tags=item.get("metadata", {}).get("tags", [m_type.value]),
+                        metadata=item.get("metadata", {})
+                    ))
+                return mem0_items
+            except Exception:
+                pass
+
         q_words = set(query.lower().split())
         scored = []
 

@@ -79,7 +79,14 @@ class SlackWebhookHandler:
         if not action:
             return {"status": "ERROR", "message": f"Action {action_id} not found."}
 
-        user = self.store.users.get("usr-sarah-jenkins", self.store.users["usr-sarah-jenkins"])
+        from ....domain.schemas import User, UserRole
+        user = User(
+            id="usr-sarah-jenkins",
+            org_id="org-acme-fintech",
+            name="Sarah Jenkins",
+            email="sarah.jenkins@acmefin.com",
+            role=UserRole.ENGINEERING_LEAD
+        )
 
         if decision == "approved":
             res = self.mcp_gateway.execute_tool(

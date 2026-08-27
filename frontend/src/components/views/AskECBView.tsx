@@ -56,11 +56,11 @@ const FormattedMarkdown: React.FC<{ text: string }> = ({ text }) => {
             key={pIdx}
             style={{
               background: 'rgba(92, 168, 255, 0.15)',
-              color: '#5ca8ff',
+              color: 'var(--accent-blue)',
               border: '1px solid rgba(92, 168, 255, 0.3)',
-              borderRadius: '4px',
+              borderRadius:'var(--radius-sm)',
               padding: '0.12rem 0.45rem',
-              fontSize: '0.78rem',
+              fontSize: 'var(--fs-sm)',
               fontFamily: 'JetBrains Mono, monospace',
               fontWeight: 600,
             }}
@@ -94,7 +94,7 @@ const FormattedMarkdown: React.FC<{ text: string }> = ({ text }) => {
         return italicParts.map((iPart, iIdx) => {
           if (iPart.startsWith('*') && iPart.endsWith('*') && iPart.length > 1) {
             return (
-              <span key={iIdx} style={{ fontStyle: 'italic', color: '#94a3b8' }}>
+              <span key={iIdx} style={{ fontStyle: 'italic', color: 'var(--text-muted)' }}>
                 {iPart.slice(1, -1)}
               </span>
             );
@@ -106,7 +106,7 @@ const FormattedMarkdown: React.FC<{ text: string }> = ({ text }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem', lineHeight: 1.65, color: '#e2e8f0' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem', lineHeight: 1.65, color: 'var(--text-secondary)' }}>
       {lines.map((line, idx) => {
         const trimmed = line.trim();
 
@@ -157,7 +157,7 @@ const FormattedMarkdown: React.FC<{ text: string }> = ({ text }) => {
         if (/^[-*]\s+/.test(trimmed)) {
           return (
             <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem', paddingLeft: '0.4rem' }}>
-              <span style={{ color: '#5ca8ff', fontSize: '0.85rem', lineHeight: 1.5 }}>•</span>
+              <span style={{ color: 'var(--accent-blue)', fontSize: 'var(--fs-base)', lineHeight: 1.5 }}>•</span>
               <div style={{ flex: 1 }}>{renderInline(trimmed.replace(/^[-*]\s+/, ''))}</div>
             </div>
           );
@@ -168,7 +168,7 @@ const FormattedMarkdown: React.FC<{ text: string }> = ({ text }) => {
         if (numMatch) {
           return (
             <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.55rem', paddingLeft: '0.4rem' }}>
-              <span style={{ color: '#35d07f', fontWeight: 700, fontSize: '0.82rem', minWidth: '18px' }}>
+              <span style={{ color: 'var(--accent-emerald)', fontWeight: 700, fontSize: '0.82rem', minWidth: '18px' }}>
                 {numMatch[1]}.
               </span>
               <div style={{ flex: 1 }}>{renderInline(numMatch[2])}</div>
@@ -297,6 +297,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
     } finally {
       setIsLoading(false);
       setIsStreaming(false);
+      onRefreshStats();
     }
   };
 
@@ -355,17 +356,17 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
           border: '1px solid rgba(92, 168, 255, 0.25)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 'var(--fs-xs)' }}>
           <Sparkles size={16} color="#9b7cff" />
-          <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#ffffff' }}>
+          <span style={{ fontSize: 'var(--fs-base)', fontWeight: 700, color: '#ffffff' }}>
             Ask ECB Command Prompt
           </span>
-          <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
             • LangGraph Orchestrated • Llama Guard 3 Protected • Mem0 Enhanced
           </span>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 'var(--fs-xs)', alignItems: 'center' }}>
           <input
             type="text"
             className="glass-input"
@@ -392,8 +393,8 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
         </div>
 
         {/* Starter Prompt Quick Chips */}
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: 600 }}>Try asking:</span>
+        <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'var(--fs-base)', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-faint)', fontWeight: 600 }}>Try asking:</span>
           {starterChips.map((chip, idx) => (
             <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
               key={idx}
@@ -406,8 +407,8 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                 border: '1px solid rgba(255, 255, 255, 0.08)',
                 borderRadius: '9999px',
                 padding: '0.25rem 0.65rem',
-                fontSize: '0.72rem',
-                color: '#cbd5e1',
+                fontSize: 'var(--fs-xs)',
+                color: 'var(--text-secondary)',
                 cursor: 'pointer',
                 transition: 'all 0.15s',
               }}
@@ -419,7 +420,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
                 e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                e.currentTarget.style.color = '#cbd5e1';
+                e.currentTarget.style.color = 'var(--text-secondary)';
               }}
             >
               {chip.label}
@@ -431,11 +432,11 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
       {/* 2.5 Error Banner */}
       {errorMsg && (
         <div className="glass-panel" style={{ padding: '1.25rem 1.5rem', border: '1px solid rgba(255, 107, 122, 0.4)', background: 'rgba(255, 107, 122, 0.08)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: '#ff6b7a', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--accent-rose)', fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.35rem' }}>
             <AlertTriangle size={18} />
             <span>Query Execution Warning</span>
           </div>
-          <p style={{ fontSize: '0.82rem', color: '#cbd5e1', margin: 0 }}>
+          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
             {errorMsg}
           </p>
         </div>
@@ -446,7 +447,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
         <div className="glass-panel" style={{ padding: '2rem' }}>
           {isLoading && agentSteps.length === 0 && (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--fs-xs)', marginBottom: '1.25rem' }}>
                 <div className="skeleton-shimmer" style={{ width: '140px', height: '24px' }} />
                 <div className="skeleton-shimmer" style={{ width: '90px', height: '24px' }} />
               </div>
@@ -460,14 +461,14 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
             <div style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                 <Zap size={16} color="#00f0ff" />
-                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#00f0ff' }}>Live Agent Trace</span>
+                <span style={{ fontSize: 'var(--fs-base)', fontWeight: 600, color: 'var(--accent-cyan)' }}>Live Agent Trace</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--fs-xs)' }}>
                 {agentSteps.map((step, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.8rem', color: '#cbd5e1' }}>
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 'var(--fs-xs)', fontSize: 'var(--fs-sm)', color: 'var(--text-secondary)' }}>
                     <CheckCircle2 size={14} color="#35d07f" />
                     <strong>{step.title}:</strong>
-                    <span style={{ color: '#94a3b8' }}>{step.description}</span>
+                    <span style={{ color: 'var(--text-muted)' }}>{step.description}</span>
                   </div>
                 ))}
               </div>
@@ -477,7 +478,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
           {streamedAnswer && (
             <div>
               <FormattedMarkdown text={streamedAnswer} />
-              <span className="animate-pulse" style={{ display: 'inline-block', width: '6px', height: '14px', backgroundColor: '#5ca8ff', marginLeft: '4px', verticalAlign: 'middle' }}></span>
+              <span className="animate-pulse" style={{ display: 'inline-block', width: '6px', height: '14px', backgroundColor: 'var(--accent-blue)', marginLeft: '4px', verticalAlign: 'middle' }}></span>
             </div>
           )}
         </div>
@@ -490,23 +491,23 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div className="glass-panel" style={{ padding: '1.75rem' }}>
               {/* Answer Header with Safety & CoVe Badges */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.25rem', paddingBottom: '0.85rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.25rem', paddingBottom: 'var(--fs-base)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Tooltip content="Factual Grounding verified via Natural Language Inference (NLI) against retrieved evidence fixtures.">
-                    <span className="glass-pill glass-btn-success" style={{ fontSize: '0.72rem', cursor: 'help' }}>
+                    <span className="glass-pill glass-btn-success" style={{ fontSize: 'var(--fs-xs)', cursor: 'help' }}>
                       <CheckCircle2 size={13} /> {(response.confidence * 100).toFixed(0)}% Grounded
                     </span>
                   </Tooltip>
 
                   <Tooltip content="Input and output guardrail protection against prompt injections, jailbreaks, and PII leaks.">
-                    <span className="glass-pill" style={{ color: '#00f0ff', borderColor: 'rgba(0, 240, 255, 0.3)', fontSize: '0.72rem', cursor: 'help' }}>
+                    <span className="glass-pill" style={{ color: 'var(--accent-cyan)', borderColor: 'rgba(0, 240, 255, 0.3)', fontSize: 'var(--fs-xs)', cursor: 'help' }}>
                       <ShieldCheck size={13} /> Llama Guard 3 Safe
                     </span>
                   </Tooltip>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.72rem', color: '#94a3b8' }}>
-                  <span>Latency: <strong style={{ color: '#5ca8ff' }}>{response.latency_ms}ms</strong></span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
+                  <span>Latency: <strong style={{ color: 'var(--accent-blue)' }}>{response.latency_ms}ms</strong></span>
                   <span>Tokens: <strong>{response.token_usage?.total_tokens}</strong></span>
                 </div>
               </div>
@@ -526,7 +527,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                   flexWrap: 'wrap',
                 }}
               >
-                <span style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: 600 }}>Verified Citations:</span>
+                <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-faint)', fontWeight: 600 }}>Verified Citations:</span>
                 {response.supporting_evidence?.concat(response.conflicting_evidence || []).map((ev, i) => (
                   <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                     key={ev.id}
@@ -550,13 +551,13 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                   background: 'linear-gradient(135deg, rgba(20, 15, 35, 0.8) 0%, rgba(13, 27, 42, 0.85) 100%)',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 'var(--fs-xs)' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
-                      <span className="glass-pill" style={{ background: 'rgba(155, 124, 255, 0.2)', color: '#c084fc', borderColor: 'rgba(155, 124, 255, 0.4)' }}>
+                      <span className="glass-pill" style={{ background: 'rgba(155, 124, 255, 0.2)', color: 'var(--accent-violet)', borderColor: 'rgba(155, 124, 255, 0.4)' }}>
                         Governed MCP Action Proposed
                       </span>
-                      <span className="glass-pill" style={{ color: '#ff6b7a', borderColor: 'rgba(255, 107, 122, 0.4)' }}>
+                      <span className="glass-pill" style={{ color: 'var(--accent-rose)', borderColor: 'rgba(255, 107, 122, 0.4)' }}>
                         {response.recommendation.risk_class.toUpperCase()}
                       </span>
                     </div>
@@ -566,7 +567,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                   </div>
                 </div>
 
-                <p style={{ fontSize: '0.825rem', color: '#94a3b8', lineHeight: 1.5, marginBottom: '1rem' }}>
+                <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '1rem' }}>
                   {response.recommendation.rationale || response.recommendation.description}
                 </p>
 
@@ -575,18 +576,18 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                   <div
                     style={{
                       background: 'rgba(5, 11, 20, 0.85)',
-                      borderRadius: '8px',
+                      borderRadius:'var(--radius-sm)',
                       padding: '0.75rem 1rem',
                       fontFamily: 'monospace',
-                      fontSize: '0.75rem',
+                      fontSize: 'var(--fs-xs)',
                       border: '1px solid rgba(255, 255, 255, 0.08)',
                       marginBottom: '1rem',
                     }}
                   >
-                    <div style={{ color: '#64748b', marginBottom: '0.25rem' }}>// Proposed Jira Mutation Diff</div>
-                    <div style={{ color: '#ff6b7a' }}>- target_date: &quot;{response.recommendation.diff_preview.from_value}&quot;</div>
-                    <div style={{ color: '#35d07f' }}>+ target_date: &quot;{response.recommendation.diff_preview.to_value}&quot;</div>
-                    <div style={{ color: '#5ca8ff', marginTop: '0.25rem' }}>// Rationale: {response.recommendation.diff_preview.rationale}</div>
+                    <div style={{ color: 'var(--text-faint)', marginBottom: '0.25rem' }}>// Proposed Jira Mutation Diff</div>
+                    <div style={{ color: 'var(--accent-rose)' }}>- target_date: &quot;{response.recommendation.diff_preview.from_value}&quot;</div>
+                    <div style={{ color: 'var(--accent-emerald)' }}>+ target_date: &quot;{response.recommendation.diff_preview.to_value}&quot;</div>
+                    <div style={{ color: 'var(--accent-blue)', marginTop: '0.25rem' }}>// Rationale: {response.recommendation.diff_preview.rationale}</div>
                   </div>
                 )}
 
@@ -596,10 +597,10 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                     style={{
                       background: 'rgba(53, 208, 127, 0.15)',
                       border: '1px solid rgba(53, 208, 127, 0.4)',
-                      borderRadius: '8px',
+                      borderRadius:'var(--radius-sm)',
                       padding: '0.75rem 1rem',
-                      color: '#35d07f',
-                      fontSize: '0.85rem',
+                      color: 'var(--accent-emerald)',
+                      fontSize: 'var(--fs-base)',
                       fontWeight: 600,
                       display: 'flex',
                       alignItems: 'center',
@@ -610,12 +611,12 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                     <span>{actionSuccessMsg}</span>
                   </div>
                 ) : (
-                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', gap: 'var(--fs-xs)', alignItems: 'center' }}>
                     <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
                       className="glass-btn glass-btn-primary"
                       disabled={isApproving}
                       onClick={() => handleApproveAction(response.recommendation!.id)}
-                      style={{ padding: '0.6rem 1.25rem', fontSize: '0.85rem' }}
+                      style={{ padding: '0.6rem 1.25rem', fontSize: 'var(--fs-base)' }}
                     >
                       {isApproving ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
                       <span>Approve &amp; Execute via MCP</span>
@@ -623,7 +624,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                     <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                       className="glass-btn"
                       onClick={() => onSelectView('approval_center')}
-                      style={{ fontSize: '0.85rem' }}
+                      style={{ fontSize: 'var(--fs-base)' }}
                     >
                       <span>Review in Approval Center</span>
                       <ArrowRight size={14} />
@@ -640,7 +641,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
               <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
                 Live Evidence Rail
               </h3>
-              <span style={{ fontSize: '0.7rem', color: '#64748b' }}>
+              <span style={{ fontSize: '0.7rem', color: 'var(--text-faint)' }}>
                 Prov. SLA: 2.8m Fresh
               </span>
             </div>
@@ -652,10 +653,10 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                 style={{
                   background: activeEvidenceTab === 'supporting' ? 'rgba(92, 168, 255, 0.2)' : 'transparent',
                   border: 'none',
-                  borderRadius: '6px',
-                  color: activeEvidenceTab === 'supporting' ? '#5ca8ff' : '#94a3b8',
+                  borderRadius:'var(--radius-sm)',
+                  color: activeEvidenceTab === 'supporting' ? 'var(--accent-blue)' : 'var(--text-muted)',
                   padding: '0.35rem 0.65rem',
-                  fontSize: '0.75rem',
+                  fontSize: 'var(--fs-xs)',
                   fontWeight: 600,
                   cursor: 'pointer',
                 }}
@@ -668,10 +669,10 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                 style={{
                   background: activeEvidenceTab === 'conflicting' ? 'rgba(251, 146, 60, 0.2)' : 'transparent',
                   border: 'none',
-                  borderRadius: '6px',
-                  color: activeEvidenceTab === 'conflicting' ? '#fb923c' : '#94a3b8',
+                  borderRadius:'var(--radius-sm)',
+                  color: activeEvidenceTab === 'conflicting' ? 'var(--accent-amber)' : 'var(--text-muted)',
                   padding: '0.35rem 0.65rem',
-                  fontSize: '0.75rem',
+                  fontSize: 'var(--fs-xs)',
                   fontWeight: 600,
                   cursor: 'pointer',
                 }}
@@ -684,10 +685,10 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                 style={{
                   background: activeEvidenceTab === 'superseded' ? 'rgba(155, 124, 255, 0.2)' : 'transparent',
                   border: 'none',
-                  borderRadius: '6px',
-                  color: activeEvidenceTab === 'superseded' ? '#c084fc' : '#94a3b8',
+                  borderRadius:'var(--radius-sm)',
+                  color: activeEvidenceTab === 'superseded' ? 'var(--accent-violet)' : 'var(--text-muted)',
                   padding: '0.35rem 0.65rem',
-                  fontSize: '0.75rem',
+                  fontSize: 'var(--fs-xs)',
                   fontWeight: 600,
                   cursor: 'pointer',
                 }}
@@ -697,7 +698,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
             </div>
 
             {/* Evidence Items List */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '420px', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--fs-xs)', maxHeight: '420px', overflowY: 'auto' }}>
               {(activeEvidenceTab === 'supporting'
                 ? response.supporting_evidence
                 : activeEvidenceTab === 'conflicting'
@@ -709,7 +710,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                   onClick={() => setSelectedEvidenceDetail(ev)}
                   style={{
                     padding: '0.75rem 0.85rem',
-                    borderRadius: '8px',
+                    borderRadius:'var(--radius-sm)',
                     background: selectedEvidenceDetail?.id === ev.id ? 'rgba(92, 168, 255, 0.15)' : 'rgba(10, 20, 32, 0.6)',
                     border: ev.is_conflicting
                       ? '1px solid rgba(251, 146, 60, 0.4)'
@@ -721,7 +722,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#ffffff' }}>
+                    <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: '#ffffff' }}>
                       {ev.source_title}
                     </span>
                     <span className="glass-pill" style={{ fontSize: '0.62rem' }}>
@@ -729,12 +730,12 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                     </span>
                   </div>
 
-                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', lineHeight: 1.35, margin: '0.25rem 0' }}>
+                  <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', lineHeight: 1.35, margin: '0.25rem 0' }}>
                     {ev.excerpt.slice(0, 110)}...
                   </p>
 
                   {ev.conflict_summary && (
-                    <div style={{ fontSize: '0.7rem', color: '#fb923c', marginTop: '0.25rem' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--accent-amber)', marginTop: '0.25rem' }}>
                       ⚠️ {ev.conflict_summary}
                     </div>
                   )}

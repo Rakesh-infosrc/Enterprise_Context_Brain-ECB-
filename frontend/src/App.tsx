@@ -10,15 +10,8 @@ import { OnboardingTour } from './components/OnboardingTour';
 const CommandCenterView = lazy(() => import('./components/views/CommandCenterView').then(m => ({ default: m.CommandCenterView })));
 const AskECBView = lazy(() => import('./components/views/AskECBView').then(m => ({ default: m.AskECBView })));
 const ProjectIntelligenceView = lazy(() => import('./components/views/ProjectIntelligenceView').then(m => ({ default: m.ProjectIntelligenceView })));
-const RiskIntelligenceView = lazy(() => import('./components/views/RiskIntelligenceView').then(m => ({ default: m.RiskIntelligenceView })));
-const ContradictionsView = lazy(() => import('./components/views/ContradictionsView').then(m => ({ default: m.ContradictionsView })));
-const DecisionIntelligenceView = lazy(() => import('./components/views/DecisionIntelligenceView').then(m => ({ default: m.DecisionIntelligenceView })));
-const EvidenceExplorerView = lazy(() => import('./components/views/EvidenceExplorerView').then(m => ({ default: m.EvidenceExplorerView })));
-const McpDatasetView = lazy(() => import('./components/views/McpDatasetView').then(m => ({ default: m.McpDatasetView })));
-const SkillsMem0View = lazy(() => import('./components/views/SkillsMem0View').then(m => ({ default: m.SkillsMem0View })));
+const DeveloperDiagnosticsView = lazy(() => import('./components/views/DeveloperDiagnosticsView').then(m => ({ default: m.DeveloperDiagnosticsView })));
 const ApprovalCenterView = lazy(() => import('./components/views/ApprovalCenterView').then(m => ({ default: m.ApprovalCenterView })));
-const AgentTraceView = lazy(() => import('./components/views/AgentTraceView').then(m => ({ default: m.AgentTraceView })));
-const AiEvaluationView = lazy(() => import('./components/views/AiEvaluationView').then(m => ({ default: m.AiEvaluationView })));
 const SettingsView = lazy(() => import('./components/views/SettingsView').then(m => ({ default: m.SettingsView })));
 
 const ViewFallback: React.FC = () => (
@@ -230,7 +223,7 @@ export function App() {
   // Guided View: hide Deep Diagnostics — auto-redirect if active view is a deep diagnostics view (Settings stays visible)
   useEffect(() => {
     if (userMode === 'guided') {
-      const deepViews: NavItem[] = ['evidence_explorer', 'mcp_dataset', 'skills_mem0', 'agent_trace', 'ai_eval'];
+      const deepViews: NavItem[] = ['developer_diagnostics'];
       if (deepViews.includes(activeView)) {
         setActiveView('command_center');
       }
@@ -253,21 +246,11 @@ export function App() {
       case 'ask_ecb':
         return { title: 'Ask ECB — AI Command Center', subtitle: 'LangGraph stateful workflow with Llama Guard 3, Qdrant & CoVe verification' };
       case 'project_intelligence':
-        return { title: 'Project Intelligence', subtitle: 'Milestones, Gantt progress, blocker root causes & velocity' };
-      case 'risk_intelligence':
-        return { title: 'Risk Intelligence', subtitle: '5x5 Likelihood vs Impact Matrix & governed mitigations' };
-      case 'decision_intelligence':
-        return { title: 'Decision Intelligence', subtitle: 'Architecture Decision Records, supersession trees & trade-offs' };
-      case 'evidence_explorer':
-        return { title: 'Evidence Explorer', subtitle: 'Multi-source search with provenance, freshness & contradiction badges' };
-      case 'skills_mem0':
-        return { title: 'Skills & Mem0 Memory', subtitle: 'Modular SKILL.md playbooks, dynamic Mem0 memory ledger & Qdrant vectors' };
+        return { title: 'Project Intelligence Hub', subtitle: 'Milestones, sprint logs, risks heatmap, ADRs & timeline contradictions' };
       case 'approval_center':
         return { title: 'Governed Approval Center', subtitle: 'Human-in-the-Loop review for high-impact MCP mutations' };
-      case 'agent_trace':
-        return { title: 'Agent Trace & Observability', subtitle: 'OpenTelemetry execution DAG waterfall & token latency metrics' };
-      case 'ai_eval':
-        return { title: 'AI Evaluation Suite', subtitle: 'Golden benchmark dataset test runner & release gates' };
+      case 'developer_diagnostics':
+        return { title: 'Developer Diagnostics Console', subtitle: 'LangGraph execution DAG traces, memories manifest & AI benchmarks runner' };
       case 'settings':
         return { title: 'Settings & Connectors', subtitle: 'Source connectors, policy profiles & model gateway' };
       default:
@@ -380,49 +363,23 @@ export function App() {
             {activeView === 'project_intelligence' && currentProject && (
               <ProjectIntelligenceView
                 project={currentProject}
-                evidenceList={evidenceList.filter((e) => e.project_id === activeProjectId)}
-                onAskQuestion={handleAskQuestionFromAnywhere}
-              />
-            )}
-
-            {activeView === 'risk_intelligence' && (
-              <RiskIntelligenceView
-                risks={risks}
-                onAskQuestion={handleAskQuestionFromAnywhere}
-              />
-            )}
-
-            {activeView === 'contradictions' && (
-              <ContradictionsView
                 evidenceList={evidenceList}
-                onAskQuestion={handleAskQuestionFromAnywhere}
-              />
-            )}
-
-            {activeView === 'decision_intelligence' && (
-              <DecisionIntelligenceView
+                risks={risks}
                 decisions={decisions}
                 onAskQuestion={handleAskQuestionFromAnywhere}
               />
             )}
 
-            {activeView === 'evidence_explorer' && (
-              <EvidenceExplorerView evidenceList={evidenceList} />
-            )}
-
-            {activeView === 'mcp_dataset' && <McpDatasetView />}
-
-            {activeView === 'skills_mem0' && <SkillsMem0View />}
-
             {activeView === 'approval_center' && (
               <ApprovalCenterView actions={actions} onRefresh={loadData} />
             )}
 
-            {activeView === 'agent_trace' && (
-              <AgentTraceView agentRuns={agentRuns} />
+            {activeView === 'developer_diagnostics' && (
+              <DeveloperDiagnosticsView
+                evidenceList={evidenceList}
+                agentRuns={agentRuns}
+              />
             )}
-
-            {activeView === 'ai_eval' && <AiEvaluationView />}
 
             {activeView === 'settings' && <SettingsView />}
           </Suspense>

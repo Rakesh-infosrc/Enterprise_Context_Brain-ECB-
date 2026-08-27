@@ -71,11 +71,9 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   const navigationItems: Array<{ id: NavItem; label: string; icon: React.ElementType }> = [
     { id: 'command_center', label: 'Go to Command Center Dashboard', icon: Layers },
     { id: 'ask_ecb', label: 'Go to Ask ECB (AI Operating Console)', icon: Sparkles },
-    { id: 'risk_intelligence', label: 'Go to Risk Matrix & Assessment', icon: ShieldAlert },
-    { id: 'decision_intelligence', label: 'Go to Decision Timeline & ADRs', icon: GitPullRequest },
+    { id: 'project_intelligence', label: 'Go to Project & Risk Intelligence Hub', icon: ShieldAlert },
     { id: 'approval_center', label: 'Go to Governed Approval Center', icon: CheckCircle2 },
-    { id: 'agent_trace', label: 'Go to Operational Traces & Latency', icon: Activity },
-    { id: 'ai_eval', label: 'Go to AI Evaluation Suite', icon: Award },
+    { id: 'developer_diagnostics', label: 'Go to Developer Diagnostics Dashboard', icon: Activity },
   ];
 
   const filteredNav = navigationItems.filter((n) =>
@@ -107,7 +105,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           maxWidth: '90vw',
           background: 'rgba(13, 27, 42, 0.95)',
           border: '1px solid rgba(92, 168, 255, 0.3)',
-          borderRadius: '16px',
+          borderRadius:'var(--radius-lg)',
           boxShadow: '0 25px 60px -15px rgba(0, 0, 0, 0.8), 0 0 30px rgba(92, 168, 255, 0.2)',
           overflow: 'hidden',
         }}
@@ -115,7 +113,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       >
         {/* Search Input Bar */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-          <Search size={20} color="#5ca8ff" style={{ marginRight: '0.75rem' }} />
+          <Search size={20} color="#5ca8ff" style={{ marginRight: 'var(--fs-xs)' }} />
           <input
             ref={inputRef}
             autoFocus
@@ -143,7 +141,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           {searchTerm && (
             <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
               onClick={() => setSearchTerm('')}
-              style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer' }}
+              style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
             >
               <X size={18} />
             </RippleButton>
@@ -151,11 +149,11 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         </div>
 
         {/* Results List */}
-        <div style={{ maxHeight: '420px', overflowY: 'auto', padding: '0.75rem' }}>
+        <div style={{ maxHeight: '420px', overflowY: 'auto', padding: 'var(--fs-xs)' }}>
           {/* Direct Query Option */}
           {searchTerm.trim() && (
-            <div style={{ marginBottom: '0.75rem' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#9b7cff', textTransform: 'uppercase', padding: '0.25rem 0.5rem' }}>
+            <div style={{ marginBottom: 'var(--fs-xs)' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--accent-violet)', textTransform: 'uppercase', padding: '0.25rem 0.5rem' }}>
                 Ask ECB Intelligence
               </div>
               <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
@@ -169,14 +167,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '0.65rem 0.75rem',
-                  borderRadius: '8px',
+                  borderRadius:'var(--radius-sm)',
                   background: 'rgba(155, 124, 255, 0.12)',
                   border: '1px solid rgba(155, 124, 255, 0.3)',
                   color: '#ffffff',
                   cursor: 'pointer',
                   textAlign: 'left',
                   fontFamily: 'inherit',
-                  fontSize: '0.85rem',
+                  fontSize: 'var(--fs-base)',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
@@ -189,8 +187,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           )}
 
           {/* Gold Questions */}
-          <div style={{ marginBottom: '0.75rem' }}>
-            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', padding: '0.25rem 0.5rem' }}>
+          <div style={{ marginBottom: 'var(--fs-xs)' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', padding: '0.25rem 0.5rem' }}>
               Golden Benchmark Questions
             </div>
             {filteredQuestions.map((q, i) => (
@@ -206,14 +204,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   padding: '0.55rem 0.75rem',
-                  borderRadius: '8px',
+                  borderRadius:'var(--radius-sm)',
                   background: 'transparent',
                   border: 'none',
-                  color: '#e2e8f0',
+                  color: 'var(--text-secondary)',
                   cursor: 'pointer',
                   textAlign: 'left',
                   fontFamily: 'inherit',
-                  fontSize: '0.825rem',
+                  fontSize: 'var(--fs-sm)',
                   transition: 'background 0.15s',
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)')}
@@ -223,14 +221,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   <Sparkles size={14} color="#5ca8ff" />
                   <span>{q}</span>
                 </div>
-                <kbd style={{ fontSize: '0.65rem', color: '#64748b' }}>Enter</kbd>
+                <kbd style={{ fontSize: '0.65rem', color: 'var(--text-faint)' }}>Enter</kbd>
               </RippleButton>
             ))}
           </div>
 
           {/* Quick Navigation */}
           <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', padding: '0.25rem 0.5rem' }}>
+            <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-faint)', textTransform: 'uppercase', padding: '0.25rem 0.5rem' }}>
               Navigation
             </div>
             {filteredNav.map((n) => {
@@ -248,14 +246,14 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '0.55rem 0.75rem',
-                    borderRadius: '8px',
+                    borderRadius:'var(--radius-sm)',
                     background: 'transparent',
                     border: 'none',
-                    color: '#94a3b8',
+                    color: 'var(--text-muted)',
                     cursor: 'pointer',
                     textAlign: 'left',
                     fontFamily: 'inherit',
-                    fontSize: '0.825rem',
+                    fontSize: 'var(--fs-sm)',
                     transition: 'background 0.15s',
                   }}
                   onMouseEnter={(e) => {
@@ -264,7 +262,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = 'transparent';
-                    e.currentTarget.style.color = '#94a3b8';
+                    e.currentTarget.style.color = 'var(--text-muted)';
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
@@ -287,7 +285,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
           background: 'rgba(7, 17, 31, 0.8)',
           borderTop: '1px solid rgba(255, 255, 255, 0.06)',
           fontSize: '0.7rem',
-          color: '#64748b',
+          color: 'var(--text-faint)',
         }}>
           <div>Use <kbd>↑</kbd> <kbd>↓</kbd> to navigate, <kbd>ESC</kbd> to dismiss</div>
           <div>Enterprise Context Brain v2.1</div>

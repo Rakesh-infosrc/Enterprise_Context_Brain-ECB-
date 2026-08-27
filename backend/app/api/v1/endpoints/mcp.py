@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any, List, Optional
 import uuid
+import os
+import json
 from pydantic import BaseModel
 
 from ....domain.schemas import ActionPreview, ActionStatus, Approval, AuditEvent, RiskClass, User, UserRole
@@ -64,7 +66,7 @@ def mcp_jsonrpc_endpoint(req: JsonRpcRequest):
             summary=f"JSON-RPC Execution for {tool_name}",
             description=f"Standard MCP tool call execution for tool {tool_name}",
             params=args,
-            risk_class=RiskClass.MEDIUM,
+            risk_class=RiskClass.HIGH_IMPACT,
             requires_approval=True,
             status=ActionStatus.APPROVED,
             impact_assessment="JSON-RPC 2.0 Standard Execution via MCP Gateway",
@@ -188,6 +190,21 @@ def approve_action(action_id: str, req: ApproveRequest):
         comment=req.comment,
     )
     store.record_approval(approval)
+
+    # Add audit log
+    audit = AuditEvent(
+        id=f"aud-app-{action_id}",
+        org_id="org-acme-fintech",
+        actor_id=user.id,
+        actor_name=user.name,
+        action_type=f"ACTION_APPROVED_{act.tool_name.upper()}",
+        entity_type="action",
+        entity_id=action_id,
+        policy_result="ALLOWED",
+        trace_id=f"tr-app-{action_id}",
+        details={"comment": req.comment},
+    )
+    store.add_audit_event(audit)
 
     # Execute tool via MCP Gateway
     execution_result = mcp_gateway.execute_tool(act, approver=user, comment=req.comment)

@@ -61,7 +61,7 @@ export const Header: React.FC<HeaderProps> = ({
         gap: '1rem',
         flexWrap: 'wrap',
         padding: '0.6rem 1.25rem',
-        rowGap: '0.75rem',
+        rowGap: 'var(--fs-xs)',
       }}
     >
       {/* Title & View Subtitle */}
@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
           {title}
         </h1>
         {subtitle && (
-          <span style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', fontWeight: 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {subtitle}
           </span>
         )}
@@ -90,20 +90,20 @@ export const Header: React.FC<HeaderProps> = ({
         className="ecb-header-search"
       >
         <Search size={15} color="#64748b" aria-hidden="true" />
-        <span style={{ fontSize: '0.8rem', color: '#64748b', flex: 1, textAlign: 'left' as const }}>
+        <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-faint)', flex: 1, textAlign: 'left' as const }}>
           Search decisions, risks, Jira, Git...
         </span>
         <span
           aria-hidden="true"
           style={{
-            fontSize: '0.68rem',
+            fontSize: 'var(--fs-2xs)',
             fontWeight: 700,
             fontFamily: 'monospace',
             padding: '0.15rem 0.4rem',
-            borderRadius: '4px',
+            borderRadius:'var(--radius-sm)',
             background: 'rgba(255, 255, 255, 0.06)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
-            color: '#94a3b8',
+            color: 'var(--text-muted)',
           }}
         >
           Ctrl K
@@ -111,7 +111,7 @@ export const Header: React.FC<HeaderProps> = ({
       </RippleButton>
 
       {/* Right Controls: Animated Theme, Mode Toggle, Guided Tour & Project Selector */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap', flexShrink: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--fs-xs)', flexWrap: 'wrap', flexShrink: 0 }}>
         <Tooltip content={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} position="bottom">
           <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
             <AnimatedThemeToggler
@@ -163,7 +163,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </Tooltip>
         {/* Mode Switcher Pill */}
-        <Tooltip content={userMode === 'guided' ? "Guided Mode: Streamlined view for essential insights. Click to switch to Pro Mode." : "Pro Mode: Deep diagnostics, LangGraph DAGs & vector indices active."} position="bottom">
+        <Tooltip content={userMode === 'guided' ? "Focus Mode: Streamlined view for essential insights. Click to switch to Pro Mode." : "Pro Mode: Deep diagnostics, LangGraph DAGs & vector indices active."} position="bottom">
           <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
             onClick={onToggleUserMode}
             className="glass-pill"
@@ -172,11 +172,11 @@ export const Header: React.FC<HeaderProps> = ({
               padding: '0.35rem 0.75rem',
               background: userMode === 'guided' ? 'rgba(53, 208, 127, 0.15)' : 'rgba(155, 124, 255, 0.15)',
               borderColor: userMode === 'guided' ? 'rgba(53, 208, 127, 0.4)' : 'rgba(155, 124, 255, 0.4)',
-              color: userMode === 'guided' ? '#35d07f' : '#c084fc',
+              color: userMode === 'guided' ? 'var(--accent-emerald)' : 'var(--accent-violet)',
             }}
           >
             {userMode === 'guided' ? <Compass size={13} /> : <Cpu size={13} />}
-            <span>{userMode === 'guided' ? 'Guided View' : 'Pro Power Mode'}</span>
+            <span>{userMode === 'guided' ? 'Focus Mode' : 'Pro Mode'}</span>
           </RippleButton>
         </Tooltip>
 
@@ -201,14 +201,19 @@ export const Header: React.FC<HeaderProps> = ({
               className="glass-input"
               aria-label="Select project"
               style={{
-                fontSize: '0.8rem',
+                fontSize: 'var(--fs-sm)',
                 fontWeight: 600,
                 padding: '0.45rem 2rem 0.45rem 0.85rem',
                 appearance: 'none',
                 cursor: 'pointer',
                 background: 'rgba(13, 27, 42, 0.75)',
                 width: 'auto',
-                minWidth: '180px',
+                minWidth: '140px',
+                maxWidth: '200px',
+                flex: '0 1 180px',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
               <option value="all" style={{ background: '#07111f', color: '#ffffff' }}>

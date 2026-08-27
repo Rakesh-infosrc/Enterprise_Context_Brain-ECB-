@@ -1,6 +1,6 @@
 // frontend/src/components/views/ProjectIntelligenceView.tsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Layers,
   Calendar,
@@ -12,23 +12,161 @@ import {
   User,
   ArrowRight,
   Sparkles,
+  ShieldAlert,
+  GitPullRequest,
+  ExternalLink,
+  Flame,
+  Info,
+  Zap,
 } from 'lucide-react';
-import { Project, Evidence } from '../../types';
+import { Project, Evidence, Risk, Decision } from '../../types';
 import { RippleButton } from "@/components/ui/ripple-button";
 
 interface ProjectIntelligenceViewProps {
   project: Project;
   evidenceList: Evidence[];
+  risks: Risk[];
+  decisions: Decision[];
   onAskQuestion: (q: string) => void;
 }
 
 export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = ({
   project,
   evidenceList,
+  risks,
+  decisions,
   onAskQuestion,
 }) => {
-  const jiraEvidence = evidenceList.filter((e) => e.source_type === 'jira');
-  const gitEvidence = evidenceList.filter((e) => e.source_type === 'git');
+  const [activeTab, setActiveTab] = useState<'sprints' | 'risks' | 'decisions' | 'contradictions'>('sprints');
+
+  // Filter lists based on selected project
+  const projectRisks = risks.filter((r) => r.project_id === project.id);
+  const projectDecisions = decisions.filter((d) => d.project_id === project.id);
+  const jiraEvidence = evidenceList.filter((e) => e.source_type === 'jira' && e.project_id === project.id);
+  const gitEvidence = evidenceList.filter((e) => e.source_type === 'git' && e.project_id === project.id);
+
+  // --- Sub-states for Risks Tab ---
+  const [selectedRisk, setSelectedRisk] = useState<Risk | null>(null);
+  const [activeRiskFilter, setActiveRiskFilter] = useState<{ prob: number; impact: number } | null>(null);
+
+  useEffect(() => {
+    if (projectRisks.length > 0) {
+      setSelectedRisk(projectRisks[0]);
+    } else {
+      setSelectedRisk(null);
+    }
+    setActiveRiskFilter(null);
+  }, [project.id, risks]);
+
+  // --- Sub-states for Decisions Tab ---
+  const [selectedDecision, setSelectedDecision] = useState<Decision | null>(null);
+
+  useEffect(() => {
+    if (projectDecisions.length > 0) {
+      setSelectedDecision(projectDecisions[0]);
+    } else {
+      setSelectedDecision(null);
+    }
+  }, [project.id, decisions]);
+
+  // --- Sub-states for Contradictions Tab ---
+  const [selectedContradictionId, setSelectedContradictionId] = useState<string>('c-1');
+  const [actionProposed, setActionProposed] = useState<boolean>(false);
+
+  const contradictions = [
+    {
+      id: 'c-1',
+      project_id: 'prj-aegis',
+      jiraKey: 'AEGIS-4',
+      title: 'Optimize PostgreSQL Connection Pool',
+      jiraTargetDate: '2026-09-15',
+      gitCommitHash: 'b4e19f2a',
+      gitTargetDate: '2026-10-30',
+      delayDays: 45,
+      rationale: 'Kafka partition lag and schema migration delay in backend/app/infrastructure/db',
+      jiraUrl: 'https://reenams.atlassian.net/browse/KAN-7',
+      gitUrl: 'https://github.com/testing842/clara-V2/commit/b4e19f2a',
+      severity: 'critical',
+    },
+    {
+      id: 'c-2',
+      project_id: 'prj-clara',
+      jiraKey: 'CLARA-9',
+      title: 'Add PCI-DSS Field-Level Encryption',
+      jiraTargetDate: '2026-08-30',
+      gitCommitHash: '7f9c2d1e',
+      gitTargetDate: '2026-09-20',
+      delayDays: 21,
+      rationale: 'Security audit review requirement for AES-256 GCM key rotation in auth module',
+      jiraUrl: 'https://reenams.atlassian.net/browse/KAN-9',
+      gitUrl: 'https://github.com/testing842/clara-V2/commit/7f9c2d1e',
+      severity: 'high',
+    },
+  ];
+
+  const projectContradictions = contradictions.filter(c => c.project_id === project.id || project.id === 'prj-aegis'); // Fallback map
+  const selectedContradiction = projectContradictions.find(c => c.id === selectedContradictionId) || projectContradictions[0];
+
+  // --- Risk helper parameters & methods ---
+  const impactLabels: Record<number, { label: string; desc: string }> = {
+    5: { label: '5 • Critical', desc: 'Catastrophic Impact' },
+    4: { label: '4 • High', desc: 'Severe Impact' },
+    3: { label: '3 • Medium', desc: 'Moderate Impact' },
+    2: { label: '2 • Low', desc: 'Minor Impact' },
+    1: { label: '1 • Negligible', desc: 'Minimal Impact' },
+  };
+
+  const likelihoodLabels: Record<number, string> = {
+    1: '1 • Rare',
+    2: '2 • Unlikely',
+    3: '3 • Possible',
+    4: '4 • Likely',
+    5: '5 • Certain',
+  };
+
+  const getCellStyles = (prob: number, impact: number, count: number, isSelected: boolean) => {
+    const score = prob * impact;
+    let bg = 'rgba(30, 41, 59, 0.4)';
+    let border = '1px solid rgba(255, 255, 255, 0.08)';
+    let textColor = 'var(--text-muted)';
+    let glow = 'none';
+
+    if (score >= 18) {
+      bg = isSelected
+        ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.45), rgba(225, 29, 72, 0.35))'
+        : 'linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(153, 27, 27, 0.15))';
+      border = isSelected ? '2px solid #ef4444' : '1px solid rgba(239, 68, 68, 0.4)';
+      textColor = '#fca5a5';
+      glow = count > 0 ? '0 0 15px rgba(239, 68, 68, 0.35)' : 'none';
+    } else if (score >= 12) {
+      bg = isSelected
+        ? 'linear-gradient(135deg, rgba(249, 115, 22, 0.4), rgba(217, 119, 6, 0.3))'
+        : 'linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(180, 83, 9, 0.12))';
+      border = isSelected ? '2px solid #f97316' : '1px solid rgba(249, 115, 22, 0.35)';
+      textColor = '#fdba74';
+      glow = count > 0 ? '0 0 12px rgba(249, 115, 22, 0.25)' : 'none';
+    } else if (score >= 6) {
+      bg = isSelected
+        ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(217, 119, 6, 0.25))'
+        : 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(146, 64, 14, 0.1))';
+      border = isSelected ? '2px solid #f59e0b' : '1px solid rgba(245, 158, 11, 0.3)';
+      textColor = '#fde68a';
+      glow = count > 0 ? '0 0 10px rgba(245, 158, 11, 0.2)' : 'none';
+    } else {
+      bg = isSelected
+        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.2))'
+        : 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(4, 120, 87, 0.08))';
+      border = isSelected ? '2px solid #10b981' : '1px solid rgba(16, 185, 129, 0.25)';
+      textColor = '#6ee7b7';
+      glow = count > 0 ? '0 0 10px rgba(16, 185, 129, 0.2)' : 'none';
+    }
+
+    return { bg, border, textColor, glow };
+  };
+
+  const filteredRisks = activeRiskFilter
+    ? projectRisks.filter((r) => (Number(r.probability) || 3) === activeRiskFilter.prob && (Number(r.impact) || 3) === activeRiskFilter.impact)
+    : projectRisks;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -37,39 +175,39 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.4rem' }}>
-              <span className="glass-pill active" style={{ fontSize: '0.75rem' }}>
+              <span className="glass-pill active" style={{ fontSize: 'var(--fs-xs)' }}>
                 {project.code}
               </span>
               <span
                 className="glass-pill"
                 style={{
-                  color: project.status === 'delayed' ? '#ff6b7a' : '#35d07f',
+                  color: project.status === 'delayed' ? 'var(--accent-rose)' : 'var(--accent-emerald)',
                   borderColor: project.status === 'delayed' ? 'rgba(255, 107, 122, 0.4)' : 'rgba(53, 208, 127, 0.4)',
                 }}
               >
                 {project.status.toUpperCase()}
               </span>
-              <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+              <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
                 Health Score: <strong style={{ color: '#ffffff' }}>{project.health_score}/100</strong>
               </span>
             </div>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff' }}>
               {project.name}
             </h2>
-            <p style={{ fontSize: '0.85rem', color: '#94a3b8', maxWidth: '750px', marginTop: '0.35rem', lineHeight: 1.5 }}>
+            <p style={{ fontSize: 'var(--fs-base)', color: 'var(--text-muted)', maxWidth: '750px', marginTop: '0.35rem', lineHeight: 1.5 }}>
               {project.description}
             </p>
           </div>
 
           <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Project Owner</div>
+            <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>Project Owner</div>
             <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#ffffff', marginTop: '0.1rem' }}>
               {project.owner_name}
             </div>
-            <RippleButton rippleColor="rgba(192,132,252,0.35)" duration="600ms"
-              className="glass-btn glass-btn-ai"
+            <RippleButton rippleColor="rgba(255,255,255,0.15)" duration="600ms"
+              className="glass-btn"
               onClick={() => onAskQuestion(`Why is ${project.name} delayed?`)}
-              style={{ marginTop: '0.75rem', fontSize: '0.8rem', padding: '0.45rem 0.9rem' }}
+              style={{ marginTop: 'var(--fs-xs)', fontSize: 'var(--fs-sm)', padding: '0.45rem 0.9rem' }}
             >
               <Sparkles size={14} />
               <span>Analyze Delay Drivers</span>
@@ -78,188 +216,561 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
         </div>
       </div>
 
-      {/* Milestones & Gantt Timeline */}
-      <div className="glass-panel" style={{ padding: '1.5rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Calendar size={18} color="#5ca8ff" />
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>
-              Execution Milestones &amp; Gating Schedule
-            </h3>
-          </div>
-          <div style={{ fontSize: '0.75rem', color: '#ff6b7a', fontWeight: 600 }}>
-            Estimated Release Slippage: +{project.estimated_delay_days} days
-          </div>
-        </div>
+      {/* Sub navigation Tabs */}
+      <div style={{ display: 'flex', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '2px', gap: '0.5rem' }}>
+        <RippleButton rippleColor="rgba(92,168,255,0.15)" duration="600ms"
+          onClick={() => setActiveTab('sprints')}
+          style={{
+            background: activeTab === 'sprints' ? 'rgba(92, 168, 255, 0.15)' : 'transparent',
+            border: 'none',
+            borderRadius: 'var(--radius-sm)',
+            color: activeTab === 'sprints' ? 'var(--accent-blue)' : 'var(--text-muted)',
+            padding: '0.5rem 1rem',
+            fontSize: 'var(--fs-sm)',
+            fontWeight: activeTab === 'sprints' ? 700 : 500,
+            cursor: 'pointer',
+          }}
+        >
+          <Layers size={14} style={{ display: 'inline', marginRight: '6px' }} />
+          Sprints &amp; Commits
+        </RippleButton>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {project.milestones.map((m, index) => (
-            <div
-              key={m.id}
-              style={{
-                background: 'rgba(17, 34, 54, 0.55)',
-                borderRadius: '12px',
-                padding: '1rem 1.25rem',
-                border: '1px solid rgba(255, 255, 255, 0.06)',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{
-                    width: '24px',
-                    height: '24px',
-                    borderRadius: '6px',
-                    background: 'rgba(92, 168, 255, 0.15)',
-                    color: '#5ca8ff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '0.75rem',
-                    fontWeight: 700,
-                  }}>
-                    {index + 1}
+        <RippleButton rippleColor="rgba(251,146,60,0.15)" duration="600ms"
+          onClick={() => setActiveTab('risks')}
+          style={{
+            background: activeTab === 'risks' ? 'rgba(251, 146, 60, 0.15)' : 'transparent',
+            border: 'none',
+            borderRadius: 'var(--radius-sm)',
+            color: activeTab === 'risks' ? 'var(--accent-amber)' : 'var(--text-muted)',
+            padding: '0.5rem 1rem',
+            fontSize: 'var(--fs-sm)',
+            fontWeight: activeTab === 'risks' ? 700 : 500,
+            cursor: 'pointer',
+          }}
+        >
+          <ShieldAlert size={14} style={{ display: 'inline', marginRight: '6px' }} />
+          Risks Heatmap ({projectRisks.length})
+        </RippleButton>
+
+        <RippleButton rippleColor="rgba(192,132,252,0.15)" duration="600ms"
+          onClick={() => setActiveTab('decisions')}
+          style={{
+            background: activeTab === 'decisions' ? 'rgba(192, 132, 252, 0.15)' : 'transparent',
+            border: 'none',
+            borderRadius: 'var(--radius-sm)',
+            color: activeTab === 'decisions' ? 'var(--accent-violet)' : 'var(--text-muted)',
+            padding: '0.5rem 1rem',
+            fontSize: 'var(--fs-sm)',
+            fontWeight: activeTab === 'decisions' ? 700 : 500,
+            cursor: 'pointer',
+          }}
+        >
+          <GitPullRequest size={14} style={{ display: 'inline', marginRight: '6px' }} />
+          ADRs &amp; Decisions ({projectDecisions.length})
+        </RippleButton>
+
+        {projectContradictions.length > 0 && (
+          <RippleButton rippleColor="rgba(239,68,68,0.15)" duration="600ms"
+            onClick={() => setActiveTab('contradictions')}
+            style={{
+              background: activeTab === 'contradictions' ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+              border: 'none',
+              borderRadius: 'var(--radius-sm)',
+              color: activeTab === 'contradictions' ? 'var(--accent-rose)' : 'var(--text-muted)',
+              padding: '0.5rem 1rem',
+              fontSize: 'var(--fs-sm)',
+              fontWeight: activeTab === 'contradictions' ? 700 : 500,
+              cursor: 'pointer',
+            }}
+          >
+            <AlertTriangle size={14} style={{ display: 'inline', marginRight: '6px' }} />
+            Roadmap Contradictions
+          </RippleButton>
+        )}
+      </div>
+
+      {/* Tab Panel Content */}
+      <div style={{ flex: 1 }}>
+        
+        {/* TAB 1: SPRINTS & COMMITS */}
+        {activeTab === 'sprints' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Milestones Schedule */}
+            <div className="glass-panel" style={{ padding: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Calendar size={18} color="#5ca8ff" />
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>
+                    Execution Milestones &amp; Gating Schedule
+                  </h3>
+                </div>
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--accent-rose)', fontWeight: 600 }}>
+                  Estimated Release Slippage: +{project.estimated_delay_days || 0} days
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {!project.milestones?.length ? (
+                  <div role="status" aria-live="polite" style={{ padding:'1.5rem', textAlign:'center', border:'1px dashed var(--border-subtle)', borderRadius:'var(--radius-md)', background:'rgba(255,255,255,0.02)' }}>
+                    <p style={{ fontSize:'var(--fs-sm)', fontWeight:600, color:'var(--text-secondary)', marginBottom:'0.25rem' }}>No milestones defined</p>
+                    <p style={{ fontSize:'var(--fs-xs)', color:'var(--text-muted)' }}>Add milestones in Project Settings to track execution progress.</p>
                   </div>
-                  <div>
-                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#ffffff' }}>
-                      {m.name}
+                ) : (
+                  project.milestones.map((m) => (
+                    <div
+                      key={m.id}
+                      style={{
+                        padding: '1rem 1.25rem',
+                        borderRadius: 'var(--radius-md)',
+                        background: 'rgba(10, 20, 32, 0.4)',
+                        border: '1px solid rgba(255, 255, 255, 0.05)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '1.5rem',
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.25rem' }}>
+                          <span style={{ fontSize: 'var(--fs-base)', fontWeight: 700, color: '#ffffff' }}>
+                            {m.name}
+                          </span>
+                          <span
+                            className="glass-pill"
+                            style={{
+                              fontSize: '0.65rem',
+                              color:
+                                m.status === 'completed'
+                                  ? 'var(--accent-emerald)'
+                                  : m.status === 'delayed'
+                                  ? 'var(--accent-rose)'
+                                  : 'var(--accent-amber)',
+                              borderColor:
+                                m.status === 'completed'
+                                  ? 'rgba(53, 208, 127, 0.3)'
+                                  : m.status === 'delayed'
+                                  ? 'rgba(255, 107, 122, 0.3)'
+                                  : 'rgba(245, 158, 11, 0.3)',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {m.status.toUpperCase()}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
+                          Target Date: <strong style={{ color: 'var(--text-primary)' }}>{m.target_date}</strong>
+                          {m.owner && ` • Owner: ${m.owner}`}
+                        </div>
+                      </div>
+
+                      {/* Micro Progress Bar */}
+                      <div style={{ width: '120px', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-faint)' }}>
+                          <span>Progress</span>
+                          <span>{m.progress_pct ?? m.progress_percentage ?? 0}%</span>
+                        </div>
+                        <div style={{ width: '100%', height: '4px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '2px', overflow: 'hidden' }}>
+                          <div
+                            style={{
+                              width: `${m.progress_pct ?? m.progress_percentage ?? 0}%`,
+                              height: '100%',
+                              background: m.status === 'delayed' ? 'var(--accent-rose)' : 'var(--accent-blue)',
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Backlog & Commits */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              {/* Backlog */}
+              <div className="glass-panel" style={{ padding: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '1rem' }}>
+                  <FileText size={16} color="#5ca8ff" />
+                  <h4 style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Active Jira Epics &amp; Backlog
+                  </h4>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', maxHeight: '350px', overflowY: 'auto' }}>
+                  {jiraEvidence.length === 0 ? (
+                    <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-faint)', fontSize: 'var(--fs-sm)' }}>
+                      No active Jira backlog items found for this project scope.
+                    </div>
+                  ) : (
+                    jiraEvidence.map((e) => (
+                      <div key={e.id} style={{ padding: '0.85rem', borderRadius: 'var(--radius-md)', background: 'rgba(15, 23, 42, 0.45)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                          <span style={{ fontSize: '0.725rem', fontFamily: 'monospace', color: 'var(--accent-blue)' }}>
+                            {e.external_id}
+                          </span>
+                          <span style={{ fontSize: '0.675rem', color: 'var(--text-faint)' }}>
+                            {new Date(e.observed_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600, color: '#f1f5f9' }}>
+                          {e.source_title}
+                        </div>
+                        <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginTop: '0.25rem', margin: 0, lineHeight: 1.4 }}>
+                          {e.excerpt}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Commit logs */}
+              <div className="glass-panel" style={{ padding: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '1rem' }}>
+                  <GitCommit size={16} color="#35d07f" />
+                  <h4 style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Lead Architect Git Commit Logs
+                  </h4>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', maxHeight: '350px', overflowY: 'auto' }}>
+                  {gitEvidence.length === 0 ? (
+                    <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-faint)', fontSize: 'var(--fs-sm)' }}>
+                      No recent git commit entries cataloged.
+                    </div>
+                  ) : (
+                    gitEvidence.map((e) => (
+                      <div key={e.id} style={{ padding: '0.85rem', borderRadius: 'var(--radius-md)', background: 'rgba(15, 23, 42, 0.45)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                          <span style={{ fontSize: '0.725rem', fontFamily: 'monospace', color: 'var(--accent-cyan)' }}>
+                            {e.external_id.slice(0, 8)}
+                          </span>
+                          <span style={{ fontSize: '0.675rem', color: 'var(--text-faint)' }}>
+                            {new Date(e.observed_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600, color: '#f1f5f9' }}>
+                          {e.source_title}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.35rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                          <User size={12} />
+                          <span>Author: <strong style={{ color: 'var(--text-primary)' }}>{e.author || 'Lead Dev'}</strong></span>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: RISKS HEATMAP */}
+        {activeTab === 'risks' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem' }}>
+            {/* Heatmap Grid */}
+            <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ShieldAlert size={18} color="#f97316" />
+                    Risk Exposure Heatmap Matrix
+                  </h3>
+                  <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-faint)', marginTop: '0.2rem' }}>
+                    Click a cell to isolate matching Project Threat severity scores.
+                  </p>
+                </div>
+                {activeRiskFilter && (
+                  <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
+                    onClick={() => setActiveRiskFilter(null)}
+                    className="glass-btn"
+                    style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem', color: '#38bdf8', borderColor: 'rgba(56, 189, 248, 0.3)' }}
+                  >
+                    Reset Grid Filter
+                  </RippleButton>
+                )}
+              </div>
+
+              {/* Color legend bar */}
+              <div style={{ display: 'flex', gap: '10px', padding: '0.5rem 0.75rem', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.05)', fontSize: '0.675rem' }}>
+                <span style={{ color: '#6ee7b7' }}>● Low (1-5)</span>
+                <span style={{ color: '#fde68a' }}>● Medium (6-11)</span>
+                <span style={{ color: '#fdba74' }}>● High (12-17)</span>
+                <span style={{ color: '#fca5a5' }}>● Critical (18-25)</span>
+              </div>
+
+              {/* 5x5 Heatmap Matrix */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase' }}>
+                  Impact ↑
+                </div>
+                {[5, 4, 3, 2, 1].map((impact) => (
+                  <div key={impact} style={{ display: 'grid', gridTemplateColumns: '110px repeat(5, 1fr)', gap: '0.4rem', alignItems: 'center' }}>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                      {impactLabels[impact].label}
+                    </div>
+                    {[1, 2, 3, 4, 5].map((prob) => {
+                      const matchingRisks = projectRisks.filter((r) => (Number(r.probability) || 3) === prob && (Number(r.impact) || 3) === impact);
+                      const count = matchingRisks.length;
+                      const isSelected = activeRiskFilter?.prob === prob && activeRiskFilter?.impact === impact;
+                      const { bg, border, textColor, glow } = getCellStyles(prob, impact, count, isSelected);
+
+                      return (
+                        <div
+                          key={`${prob}-${impact}`}
+                          onClick={() => {
+                            setActiveRiskFilter({ prob, impact });
+                            if (count > 0) setSelectedRisk(matchingRisks[0]);
+                          }}
+                          style={{
+                            background: bg,
+                            border: border,
+                            boxShadow: glow,
+                            borderRadius: 'var(--radius-sm)',
+                            padding: '0.65rem 0.35rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                            minHeight: '52px',
+                            transform: isSelected ? 'scale(1.03)' : 'scale(1)',
+                            zIndex: isSelected ? 2 : 1,
+                          }}
+                        >
+                          <span style={{ fontSize: '1rem', fontWeight: 800, color: textColor }}>{prob * impact}</span>
+                          {count > 0 && <span style={{ fontSize: '0.6rem', padding: '0.05rem 0.25rem', borderRadius: '3px', background: textColor, color: '#07111f', fontWeight: 700 }}>{count}</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+                <div style={{ display: 'grid', gridTemplateColumns: '110px repeat(5, 1fr)', gap: '0.4rem', marginTop: '0.2rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-faint)', textTransform: 'uppercase', textAlign: 'left' }}>
+                    Likelihood →
+                  </div>
+                  {[1, 2, 3, 4, 5].map((prob) => (
+                    <div key={prob} style={{ fontSize: '0.65rem', color: 'var(--text-faint)' }}>{likelihoodLabels[prob].split(' ')[2] || likelihoodLabels[prob]}</div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Inspector column */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {selectedRisk ? (
+                <div className="glass-panel" style={{ padding: '1.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                    <span className="glass-pill" style={{ color: selectedRisk.severity === 'critical' ? '#ef4444' : '#f59e0b', borderColor: 'rgba(255,255,255,0.08)' }}>
+                      {selectedRisk.severity.toUpperCase()} SCORE: {selectedRisk.score}/25
                     </span>
-                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                      Target Date: {new Date(m.target_date).toLocaleDateString()}
+                  </div>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.5rem' }}>
+                    {selectedRisk.title}
+                  </h4>
+                  <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: '1rem' }}>
+                    {selectedRisk.description}
+                  </p>
+                  <div style={{ background: 'rgba(15, 23, 42, 0.7)', borderRadius: 'var(--radius-md)', padding: '0.85rem', border: '1px solid rgba(56, 189, 248, 0.2)', marginBottom: '1rem' }}>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#38bdf8', marginBottom: '0.25rem' }}>
+                      Mitigation Strategy
+                    </div>
+                    <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                      {selectedRisk.mitigation_plan || selectedRisk.mitigation || 'No strategy documented'}
                     </div>
                   </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                    <span>Owner: <strong>{selectedRisk.owner}</strong></span>
+                    <span>Status: {selectedRisk.status}</span>
+                  </div>
                 </div>
+              ) : (
+                <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-faint)', fontSize: 'var(--fs-sm)' }}>
+                  Select a heatmap matrix cell to inspect risk mitigation.
+                </div>
+              )}
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <span
-                    className="glass-pill"
-                    style={{
-                      fontSize: '0.7rem',
-                      color: m.status === 'completed' ? '#35d07f' : m.status === 'delayed' ? '#ff6b7a' : '#f7b955',
-                      borderColor: m.status === 'completed' ? 'rgba(53, 208, 127, 0.4)' : m.status === 'delayed' ? 'rgba(255, 107, 122, 0.4)' : 'rgba(247, 185, 85, 0.4)',
-                    }}
-                  >
-                    {m.status.toUpperCase()}
-                  </span>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#ffffff', minWidth: '40px', textAlign: 'right' }}>
-                    {m.progress_percentage}%
-                  </span>
+              {/* Simple filtered list */}
+              <div className="glass-panel" style={{ padding: '1rem', maxHeight: '250px', overflowY: 'auto' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                  Risk Log List ({filteredRisks.length})
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  {filteredRisks.map((r) => (
+                    <div
+                      key={r.id}
+                      onClick={() => setSelectedRisk(r)}
+                      style={{
+                        padding: '0.55rem 0.75rem',
+                        borderRadius: 'var(--radius-sm)',
+                        background: selectedRisk?.id === r.id ? 'rgba(255,255,255,0.06)' : 'rgba(10,20,32,0.4)',
+                        border: '1px solid rgba(255,255,255,0.05)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span style={{ fontSize: 'var(--fs-sm)', color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>{r.title}</span>
+                      <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Score: {r.score}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
 
-              {/* Progress Bar */}
-              <div style={{ width: '100%', height: '6px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '3px', overflow: 'hidden' }}>
-                <div
-                  style={{
-                    height: '100%',
-                    width: `${m.progress_percentage}%`,
-                    background:
-                      m.status === 'completed'
-                        ? 'linear-gradient(90deg, #35d07f, #10b981)'
-                        : m.status === 'delayed'
-                        ? 'linear-gradient(90deg, #ff6b7a, #ef4444)'
-                        : 'linear-gradient(90deg, #5ca8ff, #3b82f6)',
-                    borderRadius: '3px',
-                    transition: 'width 0.4s ease',
-                  }}
-                />
+        {/* TAB 3: ADRS & DECISIONS */}
+        {activeTab === 'decisions' && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1.5rem' }}>
+            {/* Left list */}
+            <div className="glass-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
+                ADR Timeline Timeline
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '450px', overflowY: 'auto' }}>
+                {projectDecisions.length === 0 ? (
+                  <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-faint)', fontSize: 'var(--fs-sm)' }}>
+                    No architecture decision records accepts for this project scope.
+                  </div>
+                ) : (
+                  projectDecisions.map((d) => {
+                    const isSelected = selectedDecision?.id === d.id;
+                    const isSuperseded = d.status === 'superseded';
+                    return (
+                      <div
+                        key={d.id}
+                        onClick={() => setSelectedDecision(d)}
+                        style={{
+                          padding: '0.85rem',
+                          borderRadius: 'var(--radius-md)',
+                          background: isSelected ? 'rgba(92, 168, 255, 0.15)' : 'rgba(15,23,42,0.45)',
+                          border: isSelected ? '1px solid #5ca8ff' : '1px solid rgba(255,255,255,0.05)',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                          <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--accent-blue)' }}>{d.adr_number}</span>
+                          <span style={{ fontSize: '0.65rem', color: isSuperseded ? 'var(--accent-rose)' : 'var(--accent-emerald)' }}>{d.status.toUpperCase()}</span>
+                        </div>
+                        <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: '#ffffff' }}>{d.title}</div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
+            </div>
 
-              {m.blocker_description && (
-                <div style={{
-                  marginTop: '0.75rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  fontSize: '0.78rem',
-                  color: '#f87171',
-                  background: 'rgba(255, 107, 122, 0.12)',
-                  padding: '0.45rem 0.75rem',
-                  borderRadius: '6px',
-                  border: '1px solid rgba(255, 107, 122, 0.25)',
-                }}>
-                  <AlertTriangle size={14} />
-                  <span><strong>Root Cause Blocker:</strong> {m.blocker_description}</span>
+            {/* Right details */}
+            <div className="glass-panel" style={{ padding: '1.5rem' }}>
+              {selectedDecision ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div>
+                    <span className="glass-pill active" style={{ fontSize: 'var(--fs-xs)', marginBottom: '0.35rem' }}>{selectedDecision.adr_number}</span>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>{selectedDecision.title}</h3>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Context</div>
+                    <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-secondary)', lineHeight: 1.4, margin: 0 }}>{selectedDecision.context}</p>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent-blue)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Rationale</div>
+                    <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 'var(--radius-sm)', padding: '0.85rem', fontSize: 'var(--fs-sm)', color: '#f1f5f9', lineHeight: 1.4, border: '1px solid rgba(255,255,255,0.04)' }}>
+                      {selectedDecision.rationale || selectedDecision.decision}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.75rem' }}>
+                    <span>Decided By: <strong>{selectedDecision.decided_by || selectedDecision.author || 'Architecture Board'}</strong></span>
+                    <span>Date: {new Date(selectedDecision.decided_at).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-faint)', fontSize: 'var(--fs-sm)' }}>
+                  Select an ADR from the timeline list to review trade-offs.
                 </div>
               )}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Two Column: Live Jira Stream vs Git Commit Stream */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-        {/* Jira Tickets Stream */}
-        <div className="glass-panel" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <FileText size={16} color="#5ca8ff" />
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
-              Jira Sprint Stream ({jiraEvidence.length})
-            </h3>
           </div>
+        )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-            {jiraEvidence.map((j) => (
-              <div
-                key={j.id}
-                style={{
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  background: 'rgba(17, 34, 54, 0.5)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#5ca8ff' }}>
-                    {j.external_id}
-                  </span>
-                  <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                    {j.author}
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.78rem', color: '#e2e8f0', lineHeight: 1.4 }}>
-                  {j.excerpt}
-                </div>
+        {/* TAB 4: CONTRADICTIONS */}
+        {activeTab === 'contradictions' && selectedContradiction && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem' }}>
+            {/* List */}
+            <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
+                Roadmap target date discrepancies
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                {projectContradictions.map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => {
+                      setSelectedContradictionId(c.id);
+                      setActionProposed(false);
+                    }}
+                    style={{
+                      padding: '1rem',
+                      borderRadius: 'var(--radius-md)',
+                      background: selectedContradiction.id === c.id ? 'rgba(239, 68, 68, 0.12)' : 'rgba(10,20,32,0.4)',
+                      border: selectedContradiction.id === c.id ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255,255,255,0.05)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '0.25rem' }}>
+                      <span style={{ color: 'var(--accent-blue)', fontWeight: 700 }}>{c.jiraKey}</span>
+                      <span style={{ color: 'var(--accent-rose)' }}>+{c.delayDays} Days Delay</span>
+                    </div>
+                    <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: '#ffffff', marginBottom: '0.5rem' }}>{c.title}</div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
+                      <span>Jira Target: {c.jiraTargetDate}</span>
+                      <span>Commit Target: {c.gitTargetDate}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Git Activity Stream */}
-        <div className="glass-panel" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <GitCommit size={16} color="#35d07f" />
-            <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
-              Git Commits &amp; PRs ({gitEvidence.length})
-            </h3>
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-            {gitEvidence.map((g) => (
-              <div
-                key={g.id}
-                style={{
-                  padding: '0.75rem',
-                  borderRadius: '8px',
-                  background: 'rgba(17, 34, 54, 0.5)',
-                  border: '1px solid rgba(255, 255, 255, 0.05)',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#35d07f', fontFamily: 'monospace' }}>
-                    {g.external_id}
-                  </span>
-                  <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>
-                    {new Date(g.observed_at).toLocaleDateString()}
-                  </span>
-                </div>
-                <div style={{ fontSize: '0.78rem', color: '#e2e8f0', lineHeight: 1.4 }}>
-                  {g.excerpt}
-                </div>
+            {/* Inspector & MCP action proposal */}
+            <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Zap size={16} color="#00f0ff" />
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>Timeline Contradiction Details</h4>
               </div>
-            ))}
+              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{selectedContradiction.rationale}</div>
+              </div>
+              <div style={{ background: 'rgba(92, 168, 255, 0.08)', borderRadius: 'var(--radius-md)', padding: '1rem', border: '1px solid rgba(92, 168, 255, 0.2)' }}>
+                <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--accent-blue)', marginBottom: '0.35rem' }}>
+                  Propose Roadmap Date Alignment
+                </div>
+                <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', lineHeight: 1.4, marginBottom: '0.85rem' }}>
+                  Update Jira ticket <strong>{selectedContradiction.jiraKey}</strong> target completion date to match Lead Architect git commits timeline (<strong>{selectedContradiction.gitTargetDate}</strong>).
+                </p>
+                {actionProposed ? (
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--accent-emerald)', fontWeight: 700 }}>
+                    Roadmap update request sent to Approval Center!
+                  </div>
+                ) : (
+                  <RippleButton rippleColor="rgba(255,255,255,0.3)" duration="600ms"
+                    className="glass-btn glass-btn-primary"
+                    style={{ width: '100%', justifyContent: 'center', fontSize: 'var(--fs-xs)' }}
+                    onClick={() => setActionProposed(true)}
+                  >
+                    Submit Date Realignment Action
+                  </RippleButton>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+
       </div>
     </div>
   );
 };
+
+export default ProjectIntelligenceView;

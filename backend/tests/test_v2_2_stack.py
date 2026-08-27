@@ -151,3 +151,8 @@ def test_v2_2_new_api_endpoints(client):
     mcp_resp = client.get("/api/v1/mcp/tools")
     assert mcp_resp.status_code == 200
     assert len(mcp_resp.json()) >= 4
+
+    # Test /api/v1/mcp/finetune/status
+    ft_resp = client.get("/api/v1/mcp/finetune/status")
+    assert ft_resp.status_code == 200
+    assert "status" in ft_resp.json()

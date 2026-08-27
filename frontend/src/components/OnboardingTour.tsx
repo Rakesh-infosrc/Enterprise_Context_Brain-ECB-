@@ -36,7 +36,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
       title: 'Welcome to Enterprise Context Brain (ECB)',
       badge: 'Unified Organizational Memory',
       icon: BrainCircuit,
-      iconColor: '#5ca8ff',
+      iconColor: 'var(--accent-blue)',
       description:
         'ECB acts as an intelligent operating system for your enterprise. It continuously synthesizes fragmented knowledge across Jira tickets, Git commits, Architecture Decision Records (ADRs), risk registers, and Slack channels into a single verifiable context plane.',
       highlight: 'Resolves context silos and prevents costly architectural misalignment.',
@@ -45,7 +45,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
       title: 'Evidence-Grounded AI Command Center',
       badge: 'North-Star Flow: Ask → Evidence',
       icon: Sparkles,
-      iconColor: '#9b7cff',
+      iconColor: 'var(--accent-violet)',
       description:
         'Ask complex cross-domain questions (e.g. "Why is Project Aegis delayed?"). ECB formulates a structured context plan, executes hybrid vector retrieval via Qdrant, and generates an answer where every factual claim has an auditable citation link [E1], [E2].',
       highlight: 'Over 98% factual groundedness verified by Chain-of-Verification (CoVe).',
@@ -54,7 +54,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
       title: 'Live Evidence Rail & Contradiction Detection',
       badge: 'Automated Dispute Resolution',
       icon: FileSearch,
-      iconColor: '#fb923c',
+      iconColor: 'var(--accent-amber)',
       description:
         'When sources disagree (e.g. Jira roadmap says Sept 15 while Git commit says Oct 30), ECB automatically flags the contradiction, inspects source authority, and alerts decision-makers before misalignment cascades.',
       highlight: 'Inspect supporting, conflicting, and superseded evidence side-by-side.',
@@ -63,7 +63,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
       title: 'Governed Actions & Model Context Protocol (MCP)',
       badge: 'Two-Person Rule & Safe Execution',
       icon: ShieldCheck,
-      iconColor: '#35d07f',
+      iconColor: 'var(--accent-emerald)',
       description:
         'ECB does not just answer questions—it proposes governed actions (e.g. updating a Jira deadline or tagging a Git release). High-impact actions require explicit human review in the Approval Center and execute safely via MCP with immutable audit logs.',
       highlight: 'Zero unapproved production mutations. Total governance and compliance.',
@@ -132,22 +132,22 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#94a3b8',
+            color: 'var(--text-muted)',
             cursor: 'pointer',
             transition: 'all 0.15s',
           }}
           onMouseEnter={(e) => { e.currentTarget.style.color = '#ffffff'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.12)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.color = '#94a3b8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.06)'; }}
         >
           <X size={16} />
         </RippleButton>
 
         {/* Step Indicator Pill */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-          <span className="glass-pill active" style={{ fontSize: '0.72rem' }}>
+          <span className="glass-pill active" style={{ fontSize: 'var(--fs-xs)' }}>
             Step {currentStep + 1} of {steps.length}
           </span>
-          <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+          <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
             {activeStepData.badge}
           </span>
         </div>
@@ -158,7 +158,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
             style={{
               width: '54px',
               height: '54px',
-              borderRadius: '16px',
+              borderRadius:'var(--radius-lg)',
               background: `linear-gradient(135deg, ${activeStepData.iconColor}22 0%, ${activeStepData.iconColor}44 100%)`,
               border: `1px solid ${activeStepData.iconColor}66`,
               display: 'flex',
@@ -177,7 +177,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
         </div>
 
         {/* Description Body */}
-        <p style={{ fontSize: '0.9rem', color: '#cbd5e1', lineHeight: 1.6, marginBottom: '1.25rem' }}>
+        <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.25rem' }}>
           {activeStepData.description}
         </p>
 
@@ -189,8 +189,8 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
             borderRadius: '0 10px 10px 0',
             padding: '0.85rem 1.1rem',
             marginBottom: '2rem',
-            fontSize: '0.825rem',
-            color: '#f8fafc',
+            fontSize: 'var(--fs-sm)',
+            color: 'var(--text-primary)',
             fontWeight: 500,
           }}
         >
@@ -209,7 +209,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
                   width: i === currentStep ? '24px' : '8px',
                   height: '8px',
                   borderRadius: '9999px',
-                  background: i === currentStep ? '#5ca8ff' : 'rgba(255, 255, 255, 0.15)',
+                  background: i === currentStep ? 'var(--accent-blue)' : 'rgba(255, 255, 255, 0.15)',
                   cursor: 'pointer',
                   transition: 'all 0.25s ease',
                 }}
@@ -217,12 +217,12 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
             ))}
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: 'var(--fs-xs)' }}>
             {currentStep > 0 && (
               <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                 onClick={handlePrev}
                 className="glass-btn"
-                style={{ padding: '0.55rem 1rem', fontSize: '0.825rem' }}
+                style={{ padding: '0.55rem 1rem', fontSize: 'var(--fs-sm)' }}
               >
                 <ArrowLeft size={14} />
                 <span>Back</span>
@@ -232,7 +232,7 @@ export const OnboardingTour: React.FC<OnboardingTourProps> = ({
             <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
               onClick={handleNext}
               className="glass-btn glass-btn-primary"
-              style={{ padding: '0.55rem 1.35rem', fontSize: '0.825rem' }}
+              style={{ padding: '0.55rem 1.35rem', fontSize: 'var(--fs-sm)' }}
             >
               <span>{currentStep === steps.length - 1 ? 'Start Asking ECB' : 'Next'}</span>
               <ArrowRight size={14} />

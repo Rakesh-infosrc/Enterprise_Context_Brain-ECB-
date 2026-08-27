@@ -13,7 +13,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app.infrastructure.db.store import CanonicalStore, init_db
 from app.infrastructure.mcp.mcp_gateway import MCPGateway
-from app.domain.schemas import ActionPreview, RiskClass, ActionStatus
+from app.domain.schemas import ActionPreview, RiskClass, ActionStatus, User
 
 def main():
     """Reads JSON-RPC 2.0 requests from stdin and writes responses to stdout."""
@@ -49,19 +49,27 @@ def main():
                 tool_name = params.get("name", "jira_update_issue")
                 arguments = params.get("arguments", {})
 
-                user = store.users.get("usr-sarah-jenkins")
+                user = User(
+                    id="usr-sarah-jenkins",
+                    org_id="org-acme-fintech",
+                    name="Sarah Jenkins",
+                    email="sarah.jenkins@acmefin.com",
+                    role="project_manager"
+                )
                 action = ActionPreview(
                     id=f"act-stdio-{uuid.uuid4().hex[:6]}",
                     agent_run_id="run-mcp-stdio",
                     tool_name=tool_name,
                     target_system="Jira/GitHub",
+                    summary=f"stdio execution for {tool_name}",
+                    description=f"Standard MCP stdio execution for tool {tool_name}",
                     params=arguments,
-                    risk_class=RiskClass.MEDIUM,
+                    risk_class=RiskClass.HIGH_IMPACT,
                     requires_approval=True,
                     status=ActionStatus.APPROVED,
                     impact_assessment="Executed via stdio MCP client protocol",
                     reversibility="high",
-                    suggested_by_agent="mcp_stdio_server"
+                    suggested_by_agent="manager"
                 )
                 res = gateway.execute_tool(action, approver=user)
                 response = {

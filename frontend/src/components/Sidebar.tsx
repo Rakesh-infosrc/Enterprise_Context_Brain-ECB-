@@ -23,15 +23,8 @@ export type NavItem =
   | 'command_center'
   | 'ask_ecb'
   | 'project_intelligence'
-  | 'risk_intelligence'
-  | 'contradictions'
-  | 'decision_intelligence'
-  | 'evidence_explorer'
-  | 'mcp_dataset'
-  | 'skills_mem0'
   | 'approval_center'
-  | 'agent_trace'
-  | 'ai_eval'
+  | 'developer_diagnostics'
   | 'settings';
 
 interface SidebarProps {
@@ -53,18 +46,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'command_center' as NavItem, label: 'Command Center', icon: LayoutDashboard },
     { id: 'ask_ecb' as NavItem, label: 'Ask ECB (AI Console)', icon: Sparkles, isPrimaryAi: true },
     { id: 'project_intelligence' as NavItem, label: 'Project Intelligence', icon: Layers },
-    { id: 'risk_intelligence' as NavItem, label: 'Risk Intelligence', icon: ShieldAlert, badge: openRisksCount, badgeColor: '#fb923c' },
-    { id: 'contradictions' as NavItem, label: 'Timeline Contradictions', icon: ShieldAlert, badge: 3, badgeColor: '#ef4444' },
-    { id: 'decision_intelligence' as NavItem, label: 'Decision Intelligence', icon: GitPullRequest },
     { id: 'approval_center' as NavItem, label: 'Approval Center', icon: CheckCircle2, badge: pendingApprovalsCount, badgeColor: '#5ca8ff' },
   ];
 
   const deepDiagnosticsItems = [
-    { id: 'evidence_explorer' as NavItem, label: 'Evidence Explorer', icon: FileSearch },
-    { id: 'mcp_dataset' as NavItem, label: 'MCP LLM Training Datasets', icon: Database, badge: '92%', badgeColor: '#35d07f' },
-    { id: 'skills_mem0' as NavItem, label: 'Skills & Mem0 Memory', icon: BookOpen },
-    { id: 'agent_trace' as NavItem, label: 'LangGraph DAG Trace', icon: Activity },
-    { id: 'ai_eval' as NavItem, label: 'AI Evaluation Suite', icon: Award },
+    { id: 'developer_diagnostics' as NavItem, label: 'Developer Diagnostics', icon: Activity },
   ];
 
   const settingsItem = { id: 'settings' as NavItem, label: 'Settings & Connectors', icon: Settings };

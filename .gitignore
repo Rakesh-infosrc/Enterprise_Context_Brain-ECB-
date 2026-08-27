@@ -11,8 +11,8 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
-lib64/
+/lib/
+/lib64/
 parts/
 sdist/
 var/
@@ -46,3 +46,6 @@ build/
 .idea/
 *.swp
 *.swo
+
+# PowerBI
+*.pbix
