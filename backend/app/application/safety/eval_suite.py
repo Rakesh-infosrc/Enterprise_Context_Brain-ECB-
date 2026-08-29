@@ -106,7 +106,7 @@ class EvalSuite:
         avg_groundedness = sum(groundedness_scores) / len(groundedness_scores)
         avg_citation = sum(citation_scores) / len(citation_scores)
         conflict_detection_rate = (conflict_detected_count / total_conflicts_expected) * 100
-        p95_latency = sorted(latencies)[int(len(latencies) * 0.95)] if latencies else 220
+        p95_latency = sorted(latencies)[int(len(latencies) * 0.95)] if latencies else 0
 
         total_duration_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
 

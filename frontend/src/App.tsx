@@ -124,6 +124,38 @@ export function App() {
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProjectId, setActiveProjectId] = useState<string>('prj-kan');
+
+  // POC visibility: disconnected webhooks are hidden from main app (persisted)
+  const [hiddenWebhookIds, setHiddenWebhookIds] = useState<string[]>(() => {
+    try {
+      const raw = localStorage.getItem('ecb_hidden_webhooks');
+      return raw ? (JSON.parse(raw) as string[]) : [];
+    } catch {
+      return [];
+    }
+  });
+  useEffect(() => {
+    const syncHidden = () => {
+      try {
+        const raw = localStorage.getItem('ecb_hidden_webhooks');
+        setHiddenWebhookIds(raw ? (JSON.parse(raw) as string[]) : []);
+      } catch {}
+    };
+    window.addEventListener('ecb_hidden_webhooks_changed', syncHidden);
+    window.addEventListener('storage', syncHidden);
+    return () => {
+      window.removeEventListener('ecb_hidden_webhooks_changed', syncHidden);
+      window.removeEventListener('storage', syncHidden);
+    };
+  }, []);
+  const visibleProjects = projects.filter((p: any) => !(typeof p.name === 'string' && p.name.includes('/') && hiddenWebhookIds.includes(p.id)));
+  // If active project was disconnected, auto-switch to first visible
+  useEffect(() => {
+    if (hiddenWebhookIds.includes(activeProjectId)) {
+      const fallback = visibleProjects[0] || projects.find((p: any) => typeof p.name === 'string' && !p.name.includes('/')) || projects[0];
+      if (fallback && fallback.id !== activeProjectId) setActiveProjectId(fallback.id);
+    }
+  }, [hiddenWebhookIds, activeProjectId, visibleProjects, projects]);
   const [risks, setRisks] = useState<Risk[]>([]);
   const [decisions, setDecisions] = useState<Decision[]>([]);
   const [evidenceList, setEvidenceList] = useState<Evidence[]>([]);
@@ -204,13 +236,18 @@ export function App() {
     const onOnline = () => {
       if (!cancelled) loadData();
     };
+    const onReload = () => {
+      if (!cancelled) loadData();
+    };
     document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('online', onOnline);
+    window.addEventListener('ecb-reload-data', onReload);
     return () => {
       cancelled = true;
       if (timeoutId !== undefined) clearTimeout(timeoutId);
       document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('online', onOnline);
+      window.removeEventListener('ecb-reload-data', onReload);
     };
   }, []);
 
@@ -237,7 +274,7 @@ export function App() {
 
   const pendingApprovalsCount = actions.filter((a) => a.status === 'pending_approval').length;
   const openRisksCount = risks.filter((r) => r.status !== 'resolved').length;
-  const currentProject = projects.find((p) => p.id === activeProjectId) || projects[0];
+  const currentProject = visibleProjects.find((p) => p.id === activeProjectId) || visibleProjects[0] || projects.find((p) => p.id === activeProjectId) || projects[0];
 
   const getViewTitle = () => {
     switch (activeView) {
@@ -318,11 +355,11 @@ export function App() {
 
       {/* Main Content Area — above Light Rays */}
       <div className="ecb-main-column" style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative', zIndex: 1, height: '100dvh', overflowY: 'auto', overflowX: 'hidden', scrollbarGutter: 'stable' } as React.CSSProperties}>
-        {/* Top Header */}
+        {/* Top Header — hidden webhooks filtered from POC */}
         <Header
           title={title}
           subtitle={subtitle}
-          projects={projects}
+          projects={visibleProjects}
           activeProjectId={activeProjectId}
           onSelectProject={setActiveProjectId}
           onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
@@ -340,7 +377,7 @@ export function App() {
             {activeView === 'command_center' && (
               <CommandCenterView
                 stats={stats}
-                projects={projects}
+                projects={visibleProjects}
                 risks={risks}
                 decisions={decisions}
                 onSelectView={setActiveView}
@@ -351,7 +388,7 @@ export function App() {
 
             {activeView === 'ask_ecb' && (
               <AskECBView
-                projects={projects}
+                projects={visibleProjects}
                 activeProjectId={activeProjectId}
                 onSelectProject={setActiveProjectId}
                 initialQuestion={promptToAsk}

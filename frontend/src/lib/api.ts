@@ -17,20 +17,27 @@ import {
   DashboardStats,
 } from '../types';
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8001/api/v1';
+let activeUserEmail = localStorage.getItem('ecb_active_user_email') || 'sarah.jenkins@acmefin.com';
+let activeApiKey = localStorage.getItem('ecb_active_api_key') || '';
 let authToken = '';
 
-// Credentials via env (never hardcode in prod bundle); fallback with DEV warning
-const ECB_USERNAME = (import.meta.env.VITE_ECB_USERNAME as string) || 'sarah.jenkins@acmefin.com';
-const ECB_PASSWORD = (import.meta.env.VITE_ECB_PASSWORD as string) || 'password123';
-if (!import.meta.env.VITE_ECB_USERNAME && import.meta.env.DEV) {
-  console.warn('[api] VITE_ECB_USERNAME not set — using demo fallback. Set VITE_ECB_USERNAME/VITE_ECB_PASSWORD for prod.');
-}
+export const getActiveUserEmail = () => activeUserEmail;
+export const getActiveApiKey = () => activeApiKey;
+
+export const setPersona = (email: string, apiKey: string) => {
+  activeUserEmail = email;
+  activeApiKey = apiKey;
+  authToken = '';
+  localStorage.setItem('ecb_active_user_email', email);
+  localStorage.setItem('ecb_active_api_key', apiKey);
+};
 
 async function ensureAuthenticated(signal?: AbortSignal) {
+  if (activeApiKey) return;
   if (authToken) return;
   const formData = new URLSearchParams();
-  formData.append('username', ECB_USERNAME);
-  formData.append('password', ECB_PASSWORD);
+  formData.append('username', activeUserEmail);
+  formData.append('password', 'password123');
   
   try {
     const res = await fetch(`${API_BASE}/token`, {
@@ -53,13 +60,19 @@ async function fetchJson<T>(endpoint: string, options: RequestInit = {}): Promis
   await ensureAuthenticated(options.signal as AbortSignal | undefined);
   const url = `${API_BASE}${endpoint}`;
   try {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(options.headers as Record<string, string> || {}),
+    };
+    if (activeApiKey) {
+      headers['X-API-Key'] = activeApiKey;
+    } else if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
     const res = await fetch(url, {
       ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {}),
-        ...(options.headers || {}),
-      },
+      headers,
     });
     if (!res.ok) {
       const errText = await res.text();
@@ -84,12 +97,17 @@ export const api = {
   queryStream: async (req: QueryRequest, onEvent: (event: any) => void): Promise<void> => {
     await ensureAuthenticated();
     const url = `${API_BASE}/query/stream`;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json'
+    };
+    if (activeApiKey) {
+      headers['X-API-Key'] = activeApiKey;
+    } else if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
-      },
+      headers,
       body: JSON.stringify(req),
     });
     if (!res.ok) throw new Error(`API error ${res.status}`);
@@ -157,6 +175,11 @@ export const api = {
   getProject: (id: string): Promise<Project> =>
     fetchJson<Project>(`/projects/${id}`),
 
+  deleteProject: (id: string): Promise<any> =>
+    fetchJson<any>(`/projects/${id}`, {
+      method: 'DELETE',
+    }),
+
   // Risks
   getRisks: (projectId?: string): Promise<Risk[]> => {
     const query = projectId ? `?project_id=${projectId}` : '';
@@ -173,6 +196,11 @@ export const api = {
   getEvidenceList: (projectId?: string): Promise<Evidence[]> => {
     const query = projectId ? `?project_id=${projectId}` : '';
     return fetchJson<Evidence[]>(`/evidence${query}`);
+  },
+
+  getContradictions: (projectId?: string): Promise<{ contradictions: Array<{ id: string; project_id: string; source_title: string; conflict_summary: string; source_type: string; observed_at: string | null; url: string | null; authority: string }>; total: number }> => {
+    const query = projectId ? `?project_id=${projectId}` : '';
+    return fetchJson(`/contradictions${query}`);
   },
 
   getEvidence: (id: string): Promise<Evidence> =>
@@ -230,6 +258,11 @@ export const api = {
     fetchJson<any>('/settings/connections', {
       method: 'POST',
       body: JSON.stringify(settings),
+    }),
+
+  syncConnector: (connector: 'databricks' | 'jira' | 'github'): Promise<any> =>
+    fetchJson<any>(`/settings/connections/sync/${connector}`, {
+      method: 'POST',
     }),
 
   // Stats & Health

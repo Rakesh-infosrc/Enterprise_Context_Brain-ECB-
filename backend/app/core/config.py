@@ -16,9 +16,13 @@ class ECBSettings(BaseSettings):
     gemini_api_key: Optional[str] = Field(default=None, alias="GEMINI_API_KEY")
     groq_api_key: Optional[str] = Field(default=None, alias="GROQ_API_KEY")
 
+    # Git Integration Settings
+    github_token: Optional[str] = Field(default=None, alias="GITHUB_TOKEN")
+    github_webhook_secret: Optional[str] = Field(default=None, alias="GITHUB_WEBHOOK_SECRET")
+
     # Model Selection
-    gemini_model: str = Field(default="gemini-3.6-flash", alias="GEMINI_MODEL")
-    groq_model: str = Field(default="llama-3.3-70b-versatile", alias="GROQ_MODEL")
+    gemini_model: str = Field(default="gemini-1.5-flash", alias="GEMINI_MODEL")
+    groq_model: str = Field(default="qwen/qwen3.8-27b", alias="GROQ_MODEL")
 
     # LLM Mode
     ecb_llm_mode: Literal["auto", "gemini", "groq", "simulated"] = Field(
@@ -26,7 +30,7 @@ class ECBSettings(BaseSettings):
     )
 
     model_config = {
-        "env_file": os.path.join(os.path.dirname(os.path.dirname(__file__)), ".env"),
+        "env_file": os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), ".env"),
         "env_file_encoding": "utf-8",
         "extra": "ignore",
         "populate_by_name": True,
@@ -67,6 +71,7 @@ _settings: Optional[ECBSettings] = None
 
 def get_settings() -> ECBSettings:
     global _settings
-    if _settings is None:
-        _settings = ECBSettings()
+    # Always reload to pick up .env changes without server restart
+    _settings = ECBSettings()
     return _settings
+

@@ -72,22 +72,24 @@ class LangGraphOrchestrator:
         self.policy_engine = PolicyEngine()
         self.mcp_gateway = MCPGateway(self.store)
 
-    def execute_graph(self, req: QueryRequest) -> QueryResponse:
+    def execute_graph(self, req: QueryRequest, user_id: Optional[str] = None) -> QueryResponse:
         start_time = datetime.utcnow()
         trace_id = f"lg-tr-{uuid.uuid4().hex[:8]}"
         run_id = f"run-{uuid.uuid4().hex[:8]}"
         steps: List[AgentStep] = []
 
         # NODE 1: Llama Guard 3 Input Safety Check
+        _t1 = datetime.utcnow()
         guard_res = self.guard.inspect_prompt(req.query)
+        _d1 = int((datetime.utcnow() - _t1).total_seconds() * 1000)
         steps.append(AgentStep(
             step_id=f"lg-step-1-{uuid.uuid4().hex[:6]}",
             stage=StepStage.AUTHORIZED,
             title="Llama Guard 3 Safety Inspection",
             description=f"Scanned prompt for injections/PII. Status: {'SAFE' if guard_res.is_safe else 'BLOCKED'}",
-            started_at=datetime.utcnow(),
+            started_at=_t1,
             completed_at=datetime.utcnow(),
-            duration_ms=8,
+            duration_ms=_d1,
             status="success" if guard_res.is_safe else "failed",
             payload={"is_safe": guard_res.is_safe, "category": guard_res.category},
         ))
@@ -105,11 +107,12 @@ class LangGraphOrchestrator:
                 superseded_evidence=[],
                 recommendation=None,
                 steps=steps,
-                latency_ms=12,
+                latency_ms=_d1,
                 token_usage={"total_tokens": 50, "prompt_tokens": 50, "completion_tokens": 0},
             )
 
         # NODE 2: Context Planning Node
+        _t2 = datetime.utcnow()
         plan = self.planner.plan(
             query=guard_res.sanitized_input,
             project_id=req.project_id,
@@ -117,19 +120,21 @@ class LangGraphOrchestrator:
             source_filters=req.source_filters,
             workflow=req.workflow,
         )
+        _d2 = int((datetime.utcnow() - _t2).total_seconds() * 1000)
         steps.append(AgentStep(
             step_id=f"lg-step-2-{uuid.uuid4().hex[:6]}",
             stage=StepStage.CONTEXT_PLANNING,
             title="Context Planning Node",
             description=f"Resolved Intent: {plan.intent}, Entities: {plan.target_entities}, Planned Workflow: {plan.planned_agent.value}",
-            started_at=datetime.utcnow(),
+            started_at=_t2,
             completed_at=datetime.utcnow(),
-            duration_ms=18,
+            duration_ms=_d2,
             status="success",
             payload={"intent": plan.intent, "entities": plan.target_entities},
         ))
 
         # NODE 3: Qdrant Hybrid Vector Retrieval Node
+        _t3 = datetime.utcnow()
         qdrant_results = self.qdrant.search_hybrid(
             query=guard_res.sanitized_input,
             project_ids=plan.project_ids,
@@ -149,19 +154,21 @@ class LangGraphOrchestrator:
             else:
                 supporting.append(ev)
 
+        _d3 = int((datetime.utcnow() - _t3).total_seconds() * 1000)
         steps.append(AgentStep(
             step_id=f"lg-step-3-{uuid.uuid4().hex[:6]}",
             stage=StepStage.RETRIEVING,
             title="Qdrant Hybrid Vector Search Node",
             description=f"Retrieved {len(supporting)} supporting, {len(conflicting)} conflicting, and {len(superseded)} superseded items via Qdrant HNSW index.",
-            started_at=datetime.utcnow(),
+            started_at=_t3,
             completed_at=datetime.utcnow(),
-            duration_ms=32,
+            duration_ms=_d3,
             status="success",
             payload={"qdrant_hits": len(qdrant_results)},
         ))
 
         # NODE 4: A2A Multi-Agent Delegation & Skill Injection Node
+        _t4 = datetime.utcnow()
         a2a_msg, a2a_resp = self.a2a.delegate_subtask(
             from_agent=AgentWorkflow.MANAGER,
             to_agent=plan.planned_agent,
@@ -170,57 +177,82 @@ class LangGraphOrchestrator:
             target_entities=plan.target_entities,
         )
         active_skills = list(self.skill_loader.skills.keys())
+        _d4 = int((datetime.utcnow() - _t4).total_seconds() * 1000)
         steps.append(AgentStep(
             step_id=f"lg-step-4-{uuid.uuid4().hex[:6]}",
             stage=StepStage.REASONING,
             title="A2A Delegation & Skill Execution",
             description=f"Manager delegated subtask to {plan.planned_agent.value} with active skills: {', '.join(active_skills[:3])}.",
-            started_at=datetime.utcnow(),
+            started_at=_t4,
             completed_at=datetime.utcnow(),
-            duration_ms=45,
+            duration_ms=_d4,
             status="success",
             payload={"from_agent": "manager", "to_agent": plan.planned_agent.value, "skills": active_skills},
         ))
 
         # NODE 5: Specialist Synthesis & CoVe Hallucination Guard Node
-        agent_run = self.agent_engine.run(plan, supporting, conflicting, superseded)
+        _t5 = datetime.utcnow()
+        agent_run = self.agent_engine.run(plan, supporting, conflicting, superseded, user_id=user_id)
         cove_res = self.cove.verify_answer(agent_run.answer, supporting + conflicting)
+        _d5 = int((datetime.utcnow() - _t5).total_seconds() * 1000)
 
         steps.append(AgentStep(
             step_id=f"lg-step-5-{uuid.uuid4().hex[:6]}",
             stage=StepStage.VALIDATING,
             title="Chain-of-Verification (CoVe) Hallucination Guard",
             description=f"Verified {cove_res.verified_claims_count}/{cove_res.total_claims} claims. Groundedness: {cove_res.groundedness_score*100:.1f}%. Hallucination Risk: {cove_res.hallucination_risk_level}.",
-            started_at=datetime.utcnow(),
+            started_at=_t5,
             completed_at=datetime.utcnow(),
-            duration_ms=28,
+            duration_ms=_d5,
             status="success",
             payload={"groundedness_pct": cove_res.groundedness_score * 100, "hallucination_risk": cove_res.hallucination_risk_level},
         ))
 
         # NODE 6: Policy & Human Approval Checkpoint
+        _t6 = datetime.utcnow()
         rec = agent_run.proposed_actions[0] if agent_run.proposed_actions else None
         if rec:
+            _d6 = int((datetime.utcnow() - _t6).total_seconds() * 1000)
             steps.append(AgentStep(
                 step_id=f"lg-step-6-{uuid.uuid4().hex[:6]}",
                 stage=StepStage.POLICY_CHECK,
                 title="LangGraph Human Approval Checkpoint",
                 description=f"Tool '{rec.tool_name}' classified as {rec.risk_class.value.upper()}. Graph halted at checkpoint waiting for human token.",
-                started_at=datetime.utcnow(),
+                started_at=_t6,
                 completed_at=datetime.utcnow(),
-                duration_ms=12,
+                duration_ms=_d6,
                 status="success",
                 payload={"tool_name": rec.tool_name, "requires_human_approval": True},
             ))
 
         # NODE 7: Mem0 Dynamic Memory Write
+        _t7 = datetime.utcnow()
         self.mem0.add_memory(
-            user_id="usr-sarah-jenkins",
+            user_id=user_id or "usr-sarah-jenkins",
             content=f"Query regarding {plan.target_entities} synthesized with {cove_res.groundedness_score*100:.0f}% groundedness.",
             project_id=plan.project_ids[0] if plan.project_ids else None,
         )
+        _d7 = int((datetime.utcnow() - _t7).total_seconds() * 1000)
 
         total_latency_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+
+        # Save agent run for diagnostics
+        try:
+            from ...domain.schemas import AgentRun as AgentRunModel
+            from ...domain.schemas import AgentWorkflow as AW
+            wf_val = plan.planned_agent if isinstance(plan.planned_agent, AW) else AW(plan.planned_agent.value if hasattr(plan.planned_agent, 'value') else plan.planned_agent)
+            diag_run = AgentRunModel(
+                id=run_id, trace_id=trace_id, org_id="org-acme-fintech", user_id=user_id or "system",
+                workflow=wf_val, query=req.query, status="COMPLETED",
+                confidence=agent_run.confidence, confidence_label=agent_run.confidence_label,
+                answer=agent_run.answer, steps=steps, latency_ms=total_latency_ms,
+                total_tokens=agent_run.total_tokens, prompt_tokens=agent_run.prompt_tokens,
+                completion_tokens=agent_run.completion_tokens,
+            )
+            self.store.add_agent_run(diag_run)
+        except Exception as e:
+            import traceback, sys
+            traceback.print_exc(file=sys.stderr)
 
         return QueryResponse(
             trace_id=trace_id,
@@ -242,7 +274,7 @@ class LangGraphOrchestrator:
             },
         )
 
-    def execute_graph_stream(self, req: QueryRequest) -> Generator[str, None, None]:
+    def execute_graph_stream(self, req: QueryRequest, user_id: Optional[str] = None) -> Generator[str, None, None]:
         start_time = datetime.utcnow()
         trace_id = f"lg-tr-{uuid.uuid4().hex[:8]}"
         run_id = f"run-{uuid.uuid4().hex[:8]}"
@@ -339,7 +371,7 @@ class LangGraphOrchestrator:
 
         with tracer.start_as_current_span("SpecialistSynthesis"):
             agent_run = None
-            for event in self.agent_engine.run_stream(plan, supporting, conflicting, superseded):
+            for event in self.agent_engine.run_stream(plan, supporting, conflicting, superseded, user_id=user_id):
                 if event["type"] == "token":
                     yield json.dumps({"type": "token", "content": event["content"]})
                 elif event["type"] == "result":
@@ -369,12 +401,32 @@ class LangGraphOrchestrator:
 
         # NODE 7: Mem0 Dynamic Memory Write
         self.mem0.add_memory(
-            user_id="usr-sarah-jenkins",
+            user_id=user_id or "usr-sarah-jenkins",
             content=f"Query regarding {plan.target_entities} synthesized with {cove_res.groundedness_score*100:.0f}% groundedness.",
             project_id=plan.project_ids[0] if plan.project_ids else None,
         )
 
         total_latency_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+
+        # Save agent run for diagnostics
+        try:
+            from ...domain.schemas import AgentRun as AgentRunModel
+            from ...domain.schemas import AgentWorkflow as AW
+            wf_val = plan.planned_agent if isinstance(plan.planned_agent, AW) else AW(plan.planned_agent.value if hasattr(plan.planned_agent, 'value') else plan.planned_agent)
+            diag_run = AgentRunModel(
+                id=run_id, trace_id=trace_id, org_id="org-acme-fintech", user_id=user_id or "system",
+                workflow=wf_val, query=req.query, status="COMPLETED",
+                confidence=agent_run.confidence if agent_run else 0.95,
+                confidence_label="High", answer=agent_run.answer if agent_run else "",
+                steps=steps, latency_ms=total_latency_ms,
+                total_tokens=agent_run.total_tokens if agent_run else 0,
+                prompt_tokens=agent_run.prompt_tokens if agent_run else 0,
+                completion_tokens=agent_run.completion_tokens if agent_run else 0,
+            )
+            self.store.add_agent_run(diag_run)
+        except Exception as e:
+            import sys
+            print(f"[DIAG] Failed to save agent run (stream): {e}", file=sys.stderr)
 
         final_resp = QueryResponse(
             trace_id=trace_id,

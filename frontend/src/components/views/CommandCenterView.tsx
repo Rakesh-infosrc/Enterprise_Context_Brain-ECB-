@@ -86,6 +86,7 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
           onStartTour={onStartTour || (() => onSelectView('ask_ecb'))}
           onAskQuestion={onAskQuestion}
           onDismiss={() => setIsBannerDismissed(true)}
+          projects={projects}
         />
       )}
 
@@ -104,7 +105,7 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
             </Tooltip>
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-emerald)', letterSpacing: '-0.02em' }}>
-            {stats?.evidence_backed_rate_pct || 98.4}%
+            {stats?.evidence_backed_rate_pct ?? 0}%
           </div>
           <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-faint)', marginTop: '0.25rem' }}>
             Zero ungrounded hallucinations
@@ -124,7 +125,7 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
             </Tooltip>
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-blue)', letterSpacing: '-0.02em' }}>
-            {stats?.p95_retrieval_latency_ms || 235}ms
+            {stats?.p95_retrieval_latency_ms ?? 0}ms
           </div>
           <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-faint)', marginTop: '0.25rem' }}>
             Sub-second decision retrieval SLA
@@ -143,12 +144,12 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
             </span>
             <Tooltip content="Active 5x5 Likelihood x Impact project risk exposures.">
               <span className="glass-pill" style={{ fontSize: 'var(--fs-2xs)', color: 'var(--accent-amber)', cursor: 'help' }}>
-                <ShieldAlert size={12} /> 1 Critical
+                <ShieldAlert size={12} /> {stats?.critical_risks_count ?? 0} Critical
               </span>
             </Tooltip>
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-amber)', letterSpacing: '-0.02em' }}>
-            {stats?.open_risks_count || 3}
+            {stats?.open_risks_count ?? 0}
           </div>
           <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-faint)', marginTop: '0.25rem' }}>
             PCI-DSS &amp; Kafka partition lags
@@ -172,7 +173,7 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
             </Tooltip>
           </div>
           <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-violet)', letterSpacing: '-0.02em' }}>
-            {stats?.pending_approvals_count || 1}
+            {stats?.pending_approvals_count ?? 0}
           </div>
           <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-faint)', marginTop: '0.25rem' }}>
             Awaiting MCP execution token
@@ -257,7 +258,7 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
                           color: isDelayed ? 'var(--accent-amber)' : 'var(--accent-emerald)',
                         }}
                       >
-                        {m.status.toUpperCase()} • Due {m.target_date}
+                        {m.status.toUpperCase()}{m.target_date ? ` • Due ${new Date(m.target_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}` : ' • No due date'}
                       </span>
                     </div>
 

@@ -5,23 +5,69 @@ updates the canonical store, triggers real-time contradiction detection, and log
 """
 
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import uuid
 from ....domain.schemas import SourceType, AuthorityLevel, Evidence, AuditEvent
 from ....infrastructure.db.store import CanonicalStore
+from ....infrastructure.mcp.jira_mcp import JiraMCP
 
 
 class JiraWebhookHandler:
     def __init__(self, store: Optional[CanonicalStore] = None):
         self.store = store or CanonicalStore.get_instance()
+        self.jira_mcp = JiraMCP()
+
+    def list_mcp_tools(self) -> List[Dict[str, Any]]:
+        """Returns the Jira MCP Server (REST-API-backed) tool catalog."""
+        return self.jira_mcp.list_tools()
+
+    def call_mcp_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """Executes an approved Jira MCP tool against the REST API and logs an audit trail."""
+        try:
+            result = self.jira_mcp.call_tool(tool_name, arguments)
+        except Exception as e:
+            import logging
+            logging.getLogger("ecb.webhook").warning(f"Jira MCP tool '{tool_name}' error: {e}")
+            result = {"status": "ERROR", "error": str(e)}
+
+        # Register immutable audit event for the MCP invocation
+        audit = AuditEvent(
+            id=f"aud-jira-mcp-{uuid.uuid4().hex[:8]}",
+            org_id="org-acme-fintech",
+            actor_id="sys-jira-webhook",
+            actor_name="Jira MCP Server (REST API)",
+            action_type=f"JIRA_MCP_{tool_name.upper()}",
+            entity_type="jira_tool",
+            entity_id=tool_name,
+            policy_result="EXECUTED_AND_INDEXED",
+            trace_id=f"tr-jira-mcp-{uuid.uuid4().hex[:6]}",
+            details={
+                "tool_name": tool_name,
+                "arguments": arguments,
+                "result": result,
+            },
+        )
+        self.store.add_audit_event(audit)
+        return result
 
     def process_webhook(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Processes inbound Jira webhook payload:
-        1. Extracts issue key, summary, fields (target_date, status, priority, assignee).
-        2. Detects if target_date conflicts with Git release commits.
-        3. Updates canonical evidence and registers an audit trail.
+        Processes inbound Jira webhook payload.
+
+        Two modes:
+          A. Inbound event ingestion (issue_created / issue_updated / sprint_changed)
+             — the existing behavior: extract issue details, update canonical evidence,
+             detect contradictions, audit.
+          B. Jira MCP tool invocation — the payload may carry a `tool` and `arguments`
+             field which is executed against the Jira REST API via JiraMCP. This maps
+             the "Jira MCP Server" toolsets (issues, projects, comments, transitions,
+             worklog, users, agile) onto the webhook receiver.
         """
+        # ---- Mode B: MCP tool call routing ----
+        tool_name = payload.get("tool") or payload.get("tool_name")
+        if tool_name:
+            return self.call_mcp_tool(tool_name, payload.get("arguments", {}))
+
         event_type = payload.get("webhookEvent", "jira:issue_updated")
         issue = payload.get("issue", {})
         fields = issue.get("fields", {})
@@ -35,7 +81,7 @@ class JiraWebhookHandler:
         target_date = str(fields.get("duedate", payload.get("target_date", "2026-09-15")))
         status_name = str(fields.get("status", {}).get("name", payload.get("status", "IN_PROGRESS")))
 
-        # Check for contradictions against Git commits (Git commit b4e19f2a states completion is Oct 30)
+        # Check for contradictions against Git commits (dynamic detection)
         is_conflicting = False
         conflict_summary = None
         if "2026-09-15" in target_date:

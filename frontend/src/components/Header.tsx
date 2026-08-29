@@ -12,6 +12,7 @@ import { Project } from '../types';
 import { Tooltip } from './Tooltip';
 import { AnimatedThemeToggler } from './ui/animated-theme-toggler';
 import { RippleButton } from "@/components/ui/ripple-button";
+import { PersonaSwitcher } from './PersonaSwitcher';
 
 interface HeaderProps {
   title: string;
@@ -112,6 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right Controls: Animated Theme, Mode Toggle, Guided Tour & Project Selector */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--fs-xs)', flexWrap: 'wrap', flexShrink: 0 }}>
+        <PersonaSwitcher />
         <Tooltip content={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'} position="bottom">
           <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
             <AnimatedThemeToggler

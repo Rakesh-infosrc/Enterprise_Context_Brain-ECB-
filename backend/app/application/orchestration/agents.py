@@ -34,6 +34,7 @@ class AgentOrchestrator:
         supporting: List[Evidence],
         conflicting: List[Evidence],
         superseded: List[Evidence],
+        user_id: Optional[str] = None,
     ) -> AgentRun:
         start_time = datetime.utcnow()
         trace_id = f"tr-{uuid.uuid4().hex[:8]}"
@@ -42,7 +43,319 @@ class AgentOrchestrator:
 
         # Check if the query is a Databricks query to fetch and inject live supporting evidence
         q_lower = context_plan.query.lower()
-        is_dbx_query = any(w in q_lower for w in ["databricks", "job", "cluster", "wbd", "churn", "poc", "workspace", "notebook", "directory", "folder", "files", "catalog", "unity", "volume", "schema"])
+
+        # ── Live GitHub Evidence Injection ────────────────────────────────────────
+        # Runs independently of Databricks. Fetches real commits + file structure
+        # from GitHub REST API whenever a git/commit/code query is detected.
+        _is_git_query = any(w in q_lower for w in [
+            "git", "github", "commit", "commits", "push", "pull request", "pr",
+            "branch", "branches", "merge", "repo", "repository", "code", "source",
+            "tag", "tags", "release", "releases",
+            "ci", "workflow", "workflows", "actions", "build",
+        ])
+        if _is_git_query:
+            import urllib.request as _ur
+            import json as _json
+            import os as _os
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            _github_token = _os.getenv("GITHUB_TOKEN", "")
+            try:
+                from ...core.config import get_settings as _get_settings
+                _cfg = _get_settings()
+                if hasattr(_cfg, "github_token") and _cfg.github_token:
+                    _github_token = _cfg.github_token
+            except Exception:
+                pass
+
+            _project_name = ""
+            _selected_project_id = context_plan.project_ids[0] if context_plan.project_ids else None
+            if _selected_project_id:
+                _p = self.store.get_project(_selected_project_id)
+                if _p:
+                    _project_name = _p.name
+
+            _is_valid_github_repo = bool(_project_name and "/" in _project_name and len(_project_name.split("/")) == 2)
+            _used_fallback = False
+            if not _is_valid_github_repo:
+                _project_name = "Rakesh-infosrc/Enterprise_Context_Brain-ECB-"
+                _used_fallback = True
+
+            _gh_headers = {"User-Agent": "ECB-Agent/2.2"}
+            if _github_token:
+                _gh_headers["Authorization"] = f"token {_github_token}"
+
+            def _gh_fetch(url):
+                req = _ur.Request(url, headers=_gh_headers)
+                with _ur.urlopen(req, timeout=3) as resp:
+                    return _json.loads(resp.read().decode())
+
+            _git_futures = {}
+            _executor = ThreadPoolExecutor(max_workers=6)
+
+            # Always fetch commits
+            _git_futures[_executor.submit(_gh_fetch, f"https://api.github.com/repos/{_project_name}/commits?per_page=15")] = "commits"
+
+            # Conditionally fetch other endpoints
+            if any(w in q_lower for w in ["tag", "tags", "release", "releases"]):
+                _git_futures[_executor.submit(_gh_fetch, f"https://api.github.com/repos/{_project_name}/tags?per_page=15")] = "tags"
+            if any(w in q_lower for w in ["branch", "branches"]):
+                _git_futures[_executor.submit(_gh_fetch, f"https://api.github.com/repos/{_project_name}/branches?per_page=30")] = "branches"
+            if any(w in q_lower for w in ["pull request", "pr", "prs", "pull requests", "merge", "merged"]):
+                _git_futures[_executor.submit(_gh_fetch, f"https://api.github.com/repos/{_project_name}/pulls?state=all&per_page=10")] = "pulls"
+            if any(w in q_lower for w in ["issue", "issues", "bug", "bugs", "ticket", "tickets"]):
+                _git_futures[_executor.submit(_gh_fetch, f"https://api.github.com/repos/{_project_name}/issues?state=open&per_page=10")] = "issues"
+            if any(w in q_lower for w in ["ci", "workflow", "workflows", "actions", "build"]):
+                _git_futures[_executor.submit(_gh_fetch, f"https://api.github.com/repos/{_project_name}/actions/runs?per_page=5")] = "workflows"
+
+            _executor.shutdown(wait=False)
+
+            for future in as_completed(_git_futures):
+                _key = _git_futures[future]
+                try:
+                    _data = future.result()
+                except Exception:
+                    continue
+
+                if _key == "commits":
+                    for _c in (_data if isinstance(_data, list) else []):
+                        _sha = _c.get("sha", "")[:8]
+                        _author = (_c.get("commit", {}).get("author", {}).get("name") or
+                                   (_c.get("author") or {}).get("login") or "Developer")
+                        _msg = _c.get("commit", {}).get("message", "")
+                        _date = _c.get("commit", {}).get("author", {}).get("date", "")[:10]
+                        _url = _c.get("html_url", f"https://github.com/{_project_name}/commit/{_sha}")
+                        supporting.append(Evidence(
+                            id=f"evi-git-live-{_sha}",
+                            source_record_id=f"rec-git-live-{_sha}",
+                            source_type=SourceType.GIT,
+                            source_title=f"Git Commit {_sha}: {_msg[:50]}",
+                            external_id=_sha,
+                            project_id=_selected_project_id or "prj-git",
+                            excerpt=f"Commit by {_author} on {_date}: {_msg}",
+                            authority="high",
+                            observed_at=datetime.utcnow().isoformat(),
+                            url=_url,
+                            author=_author,
+                            freshness_score=1.0,
+                            relevance_score=0.95,
+                        ))
+                    if _used_fallback and _data:
+                        import logging
+                        logging.getLogger("ecb.agent").info(
+                            f"GitHub fallback used: project '{_selected_project_id}' has no valid repo name, "
+                            f"queries directed to default repo '{_project_name}'"
+                        )
+                elif _key == "tags":
+                    _tag_names = [t.get("name", "") for t in _data if t.get("name")]
+                    if _tag_names:
+                        supporting.append(Evidence(
+                            id=f"evi-git-tags-{uuid.uuid4().hex[:6]}",
+                            source_record_id="rec-git-tags",
+                            source_type=SourceType.GIT,
+                            source_title=f"Git Tags & Releases ({len(_tag_names)} tags)",
+                            external_id="git-tags",
+                            project_id=_selected_project_id or "prj-git",
+                            excerpt=f"Repository '{_project_name}' tags: {', '.join(_tag_names)}",
+                            authority="high",
+                            observed_at=datetime.utcnow().isoformat(),
+                            url=f"https://github.com/{_project_name}/tags",
+                            author="GitHub REST API",
+                        ))
+                elif _key == "branches":
+                    _branch_names = [b.get("name", "") for b in _data if b.get("name")]
+                    if _branch_names:
+                        supporting.append(Evidence(
+                            id=f"evi-git-branches-{uuid.uuid4().hex[:6]}",
+                            source_record_id="rec-git-branches",
+                            source_type=SourceType.GIT,
+                            source_title=f"Git Branches ({len(_branch_names)} branches)",
+                            external_id="git-branches",
+                            project_id=_selected_project_id or "prj-git",
+                            excerpt=f"Repository '{_project_name}' branches: {', '.join(_branch_names)}",
+                            authority="high",
+                            observed_at=datetime.utcnow().isoformat(),
+                            url=f"https://github.com/{_project_name}/branches",
+                            author="GitHub REST API",
+                        ))
+                elif _key == "pulls":
+                    _pr_summaries = []
+                    for _pr in (_data if isinstance(_data, list) else []):
+                        _num = _pr.get("number", "?")
+                        _title = _pr.get("title", "Untitled")
+                        _state = _pr.get("state", "?")
+                        _author = (_pr.get("user") or {}).get("login", "?")
+                        _merged = "Merged" if _pr.get("merged") else _state.capitalize()
+                        _pr_summaries.append(f"PR #{_num}: {_title} ({_merged} by {_author})")
+                    if _pr_summaries:
+                        supporting.append(Evidence(
+                            id=f"evi-git-prs-{uuid.uuid4().hex[:6]}",
+                            source_record_id="rec-git-prs",
+                            source_type=SourceType.GIT,
+                            source_title=f"GitHub Pull Requests ({len(_pr_summaries)} PRs)",
+                            external_id="git-pull-requests",
+                            project_id=_selected_project_id or "prj-git",
+                            excerpt=f"Repository '{_project_name}' pull requests: {'; '.join(_pr_summaries)}",
+                            authority="high",
+                            observed_at=datetime.utcnow().isoformat(),
+                            url=f"https://github.com/{_project_name}/pulls",
+                            author="GitHub REST API",
+                        ))
+                elif _key == "issues":
+                    _issue_summaries = []
+                    for _iss in (_data if isinstance(_data, list) else []):
+                        _num = _iss.get("number", "?")
+                        _title = _iss.get("title", "Untitled")
+                        _state = _iss.get("state", "?")
+                        _author = (_iss.get("user") or {}).get("login", "?")
+                        _labels = [l.get("name", "") for l in (_iss.get("labels") or [])]
+                        _label_str = f" [{', '.join(_labels)}]" if _labels else ""
+                        _issue_summaries.append(f"Issue #{_num}: {_title} ({_state} by {_author}){_label_str}")
+                    if _issue_summaries:
+                        supporting.append(Evidence(
+                            id=f"evi-git-issues-{uuid.uuid4().hex[:6]}",
+                            source_record_id="rec-git-issues",
+                            source_type=SourceType.GIT,
+                            source_title=f"GitHub Issues ({len(_issue_summaries)} open)",
+                            external_id="git-issues",
+                            project_id=_selected_project_id or "prj-git",
+                            excerpt=f"Repository '{_project_name}' open issues: {'; '.join(_issue_summaries)}",
+                            authority="high",
+                            observed_at=datetime.utcnow().isoformat(),
+                            url=f"https://github.com/{_project_name}/issues",
+                            author="GitHub REST API",
+                        ))
+                elif _key == "workflows":
+                    _runs = _data.get("workflow_runs", []) if isinstance(_data, dict) else []
+                    _run_summaries = []
+                    for _run in _runs:
+                        _run_id = _run.get("id", "?")
+                        _run_name = _run.get("name", "?")
+                        _run_status = _run.get("status", "?")
+                        _run_conclusion = _run.get("conclusion", "?")
+                        _run_branch = _run.get("head_branch", "?")
+                        _run_summaries.append(f"Run {_run_id}: {_run_name} [{_run_status}/{_run_conclusion}] on {_run_branch}")
+                    if _run_summaries:
+                        supporting.append(Evidence(
+                            id=f"evi-git-workflows-{uuid.uuid4().hex[:6]}",
+                            source_record_id="rec-git-workflows",
+                            source_type=SourceType.GIT,
+                            source_title=f"GitHub Actions Workflow Runs ({len(_run_summaries)} runs)",
+                            external_id="git-workflows",
+                            project_id=_selected_project_id or "prj-git",
+                            excerpt=f"Repository '{_project_name}' recent workflow runs: {'; '.join(_run_summaries)}",
+                            authority="high",
+                            observed_at=datetime.utcnow().isoformat(),
+                            url=f"https://github.com/{_project_name}/actions",
+                            author="GitHub REST API",
+                        ))
+
+        # ── Live Jira Evidence Injection ────────────────────────────────────────
+        # Fetches real Jira issues + projects from the Jira Cloud REST API whenever a
+        # Jira/work-item/issue query is detected (mirrors the GitHub injection above).
+        _is_jira_query = any(w in q_lower for w in [
+            "jira", "ticket", "tickets", "epic", "epics", "sprint", "sprints",
+            "work item", "worklog", "kanban", "story", "stories",
+            "assignee", "priority", "duedate",
+            "blocker", "blockers", "blocked",
+            "milestone", "milestones", "overdue",
+            "kan", "clara", "aegis", "orion",
+        ])
+        if _is_jira_query:
+            import base64 as _b64
+            import os as _os2
+            import urllib.request as _ur
+            import json as _json
+
+            _jira_url = _os2.getenv("JIRA_BASE_URL", "https://reenams.atlassian.net").rstrip("/")
+            _jira_user = _os2.getenv("JIRA_USER_EMAIL", "")
+            _jira_token = _os2.getenv("JIRA_API_TOKEN", "")
+
+            _jira_headers = {"Accept": "application/json"}
+            if _jira_user and _jira_token:
+                _auth_raw = f"{_jira_user}:{_jira_token}".encode()
+                _jira_headers["Authorization"] = "Basic " + _b64.b64encode(_auth_raw).decode()
+
+            # Resolve Jira project for the selected ECB project (map repo names -> Jira keys)
+            _jira_project_key = None
+            _selected_pid = context_plan.project_ids[0] if context_plan.project_ids else None
+            if _selected_pid:
+                _p = self.store.get_project(_selected_pid)
+                _pname = (_p.name if _p else "").lower()
+                if "kan" in _pname or "ecb" in _pname or "enterprise" in _pname:
+                    _jira_project_key = "KAN"
+                elif "clara" in _pname:
+                    _jira_project_key = "CLARA"
+                elif _p and _p.code:
+                    _jira_project_key = str(_p.code).upper()
+
+            # Detect a Jira project key mentioned directly in the query (e.g. "KAN-123", "project KAN")
+            import re as _re
+            _key_match = _re.search(r"\b([A-Z][A-Z0-9]{1,9})-\d+\b", q_lower.upper())
+            if _key_match:
+                _jira_project_key = _key_match.group(1)
+            elif not _jira_project_key:
+                _proj_match = _re.search(r"\bproject[:\s]+([A-Z][A-Z0-9]{1,9})\b", q_lower.upper())
+                _proj_match2 = _re.search(r"\b(?:kan|clara|it|ops|sec)\b", q_lower)
+                if _proj_match:
+                    _jira_project_key = _proj_match.group(1)
+                elif _proj_match2:
+                    _jira_project_key = _proj_match2.group(0).upper()
+                else:
+                    _jira_project_key = "KAN"
+
+            # Pull live issues via JQL search
+            try:
+                _jql = f"project={_jira_project_key} ORDER BY updated DESC"
+                _search_payload = _json.dumps({
+                    "jql": _jql,
+                    "maxResults": 15,
+                    "fields": ["summary", "status", "priority", "assignee", "duedate", "issuetype", "updated"],
+                }).encode("utf-8")
+                _search_req = _ur.Request(
+                    f"{_jira_url}/rest/api/3/search/jql",
+                    data=_search_payload,
+                    headers={**_jira_headers, "Content-Type": "application/json"},
+                    method="POST",
+                )
+                with _ur.urlopen(_search_req, timeout=3) as _resp_j:
+                    _jdata = _json.loads(_resp_j.read().decode())
+                    _issues = _jdata.get("issues", [])
+                    if _issues:
+                        _issue_lines = []
+                        for _iss in _issues[:15]:
+                            _f = _iss.get("fields", {})
+                            _k = _iss.get("key", "?")
+                            _summ = _f.get("summary", "Untitled")
+                            _st = (_f.get("status") or {}).get("name", "?")
+                            _pr = (_f.get("priority") or {}).get("name", "?")
+                            _assign = (_f.get("assignee") or {}).get("displayName", "Unassigned")
+                            _due = _f.get("duedate") or "no due date"
+                            _issue_lines.append(f"{_k}: {_summ} ({_st}, {_pr}, due {_due}, {_assign})")
+                        supporting.append(Evidence(
+                            id=f"evi-jira-live-{uuid.uuid4().hex[:6]}",
+                            source_record_id="rec-jira-live",
+                            source_type=SourceType.JIRA,
+                            source_title=f"Jira Project {_jira_project_key} Issues ({len(_issues)} total)",
+                            external_id=f"jira-{_jira_project_key}",
+                            project_id=_selected_pid or "prj-jira",
+                            excerpt=f"Jira project {_jira_project_key} live issues: {'; '.join(_issue_lines)}",
+                            authority="high",
+                            observed_at=datetime.utcnow().isoformat(),
+                            url=f"{_jira_url}/browse/{_jira_project_key}",
+                            author="Jira REST API",
+                            freshness_score=1.0,
+                            relevance_score=0.95,
+                        ))
+            except _ur.HTTPError as e:
+                import logging
+                logging.getLogger("ecb.agent").warning(
+                    f"Jira API error for project '{_jira_project_key}': HTTP {e.code} - {e.reason}"
+                )
+            except Exception:
+                pass
+
+        is_dbx_query = any(w in q_lower for w in ["databricks", "dbx", "job", "cluster", "wbd", "churn", "poc", "notebook", "catalog", "unity", "volume", "schema", "workspace list"])
         if is_dbx_query:
             from ...infrastructure.mcp.databricks_extractor import DatabricksDatasetExtractor
             from urllib.parse import quote
@@ -440,7 +753,7 @@ class AgentOrchestrator:
             id=run_id,
             trace_id=trace_id,
             org_id="org-acme-fintech",
-            user_id="usr-sarah-jenkins",
+            user_id=user_id or "usr-sarah-jenkins",
             workflow=workflow,
             query=context_plan.query,
             project_id=context_plan.project_ids[0] if context_plan.project_ids else None,
@@ -473,6 +786,7 @@ class AgentOrchestrator:
         supporting: List[Evidence],
         conflicting: List[Evidence],
         superseded: List[Evidence],
+        user_id: Optional[str] = None,
     ) -> Generator[Dict[str, Any], None, None]:
         start_time = datetime.utcnow()
         trace_id = f"tr-{uuid.uuid4().hex[:8]}"
@@ -481,7 +795,7 @@ class AgentOrchestrator:
 
         # Check if the query is a Databricks query to fetch and inject live supporting evidence
         q_lower = context_plan.query.lower()
-        is_dbx_query = any(w in q_lower for w in ["databricks", "job", "cluster", "wbd", "churn", "poc", "workspace", "notebook", "directory", "folder", "files", "catalog", "unity", "volume", "schema"])
+        is_dbx_query = any(w in q_lower for w in ["databricks", "dbx", "job", "cluster", "wbd", "churn", "poc", "notebook", "catalog", "unity", "volume", "schema", "workspace list"])
         if is_dbx_query:
             from ...infrastructure.mcp.databricks_extractor import DatabricksDatasetExtractor
             from urllib.parse import quote
@@ -825,7 +1139,7 @@ class AgentOrchestrator:
             id=run_id,
             trace_id=trace_id,
             org_id="org-acme-fintech",
-            user_id="usr-sarah-jenkins",
+            user_id=user_id or "usr-sarah-jenkins",
             workflow=workflow,
             query=context_plan.query,
             project_id=context_plan.project_ids[0] if context_plan.project_ids else None,
@@ -839,10 +1153,10 @@ class AgentOrchestrator:
             superseded_evidence_ids=[e.id for e in superseded],
             proposed_actions=[proposed_action] if proposed_action else [],
             steps=steps,
-            total_tokens=1500, # Mock usage for now
-            prompt_tokens=1000,
-            completion_tokens=500,
-            cost_usd=0.003,
+            total_tokens=max(500, len(answer) // 3),
+            prompt_tokens=max(300, len(answer) // 5),
+            completion_tokens=max(200, len(answer) // 8),
+            cost_usd=round(max(0.001, len(answer) * 0.000003), 4),
             latency_ms=latency_ms,
         )
 
@@ -913,7 +1227,7 @@ class AgentOrchestrator:
         has_dbx_evidence = any("databricks" in str(getattr(e, 'source_type', '')).lower() or "databricks" in e.id.lower() or "databricks" in e.excerpt.lower() for e in all_retrieved)
         
         is_git_query = any(w in q_lower for w in ["repo", "repository", "git", "github"])
-        is_dbx_query = any(w in q_lower for w in ["databricks", "job", "cluster", "wbd", "churn", "poc", "workspace", "notebook", "directory", "folder", "files", "catalog", "unity", "volume", "schema"])
+        is_dbx_query = any(w in q_lower for w in ["databricks", "dbx", "job", "cluster", "wbd", "churn", "poc", "notebook", "catalog", "unity", "volume", "schema", "workspace list"])
 
         # If it's a Git query and does not explicitly mention Databricks, do not route to Databricks
         if is_git_query and not any(w in q_lower for w in ["databricks", "dbx", "notebook", "workspace", "unity", "catalog"]):

@@ -473,25 +473,22 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
               <div className="glass-card">
                 <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Claim Groundedness</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>{benchmarkResult ? `${benchmarkResult.metrics.groundedness_rate}%` : '98.0%'}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>{benchmarkResult ? `${benchmarkResult.metrics.groundedness_rate}%` : 'N/A'}</div>
               </div>
               <div className="glass-card">
                 <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Citation Accuracy</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-blue)' }}>{benchmarkResult ? `${benchmarkResult.metrics.citation_accuracy_rate}%` : '100.0%'}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-blue)' }}>{benchmarkResult ? `${benchmarkResult.metrics.citation_accuracy_rate}%` : 'N/A'}</div>
               </div>
               <div className="glass-card">
                 <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Conflict Detection</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-amber)' }}>{benchmarkResult ? `${benchmarkResult.metrics.conflict_detection_rate}%` : '100.0%'}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-amber)' }}>{benchmarkResult ? `${benchmarkResult.metrics.conflict_detection_rate}%` : 'N/A'}</div>
               </div>
             </div>
 
             {/* Benchmark results table */}
             <div className="glass-panel" style={{ padding: '1rem', maxHeight: '350px', overflowY: 'auto' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
-                {(benchmarkResult?.detailed_results || [
-                  { case_id: 'GOLD-01', question: 'Why is Project Aegis delayed?', status: 'PASSED', groundedness: 0.98, citations_count: 5 },
-                  { case_id: 'GOLD-02', question: 'Why was synchronous REST replaced with Kafka?', status: 'PASSED', groundedness: 0.98, citations_count: 4 }
-                ]).map((t) => (
+                {(benchmarkResult?.detailed_results || []).map((t) => (
                   <div key={t.case_id} style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'rgba(10,20,32,0.4)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div style={{ fontSize: 'var(--fs-sm)', color: '#ffffff' }}><strong>{t.case_id}</strong>: {t.question}</div>
                     <span style={{ fontSize: '0.65rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>{t.status}</span>

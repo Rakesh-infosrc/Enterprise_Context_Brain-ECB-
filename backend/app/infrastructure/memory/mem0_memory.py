@@ -44,6 +44,7 @@ class Mem0MemoryService:
         self._init_from_canonical()
 
     def _init_from_canonical(self):
+        self.memories = {}
         canonical_mems = self.store.get_memories()
         for m in canonical_mems:
             mem0_item = Mem0MemoryItem(
@@ -128,6 +129,7 @@ class Mem0MemoryService:
         limit: int = 5,
     ) -> List[Mem0MemoryItem]:
         """Searches long-term memory matching query terms and scope."""
+        self._init_from_canonical()
         if self.client:
             try:
                 res = self.client.search(
@@ -186,4 +188,5 @@ class Mem0MemoryService:
         return [m for _, m in scored[:limit]]
 
     def get_all(self) -> List[Mem0MemoryItem]:
+        self._init_from_canonical()
         return list(self.memories.values())

@@ -4,8 +4,8 @@
       "command": "python",
       "args": ["-m", "databricks_mcp"],
       "env": {
-        "DATABRICKS_HOST": "https://<workspace-id>.cloud.databricks.com",
-        "DATABRICKS_TOKEN": "dapi...",
+        "DATABRICKS_HOST": "https://dbc-3ae3d30d-6c76.cloud.databricks.com",
+        "DATABRICKS_TOKEN": "<SET_YOUR_DATABRICKS_TOKEN_HERE>",
         "DATABRICKS_ACCESS_MODE": "controlled-write"
       },
       "tools": [

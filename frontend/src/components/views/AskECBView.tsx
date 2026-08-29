@@ -200,7 +200,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
   onSelectView,
   onRefreshStats,
 }) => {
-  const [query, setQuery] = useState(initialQuestion || 'What are the critical risks and live Jira issues for clara-v3?');
+  const [query, setQuery] = useState(initialQuestion || `What are the critical risks and live Jira issues for ${projects[0]?.name || 'this project'}?`);
   const [timeRangeDays, setTimeRangeDays] = useState(30);
   const [selectedSources, setSelectedSources] = useState<SourceType[]>([
     'jira',
@@ -317,11 +317,14 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
     }
   };
 
+  const activeProject = projects.find(p => p.id === activeProjectId) || projects[0];
+  const projectName = activeProject?.name || 'this project';
+
   const starterChips = [
-    { label: 'clara-v3 Live Risks', query: 'What are the critical open risks and blockers for clara-v3?' },
-    { label: 'Jira KAN Board Summary', query: 'Summarize all 10 live Jira issues currently in progress for project KAN.' },
-    { label: 'Git Commit Evidence', query: 'What recent Git commits have been pushed for clara-v3 backend refactoring?' },
-    { label: 'ADR-002 Architecture Rationale', query: 'Why was synchronous REST replaced with Kafka event streams in ADR-002?' },
+    { label: `${activeProject?.code || 'Project'} Risks`, query: `What are the critical open risks and blockers for ${projectName}?` },
+    { label: 'Jira Board Summary', query: `Summarize all live Jira issues currently in progress for project ${activeProject?.code || 'KAN'}.` },
+    { label: 'Recent Commits', query: `What recent Git commits have been pushed for ${projectName}?` },
+    { label: 'Architecture Decisions', query: 'What architecture decisions have been recorded?' },
   ];
 
   return (

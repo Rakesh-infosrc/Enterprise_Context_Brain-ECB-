@@ -11,13 +11,13 @@ langgraph_engine = LangGraphOrchestrator()
 @router.post("/query", response_model=QueryResponse)
 def execute_query(req: QueryRequest, current_user = Depends(get_current_user)):
     """Executes stateful LangGraph agentic workflow with Llama Guard 3, Qdrant, A2A, CoVe, and Mem0."""
-    return langgraph_engine.execute_graph(req)
+    return langgraph_engine.execute_graph(req, user_id=current_user.id)
 
 @router.post("/query/stream")
 def execute_query_stream(req: QueryRequest, current_user = Depends(get_current_user)):
     """Streams stateful LangGraph execution and LLM synthesis using SSE."""
     def event_stream():
-        for chunk_json in langgraph_engine.execute_graph_stream(req):
+        for chunk_json in langgraph_engine.execute_graph_stream(req, user_id=current_user.id):
             yield f"data: {chunk_json}\n\n"
             
     return StreamingResponse(event_stream(), media_type="text/event-stream")

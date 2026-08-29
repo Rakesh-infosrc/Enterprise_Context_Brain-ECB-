@@ -325,8 +325,8 @@ class MCPGateway:
         trace_id = f"mcp-tr-{uuid.uuid4().hex[:8]}"
 
         if "jira_create_issue" in tool_name or "jira_update_issue" in tool_name:
-            issue_key = params.get("issue_key", params.get("parent_key", "KAN-6"))
-            target_date = params.get("updates", {}).get("target_completion_date", "2026-10-30")
+            issue_key = params.get("issue_key", params.get("parent_key", ""))
+            target_date = params.get("updates", {}).get("target_completion_date", "")
             
             # Real-time state synchronization with canonical store
             ev_id = f"evi-jira-{issue_key.lower().replace('-', '')}"

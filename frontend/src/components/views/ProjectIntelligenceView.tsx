@@ -73,38 +73,40 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
   const [selectedContradictionId, setSelectedContradictionId] = useState<string>('c-1');
   const [actionProposed, setActionProposed] = useState<boolean>(false);
 
-  const contradictions = [
-    {
-      id: 'c-1',
-      project_id: 'prj-aegis',
-      jiraKey: 'AEGIS-4',
-      title: 'Optimize PostgreSQL Connection Pool',
-      jiraTargetDate: '2026-09-15',
-      gitCommitHash: 'b4e19f2a',
-      gitTargetDate: '2026-10-30',
-      delayDays: 45,
-      rationale: 'Kafka partition lag and schema migration delay in backend/app/infrastructure/db',
-      jiraUrl: 'https://reenams.atlassian.net/browse/KAN-7',
-      gitUrl: 'https://github.com/testing842/clara-V2/commit/b4e19f2a',
-      severity: 'critical',
-    },
-    {
-      id: 'c-2',
-      project_id: 'prj-clara',
-      jiraKey: 'CLARA-9',
-      title: 'Add PCI-DSS Field-Level Encryption',
-      jiraTargetDate: '2026-08-30',
-      gitCommitHash: '7f9c2d1e',
-      gitTargetDate: '2026-09-20',
-      delayDays: 21,
-      rationale: 'Security audit review requirement for AES-256 GCM key rotation in auth module',
-      jiraUrl: 'https://reenams.atlassian.net/browse/KAN-9',
-      gitUrl: 'https://github.com/testing842/clara-V2/commit/7f9c2d1e',
-      severity: 'high',
-    },
-  ];
+  const contradictions = evidenceList
+    .filter((e) => e.is_conflicting && e.project_id === project.id)
+    .map((e, idx) => {
+      const summary = e.conflict_summary || e.excerpt || '';
+      const jiraDateMatch = summary.match(/target date\s*\(([^)]+)\)/i) || summary.match(/duedate[:\s]+(\d{4}-\d{2}-\d{2})/i);
+      const gitDateMatch = summary.match(/Target:\s*(\d{4}-\d{2}-\d{2})/i) || summary.match(/commit.*?\(([^)]+)\)/i);
+      const commitMatch = summary.match(/commit\s+([a-f0-9]{7,})/i);
+      const jiraDate = jiraDateMatch?.[1] || '';
+      const gitDate = gitDateMatch?.[1] || '';
+      let delayDays = 0;
+      if (jiraDate && gitDate) {
+        try {
+          delayDays = Math.round((new Date(gitDate).getTime() - new Date(jiraDate).getTime()) / 86400000);
+        } catch { /* ignore */ }
+      }
+      return {
+        id: e.id,
+        project_id: e.project_id,
+        jiraKey: e.external_id || '',
+        title: e.source_title.replace(/^Jira\s+\S+:\s*/, ''),
+        jiraTargetDate: jiraDate,
+        gitCommitHash: commitMatch?.[1] || '',
+        gitTargetDate: gitDate,
+        delayDays,
+        rationale: summary,
+        jiraUrl: e.url || '',
+        gitUrl: '',
+        severity: delayDays >= 30 ? 'critical' : delayDays >= 7 ? 'high' : 'medium',
+      };
+    })
+    .filter((c) => c.jiraTargetDate || c.gitTargetDate)
+    .sort((a, b) => b.delayDays - a.delayDays);
 
-  const projectContradictions = contradictions.filter(c => c.project_id === project.id || project.id === 'prj-aegis'); // Fallback map
+  const projectContradictions = contradictions.filter(c => c.project_id === project.id);
   const selectedContradiction = projectContradictions.find(c => c.id === selectedContradictionId) || projectContradictions[0];
 
   // --- Risk helper parameters & methods ---
@@ -358,7 +360,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                           </span>
                         </div>
                         <div style={{ fontSize: '0.725rem', color: 'var(--text-muted)' }}>
-                          Target Date: <strong style={{ color: 'var(--text-primary)' }}>{m.target_date}</strong>
+                          Target Date: <strong style={{ color: 'var(--text-primary)' }}>{m.target_date ? new Date(m.target_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not set'}</strong>
                           {m.owner && ` • Owner: ${m.owner}`}
                         </div>
                       </div>

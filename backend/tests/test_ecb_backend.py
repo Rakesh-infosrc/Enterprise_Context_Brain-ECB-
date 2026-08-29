@@ -23,6 +23,54 @@ def client():
     return TestClient(app)
 
 
+@pytest.fixture
+def ingested_git(client):
+    import hmac
+    import hashlib
+    import json
+    
+    secret = "local-dev-secret-key-12345"
+    commits = [
+        {
+            "repository": {"full_name": "acmefin/payments-core"},
+            "head_commit": {
+                "id": "commit-88f21e",
+                "author": {"name": "Alex Mercer"},
+                "message": "refactor: replace synchronous REST payment calls with Kafka event stream per ADR-002"
+            }
+        },
+        {
+            "repository": {"full_name": "acmefin/payments-core"},
+            "head_commit": {
+                "id": "commit-92c4a1",
+                "author": {"name": "David Kumar"},
+                "message": "fix(kafka): configure static consumer group membership (KIP-345) to minimize rebalance duration"
+            }
+        },
+        {
+            "repository": {"full_name": "acmefin/payments-core"},
+            "head_commit": {
+                "id": "commit-b4e19f",
+                "author": {"name": "Alex Mercer"},
+                "message": "docs(roadmap): update target release completion to October 30, 2026"
+            }
+        }
+    ]
+    for c in commits:
+        body_bytes = json.dumps(c).encode("utf-8")
+        sig = "sha256=" + hmac.new(secret.encode(), body_bytes, hashlib.sha256).hexdigest()
+        client.post(
+            "/api/v1/webhooks/github",
+            content=body_bytes,
+            headers={
+                "X-GitHub-Event": "push",
+                "X-Hub-Signature-256": sig,
+                "Content-Type": "application/json"
+            }
+        )
+    return
+
+
 def test_health_check(client):
     response = client.get("/api/v1/health")
     assert response.status_code == 200
@@ -54,7 +102,7 @@ def test_context_plan_endpoint(client):
     assert plan["context_budget_tokens"] > 0
 
 
-def test_query_delay_analysis_with_conflict_and_citations(client):
+def test_query_delay_analysis_with_conflict_and_citations(client, ingested_git):
     response = client.post(
         "/api/v1/query",
         json={"query": "Why is Project Aegis delayed?", "project_id": "prj-aegis"},
@@ -72,7 +120,7 @@ def test_query_delay_analysis_with_conflict_and_citations(client):
     assert data["recommendation"]["requires_approval"] is True
 
 
-def test_decision_intelligence_query(client):
+def test_decision_intelligence_query(client, ingested_git):
     response = client.post(
         "/api/v1/query",
         json={"query": "Why was synchronous REST replaced with Kafka in ADR-002?"},
@@ -125,3 +173,35 @@ def test_eval_benchmark_suite(client):
     assert eval_data["metrics"]["groundedness_rate"] >= 95.0
     assert eval_data["metrics"]["citation_accuracy_rate"] >= 95.0
     assert eval_data["metrics"]["tool_safety_violations"] == 0
+
+
+def test_delete_project_endpoint(client):
+    store = CanonicalStore.get_instance()
+    from app.domain.schemas import Project, ProjectStatus
+    from datetime import datetime
+    proj_id = "prj-test-deletion-target"
+    proj = Project(
+        id=proj_id,
+        org_id="org-acme-fintech",
+        name="Test Deletion Target",
+        code="TDTST",
+        description="A project created specifically to test cascade deletion.",
+        status=ProjectStatus.ON_TRACK,
+        health_score=100,
+        owner_id="usr-sarah-jenkins",
+        owner_name="Sarah Jenkins",
+        target_completion_date=datetime.utcnow(),
+        created_at=datetime.utcnow(),
+        updated_at=datetime.utcnow(),
+        milestones=[]
+    )
+    store.add_project(proj)
+    
+    assert store.get_project(proj_id) is not None
+    
+    response = client.delete(f"/api/v1/projects/{proj_id}")
+    assert response.status_code == 200
+    res_data = response.json()
+    assert res_data["status"] == "SUCCESS"
+    
+    assert store.get_project(proj_id) is None

@@ -5,7 +5,7 @@ import urllib.error
 import base64
 import subprocess
 from datetime import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 
 from ...domain.schemas import (
     Project, ProjectStatus, Evidence, SourceType, AuthorityLevel, Risk, Decision,
@@ -16,15 +16,39 @@ from ..db.store import CanonicalStore
 class LiveDataIntegrationService:
     def __init__(self):
         self.store = CanonicalStore.get_instance()
-        self.github_token = os.getenv("GITHUB_TOKEN")
-        self.jira_url = os.getenv("JIRA_BASE_URL", "https://reenams.atlassian.net")
-        self.jira_user = os.getenv("JIRA_USER_EMAIL", "reenams2002@gmail.com")
-        self.jira_token = os.getenv("JIRA_API_TOKEN", "")
+
+    @property
+    def github_token(self) -> Optional[str]:
+        return os.getenv("GITHUB_TOKEN")
+
+    @property
+    def jira_url(self) -> str:
+        return os.getenv("JIRA_BASE_URL", "https://reenams.atlassian.net")
+
+    @property
+    def jira_user(self) -> str:
+        return os.getenv("JIRA_USER_EMAIL", "reenams2002@gmail.com")
+
+    @property
+    def github_token(self) -> Optional[str]:
+        return os.getenv("GITHUB_TOKEN")
+
+    @property
+    def github_host(self) -> str:
+        return os.getenv("GITHUB_HOST", "https://github.com").rstrip("/")
+
+    @property
+    def github_repos(self) -> List[str]:
+        """Returns list of 'owner/repo' strings to sync. Empty = sync all."""
+        raw = os.getenv("GITHUB_REPOS", "").strip()
+        if not raw:
+            return []
+        return [r.strip() for r in raw.split(",") if r.strip()]
 
     def _github_request(self, endpoint: str) -> List[Dict[str, Any]]:
         if not self.github_token:
             return []
-        url = f"https://api.github.com{endpoint}"
+        url = f"{self.github_host}/api/v3{endpoint}" if "github.com" not in self.github_host else f"https://api.github.com{endpoint}"
         req = urllib.request.Request(url)
         req.add_header("Authorization", f"Bearer {self.github_token}")
         req.add_header("Accept", "application/vnd.github.v3+json")
@@ -38,18 +62,28 @@ class LiveDataIntegrationService:
     def sync_github(self) -> Dict[str, Any]:
         results = {"projects_created": 0, "commits_ingested": 0, "status": "success"}
 
-        # Attempt GitHub REST API sync if token is available
-        repos = self._github_request("/user/repos?sort=updated&per_page=20")
+        # Fetch repos: specific repos if configured, else all user repos
+        configured_repos = self.github_repos
+        if configured_repos:
+            repos = []
+            for repo_name in configured_repos:
+                repo_data = self._github_request(f"/repos/{repo_name}")
+                if isinstance(repo_data, dict) and repo_data.get("full_name"):
+                    repos.append(repo_data)
+        else:
+            repos = self._github_request("/user/repos?sort=updated&per_page=20")
+
         for repo in repos:
             repo_name = repo.get("name")
+            full_name = repo.get("full_name", repo_name)
             p_id = f"prj-{repo_name.lower()}"
-            
+
             existing = self.store.get_project(p_id)
             if not existing:
                 proj = Project(
                     id=p_id,
                     org_id="org-acme-fintech",
-                    name=repo_name,
+                    name=full_name,
                     code=repo_name[:5].upper(),
                     description=repo.get("description") or "Live connected GitHub repository",
                     status=ProjectStatus.ON_TRACK,
@@ -60,8 +94,12 @@ class LiveDataIntegrationService:
                     created_at=datetime.utcnow(),
                     updated_at=datetime.utcnow(),
                 )
+                proj.source_type = "github"
                 self.store.add_project(proj)
                 results["projects_created"] += 1
+
+            # Webhook status is set only when real events arrive (github_webhook.py)
+            # Do NOT guess from API — token may lack admin:repo_hook scope
 
             full_name = repo.get("full_name")
             commits = self._github_request(f"/repos/{full_name}/commits?per_page=15")
@@ -86,54 +124,6 @@ class LiveDataIntegrationService:
                     )
                     self.store.add_evidence(evidence)
                     results["commits_ingested"] += 1
-
-        # Local Git Repository Fallback
-        try:
-            cmd = ["git", "log", "-n", "10", "--pretty=format:%h|%an|%s|%aI"]
-            output = subprocess.check_output(cmd, cwd="d:/InfoServices/ECB").decode("utf-8")
-            local_pid = "prj-ecb"
-            if not self.store.get_project(local_pid):
-                self.store.add_project(Project(
-                    id=local_pid,
-                    org_id="org-acme-fintech",
-                    name="ECB Core Engine (Git)",
-                    code="ECB",
-                    description="Enterprise Context Brain Repository",
-                    status=ProjectStatus.ON_TRACK,
-                    health_score=98,
-                    owner_id="usr-system",
-                    owner_name="Rakesh Reddy",
-                    target_completion_date=datetime.utcnow(),
-                    created_at=datetime.utcnow(),
-                    updated_at=datetime.utcnow(),
-                ))
-
-            for line in output.strip().split("\n"):
-                if not line or "|" not in line:
-                    continue
-                parts = line.split("|")
-                sha = parts[0]
-                author = parts[1]
-                msg = parts[2]
-                evidence_id = f"evi-git-local-{sha}"
-                if not self.store.get_evidence(evidence_id):
-                    evidence = Evidence(
-                        id=evidence_id,
-                        source_record_id=f"rec-git-{sha}",
-                        source_type=SourceType.GIT,
-                        source_title=f"Git Commit {sha}: {msg[:40]}",
-                        external_id=sha,
-                        project_id=local_pid,
-                        excerpt=f"Commit {sha}: {msg}",
-                        authority=AuthorityLevel.HIGH,
-                        observed_at=datetime.utcnow(),
-                        url=f"https://github.com/user/ecb/commit/{sha}",
-                        author=author,
-                    )
-                    self.store.add_evidence(evidence)
-                    results["commits_ingested"] += 1
-        except Exception as e:
-            print(f"Local Git Log Sync Warning: {e}")
 
         return results
 
@@ -171,6 +161,7 @@ class LiveDataIntegrationService:
                             created_at=datetime.utcnow(),
                             updated_at=datetime.utcnow(),
                         )
+                        proj.source_type = "jira"
                         self.store.add_project(proj)
                         results["projects_created"] += 1
 
@@ -262,9 +253,70 @@ class LiveDataIntegrationService:
 
         return results
 
+    def sync_databricks(self) -> Dict[str, Any]:
+        results = {"projects_created": 0, "catalogs_ingested": 0, "status": "success"}
+
+        databricks_host = os.getenv("DATABRICKS_HOST", "").rstrip("/")
+        databricks_token = os.getenv("DATABRICKS_TOKEN", "")
+
+        if not (databricks_host and databricks_token):
+            return results
+
+        p_id = "prj-databricks"
+        existing = self.store.get_project(p_id)
+        if not existing:
+            proj = Project(
+                id=p_id,
+                org_id="org-acme-fintech",
+                name="Databricks Data Lake",
+                code="DBX",
+                description="Live Databricks workspace data pipelines",
+                status=ProjectStatus.ON_TRACK,
+                health_score=95,
+                owner_id="usr-system",
+                owner_name="System",
+                target_completion_date=datetime.utcnow(),
+                created_at=datetime.utcnow(),
+                updated_at=datetime.utcnow(),
+            )
+            proj.source_type = "databricks"
+            self.store.add_project(proj)
+            results["projects_created"] += 1
+
+        try:
+            req = urllib.request.Request(f"{databricks_host}/api/2.1/unity-catalog/catalogs")
+            req.add_header("Authorization", f"Bearer {databricks_token}")
+            req.add_header("Accept", "application/json")
+            with urllib.request.urlopen(req) as resp:
+                data = json.loads(resp.read().decode())
+                for cat in data.get("catalogs", []):
+                    cat_name = cat.get("name", "")
+                    evidence_id = f"evi-dbx-catalog-{cat_name.lower()}"
+                    if not self.store.get_evidence(evidence_id):
+                        evidence = Evidence(
+                            id=evidence_id,
+                            source_record_id=f"rec-dbx-catalog-{cat_name.lower()}",
+                            source_type=SourceType.DOCUMENT,
+                            source_title=f"Databricks Catalog: {cat_name}",
+                            external_id=cat_name,
+                            project_id=p_id,
+                            excerpt=cat.get("comment") or f"Unity Catalog: {cat_name}",
+                            authority=AuthorityLevel.HIGH,
+                            observed_at=datetime.utcnow(),
+                            url=f"{databricks_host}/explore/data/catalog/{cat_name}",
+                            author="System",
+                        )
+                        self.store.add_evidence(evidence)
+                        results["catalogs_ingested"] += 1
+        except Exception as e:
+            print(f"Databricks Catalog Sync Error: {e}")
+
+        return results
+
     def sync_all_sources(self) -> Dict[str, Any]:
         sync_results = {}
         sync_results["jira"] = self.sync_jira()
         sync_results["github"] = self.sync_github()
         sync_results["adrs"] = self.sync_adrs()
+        sync_results["databricks"] = self.sync_databricks()
         return sync_results

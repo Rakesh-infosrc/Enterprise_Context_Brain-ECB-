@@ -1,6 +1,6 @@
 // frontend/src/components/WelcomeBanner.tsx
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Sparkles,
   HelpCircle,
@@ -16,34 +16,39 @@ interface WelcomeBannerProps {
   onStartTour: () => void;
   onAskQuestion: (query: string) => void;
   onDismiss: () => void;
+  projects?: Array<{ id: string; name: string; status: string; health_score: number }>;
 }
 
 export const WelcomeBanner: React.FC<WelcomeBannerProps> = ({
   onStartTour,
   onAskQuestion,
   onDismiss,
+  projects = [],
 }) => {
+  const firstProject = projects[0];
+  const projectName = firstProject?.name || 'your project';
+
   const personas = [
     {
       role: 'Project Manager',
       icon: TrendingUp,
       color: 'var(--accent-blue)',
-      query: 'Why is Project Aegis delayed and what is the root cause?',
-      label: 'Inspect Project Aegis Blocker & Roadmap Delay',
+      query: `What is the health status of ${projectName}?`,
+      label: `Inspect ${projectName} Status & Milestones`,
     },
     {
       role: 'Lead Architect',
       icon: GitPullRequest,
       color: 'var(--accent-violet)',
-      query: 'Why was synchronous REST replaced with Kafka in ADR-002?',
-      label: 'Trace ADR-001 vs ADR-002 Kafka Supersession',
+      query: 'What architecture decisions have been recorded?',
+      label: 'Review Architecture Decision Records',
     },
     {
       role: 'Risk Officer',
       icon: ShieldAlert,
       color: 'var(--accent-amber)',
-      query: 'What are the critical open risks for Project Aegis and PCI-DSS 4.0?',
-      label: 'Review Critical 5x5 Risk Heatmap & Audit Gaps',
+      query: 'What are the critical open risks across all projects?',
+      label: 'Review Critical Risk Heatmap & Gaps',
     },
   ];
 

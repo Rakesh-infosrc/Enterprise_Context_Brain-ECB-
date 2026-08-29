@@ -21,7 +21,11 @@ class JiraDatasetExtractor:
         if self.jira_url and self.jira_user and self.jira_token:
             auth = base64.b64encode(f"{self.jira_user}:{self.jira_token}".encode()).decode()
             search_url = f"{self.jira_url.rstrip('/')}/rest/api/3/search/jql"
-            payload = json.dumps({"jql": f"project={project_key}", "maxResults": 50}).encode('utf-8')
+            payload = json.dumps({
+                "jql": f"project={project_key}",
+                "maxResults": 50,
+                "fields": ["summary", "status", "priority", "assignee", "duedate"]
+            }).encode('utf-8')
             req = urllib.request.Request(search_url, data=payload, headers={
                 "Authorization": f"Basic {auth}",
                 "Content-Type": "application/json",
@@ -31,20 +35,45 @@ class JiraDatasetExtractor:
                 with urllib.request.urlopen(req) as resp:
                     data = json.loads(resp.read().decode())
                     for item in data.get("issues", []):
+                        # /search/jql returns {id, key, fields} or just {id}
+                        # Try to get key from item or fetch via ID
                         key = item.get("key")
+                        item_id = item.get("id")
                         fields = item.get("fields", {})
-                        summary = str(fields.get("summary", ""))
-                        status = fields.get("status", {}).get("name", "In Progress")
-                        priority = fields.get("priority", {}).get("name", "Medium")
-                        assignee = fields.get("assignee", {}).get("displayName", "Unassigned") if fields.get("assignee") else "Unassigned"
-                        duedate = fields.get("duedate", "2026-09-15")
+                        
+                        # If key is missing, fetch the issue directly
+                        if not key and item_id:
+                            try:
+                                issue_url = f"{self.jira_url.rstrip('/')}/rest/api/3/issue/{item_id}"
+                                issue_req = urllib.request.Request(issue_url, headers={
+                                    "Authorization": f"Basic {auth}",
+                                    "Accept": "application/json"
+                                })
+                                with urllib.request.urlopen(issue_req) as ir:
+                                    full_issue = json.loads(ir.read().decode())
+                                    key = full_issue.get("key")
+                                    fields = full_issue.get("fields", {})
+                            except Exception:
+                                pass
+                        
+                        if not key:
+                            continue
+                            
+                        summary = str(fields.get("summary", "") or "")
+                        status = fields.get("status", {})
+                        status_name = status.get("name", "In Progress") if isinstance(status, dict) else str(status or "In Progress")
+                        priority = fields.get("priority", {})
+                        priority_name = priority.get("name", "Medium") if isinstance(priority, dict) else str(priority or "Medium")
+                        assignee = fields.get("assignee")
+                        assignee_name = assignee.get("displayName", "Unassigned") if isinstance(assignee, dict) and assignee else "Unassigned"
+                        duedate = fields.get("duedate")
 
                         issues.append({
                             "key": key,
                             "summary": summary,
-                            "status": status,
-                            "priority": priority,
-                            "assignee": assignee,
+                            "status": status_name,
+                            "priority": priority_name,
+                            "assignee": assignee_name,
                             "due_date": duedate,
                             "url": f"{self.jira_url}/browse/{key}",
                         })
@@ -62,7 +91,7 @@ class JiraDatasetExtractor:
                         "status": "Done" if "done" in ev.excerpt.lower() else "In Progress",
                         "priority": "High",
                         "assignee": getattr(ev, 'author', 'Reena MS') or "Reena MS",
-                        "due_date": "2026-09-15",
+                        "due_date": getattr(ev, 'observed_at', None).isoformat() if getattr(ev, 'observed_at', None) else "",
                         "url": ev.url,
                     })
 

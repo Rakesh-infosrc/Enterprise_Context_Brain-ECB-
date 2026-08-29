@@ -241,7 +241,7 @@ class Milestone(BaseModel):
     id: str
     project_id: str
     name: str
-    target_date: datetime
+    target_date: Optional[datetime] = None
     status: str # "completed", "in_progress", "at_risk", "delayed"
     progress_percentage: int = 0
     blocker_description: Optional[str] = None

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, DateTime, Boolean, ForeignKey, Integer, JSON
+from sqlalchemy import Column, String, Float, DateTime, Boolean, ForeignKey, Integer, JSON, Text
 from sqlalchemy.orm import declarative_base, relationship
 from datetime import datetime
 
@@ -19,6 +19,9 @@ class DBUser(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(String, nullable=False)
     org_id = Column(String, ForeignKey("organizations.id"))
+    team = Column(String, nullable=True)
+    api_key = Column(String, nullable=True, unique=True)
+    is_manager = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class DBSource(Base):
@@ -35,6 +38,9 @@ class DBProject(Base):
     name = Column(String, nullable=False)
     status = Column(String, nullable=False)
     owner_id = Column(String, nullable=False)
+    team = Column(String, nullable=True)
+    webhook_status = Column(String, nullable=True, default="unknown")
+    source_type = Column(String, nullable=True, default="unknown")
 
 class DBRisk(Base):
     __tablename__ = "risks"
@@ -47,6 +53,8 @@ class DBRisk(Base):
     description = Column(String, nullable=True)
     mitigation = Column(String, nullable=True)
     status = Column(String, nullable=False, default="identified")
+    probability = Column(Integer, nullable=True, default=3)
+    impact = Column(Integer, nullable=True, default=3)
 
 class DBDecision(Base):
     __tablename__ = "decisions"
@@ -55,6 +63,8 @@ class DBDecision(Base):
     status = Column(String, nullable=False)
     project_id = Column(String, nullable=True)
     rationale = Column(String, nullable=True)
+    adr_number = Column(String, nullable=True)
+    decided_by = Column(String, nullable=True, default="System")
 
 class DBSourceRecord(Base):
     __tablename__ = "source_records"
@@ -80,6 +90,7 @@ class DBEvidence(Base):
     authority = Column(String, nullable=True)
     url = Column(String, nullable=True)
     author = Column(String, nullable=True)
+    conflict_summary = Column(String, nullable=True)
 
 class DBMemoryItem(Base):
     __tablename__ = "memory_items"
@@ -112,4 +123,8 @@ class DBAgentRun(Base):
     query = Column(String, nullable=False)
     status = Column(String, nullable=False)
     answer = Column(String, nullable=True)
+    confidence = Column(Float, default=0.95)
+    latency_ms = Column(Integer, default=0)
+    steps_json = Column(Text, nullable=True)
+    token_usage_json = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

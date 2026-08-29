@@ -5,23 +5,69 @@ updates the canonical store evidence, and logs audit events.
 """
 
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import uuid
 from ....domain.schemas import SourceType, AuthorityLevel, Evidence, AuditEvent
 from ....infrastructure.db.store import CanonicalStore
+from ....infrastructure.mcp.databricks_mcp import DatabricksMCP
 
 
 class DatabricksWebhookHandler:
     def __init__(self, store: Optional[CanonicalStore] = None):
         self.store = store or CanonicalStore.get_instance()
+        self.databricks_mcp = DatabricksMCP()
+
+    def list_mcp_tools(self) -> List[Dict[str, Any]]:
+        """Returns the Databricks MCP Server (REST-API-backed) tool catalog."""
+        return self.databricks_mcp.list_tools()
+
+    def call_mcp_tool(self, tool_name: str, arguments: Dict[str, Any]) -> Dict[str, Any]:
+        """Executes an approved Databricks MCP tool against the REST API and logs an audit trail."""
+        try:
+            result = self.databricks_mcp.call_tool(tool_name, arguments)
+        except Exception as e:
+            import logging
+            logging.getLogger("ecb.webhook").warning(f"Databricks MCP tool '{tool_name}' error: {e}")
+            result = {"status": "ERROR", "error": str(e)}
+
+        # Register immutable audit event for the MCP invocation
+        audit = AuditEvent(
+            id=f"aud-dbx-mcp-{uuid.uuid4().hex[:8]}",
+            org_id="org-acme-fintech",
+            actor_id="sys-databricks-webhook",
+            actor_name="Databricks MCP Server (REST API)",
+            action_type=f"DATABRICKS_MCP_{tool_name.upper()}",
+            entity_type="databricks_tool",
+            entity_id=tool_name,
+            policy_result="EXECUTED_AND_INDEXED",
+            trace_id=f"tr-dbx-mcp-{uuid.uuid4().hex[:6]}",
+            details={
+                "tool_name": tool_name,
+                "arguments": arguments,
+                "result": result,
+            },
+        )
+        self.store.add_audit_event(audit)
+        return result
 
     def process_webhook(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Processes inbound Databricks webhook payload:
-        1. Extracts workspace details, job run ID, status/event type, and run URL.
-        2. Logs the job status change as canonical evidence in ECB.
-        3. Registers an immutable audit log for security compliance.
+        Processes inbound Databricks webhook payload.
+
+        Two modes:
+          A. Inbound event ingestion (job status / SQL alert) — the existing
+             behavior: extract run details, update canonical evidence, audit.
+          B. Databricks MCP tool invocation — the payload may carry a `tool` and
+             `arguments` field which is executed against the Databricks REST API
+             via DatabricksMCP. This maps the "Databricks MCP Server" toolsets
+             (Unity Catalog, SQL, Compute, Jobs, Workspace, Volumes) onto the
+             webhook receiver.
         """
+        # ---- Mode B: MCP tool call routing ----
+        tool_name = payload.get("tool") or payload.get("tool_name")
+        if tool_name:
+            return self.call_mcp_tool(tool_name, payload.get("arguments", {}))
+
         event_type = str(payload.get("event_type", payload.get("event", "job.run.succeeded"))).lower()
         workspace_id = str(payload.get("workspace_id", "adb-123456789"))
         run_id = str(payload.get("run_id", "9876543"))
