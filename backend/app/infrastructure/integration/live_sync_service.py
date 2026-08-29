@@ -30,8 +30,8 @@ class LiveDataIntegrationService:
         return os.getenv("JIRA_USER_EMAIL", "reenams2002@gmail.com")
 
     @property
-    def github_token(self) -> Optional[str]:
-        return os.getenv("GITHUB_TOKEN")
+    def jira_token(self) -> Optional[str]:
+        return os.getenv("JIRA_API_TOKEN")
 
     @property
     def github_host(self) -> str:
@@ -165,11 +165,17 @@ class LiveDataIntegrationService:
                         self.store.add_project(proj)
                         results["projects_created"] += 1
 
-                    # Query live issues for this project key
-                    search_url = f"{self.jira_url.rstrip('/')}/rest/api/3/search?jql=project={pkey}&maxResults=50"
-                    s_req = urllib.request.Request(search_url)
+                    # Query live issues for this project key via JQL POST
+                    search_url = f"{self.jira_url.rstrip('/')}/rest/api/3/search/jql"
+                    s_payload = json.dumps({
+                        "jql": f"project={pkey} ORDER BY updated DESC",
+                        "maxResults": 50,
+                        "fields": ["summary", "status", "priority", "assignee", "duedate"],
+                    }).encode("utf-8")
+                    s_req = urllib.request.Request(search_url, data=s_payload, method="POST")
                     s_req.add_header("Authorization", f"Basic {auth}")
                     s_req.add_header("Accept", "application/json")
+                    s_req.add_header("Content-Type", "application/json")
                     try:
                         with urllib.request.urlopen(s_req) as s_resp:
                             issue_data = json.loads(s_resp.read().decode())

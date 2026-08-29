@@ -265,6 +265,7 @@ class Project(BaseModel):
     active_risks_count: int = 0
     open_tickets_count: int = 0
     recent_decisions_count: int = 0
+    source_type: str = "unknown"
 
 
 # --- Governance, Policy, Actions & Approvals ---
