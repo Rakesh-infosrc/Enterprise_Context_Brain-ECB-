@@ -131,4 +131,5 @@ class DBAgentRun(Base):
     latency_ms = Column(Integer, default=0)
     steps_json = Column(Text, nullable=True)
     token_usage_json = Column(Text, nullable=True)
+    project_id = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

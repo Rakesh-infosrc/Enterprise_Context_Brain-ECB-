@@ -30,13 +30,16 @@ class GitDatasetExtractor:
                 if prefix and msg.startswith(prefix):
                     msg = msg[len(prefix):]
                     
+                obs_time = getattr(e, 'observed_at', None) or getattr(e, 'created_at', None)
+                ts_str = obs_time.isoformat() if hasattr(obs_time, 'isoformat') else str(obs_time) if obs_time else ""
+
                 commits_data.append({
                     "sha": e.external_id or e.id[-8:],
-                    "author": e.author or "Developer",
-                    "timestamp": e.observed_at.isoformat() if hasattr(e.observed_at, 'isoformat') else str(e.observed_at),
+                    "author": getattr(e, 'author', None) or "Developer",
+                    "timestamp": ts_str,
                     "message": msg,
                     "repo": repo,
-                    "url": e.url or f"https://github.com/{repo}/commit/{e.external_id}",
+                    "url": getattr(e, 'url', None) or f"https://github.com/{repo}/commit/{e.external_id}",
                 })
         
         commits_data.sort(key=lambda x: x["timestamp"], reverse=True)

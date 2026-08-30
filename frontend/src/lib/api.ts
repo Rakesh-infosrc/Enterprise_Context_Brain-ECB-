@@ -17,8 +17,9 @@ import {
   DashboardStats,
 } from '../types';
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8001/api/v1';
+// Email persists across sessions; API key is session-only (cleared on tab close) to reduce persistence risk
 let activeUserEmail = localStorage.getItem('ecb_active_user_email') || 'sarah.jenkins@acmefin.com';
-let activeApiKey = localStorage.getItem('ecb_active_api_key') || '';
+let activeApiKey = sessionStorage.getItem('ecb_active_api_key') || localStorage.getItem('ecb_active_api_key') || '';
 let authToken = '';
 
 export const getActiveUserEmail = () => activeUserEmail;
@@ -29,7 +30,15 @@ export const setPersona = (email: string, apiKey: string) => {
   activeApiKey = apiKey;
   authToken = '';
   localStorage.setItem('ecb_active_user_email', email);
-  localStorage.setItem('ecb_active_api_key', apiKey);
+  // Migrate old localStorage key to sessionStorage
+  try {
+    localStorage.removeItem('ecb_active_api_key');
+  } catch {}
+  if (apiKey) {
+    sessionStorage.setItem('ecb_active_api_key', apiKey);
+  } else {
+    sessionStorage.removeItem('ecb_active_api_key');
+  }
 };
 
 async function ensureAuthenticated(signal?: AbortSignal) {
@@ -147,6 +156,40 @@ export const api = {
   // Advanced GenAI Stack: Skills, Mem0, Qdrant & Llama Guard
   getSkills: (): Promise<SkillMetadata[]> =>
     fetchJson<SkillMetadata[]>('/skills'),
+
+  createSkill: (skill: { name: string; description: string; version: string; author: string; instructions: string }): Promise<SkillMetadata> =>
+    fetchJson<SkillMetadata>('/skills', {
+      method: 'POST',
+      body: JSON.stringify(skill),
+    }),
+
+  updateSkill: (name: string, skill: { name: string; description: string; version: string; author: string; instructions: string }): Promise<SkillMetadata> =>
+    fetchJson<SkillMetadata>(`/skills/${name}`, {
+      method: 'PUT',
+      body: JSON.stringify(skill),
+    }),
+
+  deleteSkill: (name: string): Promise<any> =>
+    fetchJson(`/skills/${name}`, { method: 'DELETE' }),
+
+  uploadSkill: async (file: File): Promise<SkillMetadata> => {
+    await ensureAuthenticated();
+    const formData = new FormData();
+    formData.append('file', file);
+    const headers: Record<string, string> = {};
+    if (activeApiKey) headers['X-API-Key'] = activeApiKey;
+    else if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    const res = await fetch(`${API_BASE}/skills/upload`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`API error ${res.status}: ${errText || res.statusText}`);
+    }
+    return await res.json();
+  },
 
   getMem0Memories: (userId?: string, projectId?: string): Promise<Mem0MemoryItem[]> => {
     const params = new URLSearchParams();
@@ -267,6 +310,13 @@ export const api = {
     fetchJson<any>(`/settings/connections/sync/${connector}`, {
       method: 'POST',
     }),
+
+  // Mem0 history — persisted search history
+  deleteMem0Memory: (memoryId: string): Promise<any> =>
+    fetchJson(`/mem0/memories/${memoryId}`, { method: 'DELETE' }),
+
+  deleteAgentRun: (runId: string): Promise<any> =>
+    fetchJson(`/agent-runs/${runId}`, { method: 'DELETE' }),
 
   // Stats & Health
   getStats: (): Promise<DashboardStats> =>

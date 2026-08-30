@@ -66,3 +66,18 @@ def list_mem0_memories(user_id: Optional[str] = Query(None), project_id: Optiona
     if target_user_id or project_id:
         return mem0_service.search_memories(query="", user_id=target_user_id, project_id=project_id, limit=20)
     return mem0_service.get_all()
+
+@router.delete("/mem0/memories/{memory_id}")
+def delete_mem0_memory(memory_id: str, current_user = Depends(get_current_user)):
+    """User-removable history — deletes from both cloud and project DB; log deletion is blocked until this succeeds."""
+    # Check existence (any project) — allow user to delete their own, admin any
+    all_mems = mem0_service.get_all()
+    target = next((m for m in all_mems if m.id == memory_id), None)
+    if not target:
+        raise HTTPException(status_code=404, detail="Memory not found")
+    if current_user.role != "master_authority" and target.user_id != current_user.id and current_user.role != "manager":
+        raise HTTPException(status_code=403, detail="Not allowed to delete this memory")
+    ok = mem0_service.delete_memory(memory_id)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Delete failed")
+    return {"status": "deleted", "id": memory_id}

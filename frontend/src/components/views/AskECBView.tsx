@@ -24,6 +24,8 @@ import {
   Zap,
   ShieldCheck,
   HelpCircle,
+  Trash2,
+  History,
 } from 'lucide-react';
 import {
   Project,
@@ -123,7 +125,7 @@ const FormattedMarkdown: React.FC<{ text: string }> = ({ text }) => {
                 fontSize: '1.08rem',
                 fontWeight: 800,
                 color: 'var(--text-primary)',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                borderBottom: '1px solid var(--border-subtle)',
                 paddingBottom: '0.35rem',
                 marginTop: idx === 0 ? 0 : '0.9rem',
                 marginBottom: '0.35rem',
@@ -217,6 +219,33 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
   const [isApproving, setIsApproving] = useState(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
 
+  // Temporary local search history — one row per search, click to view AI response. Deleting here does NOT affect Mem0 project DB.
+  type LocalHist = { id: string; query: string; answeredAt: string; projectId: string; response: QueryResponse };
+  const histKey = `ecb_ask_history_${activeProjectId || 'all'}`;
+  const [searchHistory, setSearchHistory] = useState<LocalHist[]>(() => {
+    try { const raw = localStorage.getItem(histKey); return raw ? JSON.parse(raw) : []; } catch { return []; }
+  });
+  const persistHist = (next: LocalHist[]) => {
+    setSearchHistory(next);
+    try { localStorage.setItem(histKey, JSON.stringify(next.slice(0, 20))); } catch {}
+  };
+  useEffect(() => {
+    try { const raw = localStorage.getItem(histKey); setSearchHistory(raw ? JSON.parse(raw) : []); } catch { setSearchHistory([]); }
+  }, [histKey]);
+  const handleDeleteHistory = (hid: string) => {
+    if (!confirm('Remove this history entry? This is local only and will NOT delete from Mem0 project DB.')) return;
+    const next = searchHistory.filter(h => h.id !== hid);
+    persistHist(next);
+  };
+  const handleClickHistory = (h: LocalHist) => {
+    setQuery(h.query);
+    setResponse(h.response);
+    setAgentSteps(h.response.steps || []);
+    setErrorMsg(null);
+    // scroll to response
+    setTimeout(() => document.getElementById('ecb-answer-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+  };
+
   useEffect(() => {
     if (initialQuestion) {
       setQuery(initialQuestion);
@@ -238,6 +267,15 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
     setSelectedEvidenceDetail(null);
 
     const targetProject = activeProjectId && activeProjectId !== 'all' ? activeProjectId : (projects[0]?.id || 'prj-kan');
+    const pushHist = (r: QueryResponse) => {
+      const entry: LocalHist = { id: r.agent_run_id || `hist-${Date.now()}`, query: q, answeredAt: new Date().toISOString(), projectId: targetProject, response: r };
+      setSearchHistory(prev => {
+        const dedup = prev.filter(h => h.id !== entry.id);
+        const next = [entry, ...dedup].slice(0, 20);
+        try { localStorage.setItem(histKey, JSON.stringify(next)); } catch {}
+        return next;
+      });
+    };
 
     try {
       // Primary: Fast, stateful REST query execution
@@ -251,6 +289,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
 
       if (resData && resData.answer) {
         setResponse(resData);
+        pushHist(resData);
         if (resData.steps) setAgentSteps(resData.steps);
         if (resData.conflicting_evidence && resData.conflicting_evidence.length > 0) {
           setActiveEvidenceTab('conflicting');
@@ -278,6 +317,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
           } else if (event.type === 'complete') {
             received = true;
             setResponse(event.data);
+            pushHist(event.data);
           }
         });
 
@@ -376,7 +416,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
             style={{ fontSize: '0.9rem', padding: '0.75rem 1.15rem' }}
           />
 
-          <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
+          <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms"
             className="glass-btn glass-btn-primary"
             onClick={() => handleExecuteQuery()}
             disabled={isLoading || isStreaming || !query.trim()}
@@ -398,8 +438,8 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                 handleExecuteQuery(chip.query);
               }}
               style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: '9999px',
                 padding: '0.25rem 0.65rem',
                 fontSize: 'var(--fs-xs)',
@@ -413,14 +453,61 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                 e.currentTarget.style.color = 'var(--text-primary)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                e.currentTarget.style.background = 'var(--bg-surface)';
+                e.currentTarget.style.borderColor = 'var(--border-subtle)';
                 e.currentTarget.style.color = 'var(--text-secondary)';
               }}
             >
               {chip.label}
             </RippleButton>
           ))}
+        </div>
+
+        {/* Search History — TEMPORARY, one row per search, click to view AI response. Deleting here does NOT touch Mem0 DB. */}
+        <div style={{ marginTop: '0.85rem', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.7rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-muted)' }}>
+              <History size={13} /> Search History
+              <span style={{ fontSize: '0.62rem', fontWeight: 700, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 999, padding: '0.1rem 0.35rem' }}>{searchHistory.length}</span>
+              <span style={{ fontSize: '0.62rem', color: 'var(--text-faint)', fontWeight: 600 }}>— temporary, local only (deleting here does not affect Mem0)</span>
+            </div>
+            {searchHistory.length > 0 && (
+              <button onClick={() => { if (!confirm('Clear all temporary history? Mem0 DB will be untouched.')) return; persistHist([]); }} style={{ fontSize: '0.62rem', background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>Clear all</button>
+            )}
+          </div>
+          {searchHistory.length === 0 ? (
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-faint)', fontStyle: 'italic', background: 'var(--bg-surface)', border: '1px dashed var(--border-subtle)', borderRadius: 8, padding: '0.6rem 0.75rem' }}>No history yet — your searches will appear here one per row. Click any row to reload that AI response. Move to another page and back — history stays (local). Delete here never touches Mem0.</div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', maxHeight: 220, overflowY: 'auto', paddingRight: 2 }}>
+              {searchHistory.map((h) => (
+                <div
+                  key={h.id}
+                  onClick={() => handleClickHistory(h)}
+                  title="Click to view AI response"
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 10, padding: '0.55rem 0.6rem 0.55rem 0.7rem', cursor: 'pointer', transition: 'background 0.15s' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-card)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'var(--bg-surface)')}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.query}</div>
+                    <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', display: 'flex', gap: 8, marginTop: 2, flexWrap: 'wrap' }}>
+                      <span>{new Date(h.answeredAt).toLocaleTimeString()} · {h.projectId}</span>
+                      <span style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '0.05rem 0.28rem' }}>{h.response?.latency_ms || 0}ms · {(h.response?.confidence ? Math.round(h.response.confidence*100) : 0)}% grounded</span>
+                    </div>
+                  </div>
+                  <span style={{ fontSize: '0.62rem', color: 'var(--accent-blue)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 4, flexShrink: 0 }}><ExternalLink size={11} /> View</span>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteHistory(h.id); }}
+                    title="Remove from temporary history only — Mem0 untouched"
+                    style={{ width: 24, height: 24, borderRadius: 999, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.18)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#ef4444', flexShrink: 0 }}
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div id="ecb-answer-panel" style={{ height: 1 }} />
         </div>
       </div>
 
@@ -453,7 +540,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
           )}
 
           {agentSteps.length > 0 && (
-            <div style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+            <div style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid var(--border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                 <Zap size={16} color="#22d3ee" />
                 <span style={{ fontSize: 'var(--fs-base)', fontWeight: 600, color: 'var(--accent-cyan)' }}>Live Agent Trace</span>
@@ -486,7 +573,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div className="glass-panel" style={{ padding: '1.75rem' }}>
               {/* Answer Header with Safety & CoVe Badges */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.25rem', paddingBottom: 'var(--fs-base)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1.25rem', paddingBottom: 'var(--fs-base)', borderBottom: '1px solid var(--border-subtle)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Tooltip content="Factual Grounding verified via Natural Language Inference (NLI) against retrieved evidence fixtures.">
                     <span className="glass-pill glass-btn-success" style={{ fontSize: 'var(--fs-xs)', cursor: 'help' }}>
@@ -515,7 +602,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                 style={{
                   marginTop: '1.5rem',
                   paddingTop: '1rem',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                  borderTop: '1px solid var(--border-subtle)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.5rem',
@@ -575,7 +662,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                       padding: '0.75rem 1rem',
                       fontFamily: 'monospace',
                       fontSize: 'var(--fs-xs)',
-                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      border: '1px solid var(--border-subtle)',
                       marginBottom: '1rem',
                     }}
                   >
@@ -607,7 +694,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                   </div>
                 ) : (
                   <div style={{ display: 'flex', gap: 'var(--fs-xs)', alignItems: 'center' }}>
-                    <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
+                    <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms"
                       className="glass-btn glass-btn-primary"
                       disabled={isApproving}
                       onClick={() => handleApproveAction(response.recommendation!.id)}
@@ -642,7 +729,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
             </div>
 
             {/* Evidence Tabs */}
-            <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.5rem' }}>
+            <div style={{ display: 'flex', gap: '0.35rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.5rem' }}>
               <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
                 onClick={() => setActiveEvidenceTab('supporting')}
                 style={{
@@ -711,7 +798,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                       ? '1px solid rgba(251, 146, 60, 0.4)'
                       : selectedEvidenceDetail?.id === ev.id
                       ? '1px solid #6366f1'
-                      : '1px solid rgba(255, 255, 255, 0.05)',
+                      : '1px solid var(--border-subtle)',
                     cursor: 'pointer',
                     transition: 'all 0.15s',
                   }}

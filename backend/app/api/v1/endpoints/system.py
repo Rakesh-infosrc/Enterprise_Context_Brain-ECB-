@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends, UploadFile, File
 from typing import Dict, Any, List
 from datetime import datetime
+import re as _re
+from pydantic import BaseModel
 
 from ....domain.schemas import AgentRun, AuditEvent, QueryRequest
 from ....infrastructure.db.store import CanonicalStore
@@ -30,6 +32,75 @@ def list_skills():
     """Lists dynamically discovered modular skills from backend/skills/."""
     return skill_loader.list_skills()
 
+
+class SkillCreateRequest(BaseModel):
+    name: str
+    description: str
+    version: str = "1.0.0"
+    author: str = "ECB Engineering"
+    instructions: str
+
+
+@router.post("/skills", response_model=SkillMetadata)
+def create_skill(req: SkillCreateRequest, current_user = Depends(get_current_user)):
+    """Create a new skill playbook."""
+    import re as _re
+    if not _re.match(r"^[a-z0-9_]+$", req.name):
+        raise HTTPException(status_code=400, detail="Skill name must be lowercase alphanumeric with underscores only.")
+    try:
+        return skill_loader.create_skill(req.name, req.description, req.version, req.author, req.instructions)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+
+
+@router.put("/skills/{name}", response_model=SkillMetadata)
+def update_skill(name: str, req: SkillCreateRequest, current_user = Depends(get_current_user)):
+    """Update an existing skill playbook."""
+    if name not in skill_loader.skills:
+        raise HTTPException(status_code=404, detail=f"Skill '{name}' not found")
+    return skill_loader.save_skill(name, req.description, req.version, req.author, req.instructions)
+
+
+@router.delete("/skills/{name}")
+def delete_skill(name: str, current_user = Depends(get_current_user)):
+    """Delete a skill playbook."""
+    if name not in skill_loader.skills:
+        raise HTTPException(status_code=404, detail=f"Skill '{name}' not found")
+    ok = skill_loader.delete_skill(name)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Delete failed")
+    return {"status": "deleted", "name": name}
+
+
+@router.post("/skills/upload", response_model=SkillMetadata)
+async def upload_skill_file(file: UploadFile = File(...), current_user = Depends(get_current_user)):
+    """Upload a SKILL.md file to create a new skill. The file must have YAML frontmatter with name, description, version, author."""
+    if not file.filename or not file.filename.endswith('.md'):
+        raise HTTPException(status_code=400, detail="File must be a .md file")
+    content = await file.read()
+    text = content.decode("utf-8")
+    frontmatter_match = _re.match(r"^---\s*\n(.*?)\n---\s*\n(.*)$", text, _re.DOTALL)
+    if not frontmatter_match:
+        raise HTTPException(status_code=400, detail="Invalid SKILL.md format. Must have YAML frontmatter between --- fences.")
+    raw_yaml = frontmatter_match.group(1)
+    instructions = frontmatter_match.group(2).strip()
+    meta_dict = {}
+    for line in raw_yaml.split("\n"):
+        if ":" in line:
+            k, v = line.split(":", 1)
+            meta_dict[k.strip()] = v.strip()
+    name = meta_dict.get("name", "").strip()
+    description = meta_dict.get("description", "").strip()
+    version = meta_dict.get("version", "1.0.0").strip()
+    author = meta_dict.get("author", "ECB Engineering").strip()
+    if not name:
+        raise HTTPException(status_code=400, detail="SKILL.md frontmatter must include a 'name' field.")
+    if not _re.match(r"^[a-z0-9_]+$", name):
+        raise HTTPException(status_code=400, detail="Skill name must be lowercase alphanumeric with underscores only.")
+    if not description:
+        raise HTTPException(status_code=400, detail="SKILL.md frontmatter must include a 'description' field.")
+    return skill_loader.save_skill(name, description, version, author, instructions)
+
 @router.get("/qdrant/stats")
 def get_qdrant_stats():
     """Returns Qdrant vector database collection metrics."""
@@ -50,6 +121,30 @@ def get_agent_run(run_id: str):
     if not r:
         raise HTTPException(status_code=404, detail="Agent run not found")
     return r
+
+@router.delete("/agent-runs/{run_id}")
+def delete_agent_run(run_id: str, current_user = Depends(get_current_user)):
+    """Log deletion is blocked until linked Mem0 project memory is deleted — enforces 'project DB first' rule."""
+    run = store.get_agent_run(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail="Agent run not found")
+    # Guard: if any Mem0/DB memory still exists for same project, block
+    pid = getattr(run, 'project_id', None)
+    # Prefer strict project guard, fallback to query substring
+    if pid:
+        mems = store.get_memories(project_id=pid)
+        if mems:
+            raise HTTPException(status_code=409, detail=f"Cannot delete log: {len(mems)} Mem0 memories still exist for project {pid}. Delete from Mem0 Memory Logs first.")
+    # Fallback substring check across all memories
+    q = (run.query or "").strip()[:30].lower()
+    if q:
+        all_mems = store.get_memories()
+        if any(q in (m.content or "").lower() or q in (m.title or "").lower() for m in all_mems):
+            raise HTTPException(status_code=409, detail="Cannot delete log: linked Mem0 memory still exists. Delete from Mem0 Memory Logs first.")
+    ok = store.delete_agent_run(run_id)
+    if not ok:
+        raise HTTPException(status_code=500, detail="Delete failed")
+    return {"status": "deleted", "id": run_id}
 
 @router.get("/audit-events", response_model=List[AuditEvent])
 def list_audit_events(limit: int = Query(50, ge=1, le=100), current_user = Depends(get_current_user)):

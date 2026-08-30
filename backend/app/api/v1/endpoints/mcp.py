@@ -87,9 +87,12 @@ def mcp_jsonrpc_endpoint(req: JsonRpcRequest):
         }
 
 @router.get("/mcp/dataset/git")
-def export_git_dataset(repo: str = "testing842/clara-V2", max_commits: int = 20):
+def export_git_dataset(repo: Optional[str] = None, max_commits: int = 20):
     """Exports Git commit history, pull requests, and code diffs into LLM fine-tuning JSONL format."""
     from ....infrastructure.mcp.mcp_data_extractor import GitDatasetExtractor, JiraDatasetExtractor, DatasetNormalizer
+    if not repo or repo == "testing842/clara-V2":
+        github_repos_raw = os.getenv("GITHUB_REPOS", "").strip()
+        repo = github_repos_raw.split(",")[0].strip() if github_repos_raw else "Rakesh-infosrc/Enterprise_Context_Brain-ECB-"
     git_ext = GitDatasetExtractor()
     jira_ext = JiraDatasetExtractor()
     commits = git_ext.extract_commits(repo=repo, max_commits=max_commits)

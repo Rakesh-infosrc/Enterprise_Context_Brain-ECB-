@@ -29,16 +29,38 @@ is_test = (
     or bool(os.getenv("PYTEST_CURRENT_TEST"))
 )
 backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-db_filename = "ecb_database_test.db" if is_test else "ecb_database.db"
-db_path = os.path.join(backend_dir, db_filename)
-DATABASE_URL = f"sqlite:///{db_path}"
-engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+# Prefer explicit DATABASE_URL; else build from POSTGRES_*; fallback to SQLite file
+_database_url_env = os.getenv("DATABASE_URL")
+if not _database_url_env and not is_test:
+    _pg_host = os.getenv("POSTGRES_HOST")
+    _pg_user = os.getenv("POSTGRES_USER", "ecb_user")
+    _pg_pass = os.getenv("POSTGRES_PASSWORD", "ecb_password")
+    _pg_db = os.getenv("POSTGRES_DB", "ecb_db")
+    _pg_port = os.getenv("POSTGRES_PORT", "5432")
+    if _pg_host:
+        _database_url_env = f"postgresql://{_pg_user}:{_pg_pass}@{_pg_host}:{_pg_port}/{_pg_db}"
+
+if _database_url_env:
+    DATABASE_URL = _database_url_env
+else:
+    db_filename = "ecb_database_test.db" if is_test else "ecb_database.db"
+    db_path = os.path.join(backend_dir, db_filename)
+    DATABASE_URL = f"sqlite:///{db_path}"
+
+if DATABASE_URL.startswith("sqlite"):
+    engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+else:
+    # Postgres — enable RLS-ready engine; pool_pre_ping for resilience
+    engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # Fixture project IDs created by tests — cleaned up on normal app startup
 FIXTURE_PROJECT_IDS = {"prj-aegis", "prj-orion", "prj-clara-v3", "prj-test"}
+
+# Simple TTL cache for Jira issues to avoid N+1 on get_projects (30s)
+_jira_issues_cache: Dict[str, Any] = {"ts": 0, "by_key": {}}  # type: ignore
 
 def _cleanup_fixtures():
     """Remove mock fixture projects and their related data when not in test mode."""
@@ -72,6 +94,7 @@ def _migrate_db_columns():
         ("memory_items", "confidence", "REAL DEFAULT 0.98"),
         ("memory_items", "validity_from", "TEXT"),
         ("memory_items", "metadata_json", "TEXT"),
+        ("agent_runs", "project_id", "TEXT"),
     ]
     try:
         with engine.connect() as conn:
@@ -81,6 +104,13 @@ def _migrate_db_columns():
                 except Exception:
                     pass  # Column already exists
             conn.commit()
+    except Exception:
+        pass
+    # Backfill old agent_runs.project_id where NULL (pre-migration runs)
+    try:
+        with engine.connect() as _conn:
+            _conn.execute(text("UPDATE agent_runs SET project_id='prj-kan' WHERE project_id IS NULL"))
+            _conn.commit()
     except Exception:
         pass
 
@@ -103,7 +133,14 @@ def init_db():
                 name="Acme Global Financial Technologies",
                 policy_profile="enterprise_strict"
             ))
-            hashed_pw = pwd_context.hash("password123")
+            _seed_pw = _os.getenv("SEED_PASSWORD", "password123")
+            if _seed_pw == "password123":
+                import logging
+
+                logging.getLogger("ecb.store").warning(
+                    "Using default SEED_PASSWORD=password123 — set SEED_PASSWORD env for production"
+                )
+            hashed_pw = pwd_context.hash(_seed_pw)
             
             # Dev fallbacks
             db.add(DBUser(id="usr-sarah-jenkins", name="Sarah Jenkins", email="sarah.jenkins@acmefin.com", role="project_manager", org_id=org_id, team="siva_team", hashed_password=hashed_pw))
@@ -338,12 +375,23 @@ class CanonicalStore:
         _key_map = {"KAN": "KAN", "CLARA": "CLARA", "ECB": "KAN"}
         proj_key = _key_map.get(proj_key, proj_key)
         
-        # Extract live milestones from Jira Cloud
+        # Extract live milestones from Jira Cloud (cached 30s to avoid N+1)
         jira_issues = []
         milestones = []
         try:
-            from ...infrastructure.mcp.jira_extractor import JiraDatasetExtractor
-            jira_issues = JiraDatasetExtractor().extract_issues(project_key=proj_key)
+            import time as _t
+
+            _now = _t.time()
+            _by_key = _jira_issues_cache.get("by_key", {})  # type: ignore
+            if _now - float(_jira_issues_cache.get("ts", 0)) < 30 and proj_key in _by_key:
+                jira_issues = _by_key[proj_key]
+            else:
+                from ...infrastructure.mcp.jira_extractor import JiraDatasetExtractor
+
+                jira_issues = JiraDatasetExtractor().extract_issues(project_key=proj_key)
+                _by_key[proj_key] = jira_issues
+                _jira_issues_cache["by_key"] = _by_key  # type: ignore
+                _jira_issues_cache["ts"] = _now  # type: ignore
             done_count = 0
             total_count = len(jira_issues)
             now = datetime.utcnow()
@@ -475,7 +523,10 @@ class CanonicalStore:
             return risk
 
     def _seed_risks_from_jira(self, project_id: str, proj_key: str, jira_issues: list) -> None:
-        """Seeds real risks into the DB from Jira issue data. Idempotent (upserts by ID)."""
+        """Seeds real risks into the DB from Jira issue data. Idempotent (upserts by ID). Only for live Jira projects."""
+        # Only seed risks for real Jira projects — not GitHub/Databricks synthetic keys
+        if proj_key not in ("KAN", "SAM1", "AEGIS", "CLARA"):
+            return
         if not jira_issues:
             return
         with self._get_db() as db:
@@ -514,7 +565,9 @@ class CanonicalStore:
             db.commit()
 
     def _seed_decisions_from_context(self, project_id: str, proj_key: str, jira_issues: list) -> None:
-        """Seeds real ADR decisions from project context into the DB. Idempotent."""
+        """Seeds real ADR decisions from project context into the DB. Idempotent. Only for Jira projects."""
+        if proj_key not in ("KAN", "SAM1", "AEGIS", "CLARA"):
+            return
         with self._get_db() as db:
             existing_count = db.query(DBDecision).filter(DBDecision.project_id == project_id).count()
             if existing_count > 0:
@@ -797,6 +850,7 @@ class CanonicalStore:
                 results.append(AgentRun(
                     id=r.id, trace_id=r.trace_id, org_id="org-acme-fintech", user_id="system",
                     workflow=r.workflow, query=r.query, status=r.status,
+                    project_id=getattr(r, 'project_id', None),
                     confidence=r.confidence or 0.95, confidence_label="High",
                     answer=r.answer or "", steps=steps, latency_ms=r.latency_ms or 0,
                     total_tokens=token_usage.get("total_tokens", 0),
@@ -826,12 +880,22 @@ class CanonicalStore:
             return AgentRun(
                 id=r.id, trace_id=r.trace_id, org_id="org-acme-fintech", user_id="system",
                 workflow=r.workflow, query=r.query, status=r.status,
+                project_id=getattr(r, 'project_id', None),
                 confidence=r.confidence or 0.95, confidence_label="High",
                 answer=r.answer or "", steps=steps, latency_ms=r.latency_ms or 0,
                 total_tokens=token_usage.get("total_tokens", 0),
                 prompt_tokens=token_usage.get("prompt_tokens", 0),
                 completion_tokens=token_usage.get("completion_tokens", 0),
             )
+
+    def delete_agent_run(self, run_id: str) -> bool:
+        with self._get_db() as db:
+            row = db.query(DBAgentRun).filter(DBAgentRun.id == run_id).first()
+            if not row:
+                return False
+            db.delete(row)
+            db.commit()
+            return True
 
     def add_agent_run(self, run: AgentRun):
         import json as _json
@@ -852,11 +916,13 @@ class CanonicalStore:
             logging.getLogger("ecb.store").info(
                 f"add_agent_run: id={run.id} latency={run.latency_ms} steps={len(run.steps)} workflow={run.workflow}"
             )
+            pid = getattr(run, 'project_id', None) or (run.context_plan.project_ids[0] if getattr(run, 'context_plan', None) and getattr(run.context_plan, 'project_ids', None) else None)
             db.add(DBAgentRun(
                 id=run.id, trace_id=run.trace_id, workflow=run.workflow,
                 query=run.query, status=run.status, answer=run.answer,
                 confidence=run.confidence, latency_ms=run.latency_ms,
                 steps_json=steps_json, token_usage_json=token_json,
+                project_id=pid,
             ))
             db.commit()
             

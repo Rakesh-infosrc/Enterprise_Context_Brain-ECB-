@@ -120,8 +120,8 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
                     style={{
                       padding: '0.85rem 1rem',
                       borderRadius:'var(--radius-md)',
-                      background: selectedAction?.id === a.id ? 'rgba(92, 168, 255, 0.15)' : 'rgba(17, 34, 54, 0.55)',
-                      border: selectedAction?.id === a.id ? '1px solid #6366f1' : '1px solid rgba(255, 255, 255, 0.06)',
+                      background: selectedAction?.id === a.id ? 'rgba(99, 102, 241, 0.08)' : 'var(--bg-surface)',
+                      border: selectedAction?.id === a.id ? '1px solid #6366f1' : '1px solid var(--border-subtle)',
                       cursor: 'pointer',
                       transition: 'all 0.15s',
                     }}
@@ -159,8 +159,8 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
                   style={{
                     padding: '0.65rem 0.85rem',
                     borderRadius:'var(--radius-sm)',
-                    background: 'rgba(17, 34, 54, 0.4)',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    background: 'var(--bg-surface)',
+                    border: '1px solid var(--border-subtle)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -217,7 +217,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
               background: 'var(--bg-card)',
               borderRadius:'var(--radius-md)',
               padding: '1rem',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              border: '1px solid var(--border-subtle)',
               marginBottom: '1rem',
             }}>
               <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--accent-blue)', marginBottom: '0.3rem' }}>
@@ -237,7 +237,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
                 background: 'rgba(5, 11, 20, 0.85)',
                 borderRadius:'var(--radius-md)',
                 padding: '1rem',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
+                border: '1px solid var(--border-subtle)',
                 fontFamily: 'monospace',
                 fontSize: 'var(--fs-sm)',
                 marginBottom: '1.25rem',
@@ -266,7 +266,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
                 </div>
 
                 <div style={{ display: 'flex', gap: 'var(--fs-xs)' }}>
-                  <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
+                  <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms"
                     disabled={isProcessing}
                     onClick={() => handleApprove(selectedAction.id)}
                     className="glass-btn glass-btn-primary"

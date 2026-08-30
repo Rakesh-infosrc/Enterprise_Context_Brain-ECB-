@@ -30,6 +30,7 @@ import {
   ExternalLink,
   ChevronDown,
   ChevronUp,
+  Trash2,
 } from 'lucide-react';
 import { AgentRun, AgentStep, Evidence, SkillMetadata, Mem0MemoryItem, BenchmarkSummary } from '../../types';
 import { api } from '../../lib/api';
@@ -63,6 +64,25 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
   const [expandedSteps, setExpandedSteps] = useState<Set<number>>(new Set([0]));
   React.useEffect(() => { if (visibleRuns.length && !visibleRuns.find(v=>v.id===selectedRun?.id)) { setSelectedRun(visibleRuns[0]); setExpandedSteps(new Set([0])); } }, [visibleRuns]);
   React.useEffect(() => { setExpandedSteps(new Set([0])); }, [selectedRun?.id]);
+  const handleDeleteLog = async (runId: string) => {
+    if (!confirm('Delete this trace log? Blocked if linked Mem0 history still exists (delete from Mem0 Memory Logs first).')) return;
+    try {
+      await api.deleteAgentRun(runId);
+      // Optimistic update — hide from UI; parent will refresh on next load
+      const next = visibleRuns.find(r => r.id !== runId);
+      if (next) setSelectedRun(next);
+      alert('Log deleted.');
+      // Force reload of page data if parent exposes refresh — fallback reload
+      window.location.reload();
+    } catch (e: any) {
+      const msg = e?.message || '';
+      if (msg.includes('409') || msg.includes('Cannot delete log')) {
+        alert('Blocked: ' + msg + '\n\nDelete the linked Mem0 history for this project first (Skills & Memories → Mem0 Memory Logs).');
+      } else {
+        alert('Delete failed: ' + msg);
+      }
+    }
+  };
 
   // --- Sub-states for Skills & Memories Tab ---
   const [activeSubTab, setActiveSubTab] = useState<'skills' | 'mem0' | 'qdrant'>('skills');
@@ -71,6 +91,10 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
   const [qdrantStats, setQdrantStats] = useState<any>(null);
   const [selectedSkill, setSelectedSkill] = useState<SkillMetadata | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editingSkill, setEditingSkill] = useState<SkillMetadata | null>(null);
+  const [isCreatingSkill, setIsCreatingSkill] = useState(false);
+  const [skillForm, setSkillForm] = useState({ name: '', description: '', version: '1.0.0', author: '', instructions: '' });
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   // --- Sub-states for Evidence Tab ---
   const [evidenceSearch, setEvidenceSearch] = useState('');
@@ -96,6 +120,56 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
     api.getMem0Memories().then(setMemories).catch(console.error);
     api.getQdrantStats().then(setQdrantStats).catch(console.error);
   }, []);
+
+  const refreshSkills = () => {
+    api.getSkills().then((res) => {
+      setSkills(res);
+      if (res.length > 0 && !selectedSkill) setSelectedSkill(res[0]);
+    }).catch(console.error);
+  };
+
+  const handleSaveSkill = async () => {
+    if (!editingSkill) return;
+    try {
+      const updated = await api.updateSkill(editingSkill.name, skillForm);
+      setEditingSkill(null);
+      setSkills(prev => prev.map(s => s.name === updated.name ? updated : s));
+      setSelectedSkill(updated);
+    } catch (e: any) { alert('Save failed: ' + (e?.message || '')); }
+  };
+
+  const handleCreateSkill = async () => {
+    if (!skillForm.name || !skillForm.description) { alert('Name and description are required.'); return; }
+    try {
+      const created = await api.createSkill(skillForm);
+      setIsCreatingSkill(false);
+      setSkillForm({ name: '', description: '', version: '1.0.0', author: '', instructions: '' });
+      refreshSkills();
+      setSelectedSkill(created);
+    } catch (e: any) { alert('Create failed: ' + (e?.message || '')); }
+  };
+
+  const handleDeleteSkill = async (name: string) => {
+    if (!confirm(`Delete skill "${name}"? This removes the playbook permanently.`)) return;
+    try {
+      await api.deleteSkill(name);
+      setSkills(prev => prev.filter(s => s.name !== name));
+      if (selectedSkill?.name === name) setSelectedSkill(null);
+      setEditingSkill(null);
+    } catch (e: any) { alert('Delete failed: ' + (e?.message || '')); }
+  };
+
+  const handleUploadSkill = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const created = await api.uploadSkill(file);
+      refreshSkills();
+      setSelectedSkill(created);
+      alert(`Skill "${created.name}" uploaded successfully.`);
+    } catch (e: any) { alert('Upload failed: ' + (e?.message || '')); }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   // Load MCP Dataset records based on selected sub-tab
   const loadMcpData = async () => {
@@ -179,7 +253,7 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
       </div>
 
       {/* Sub tabs bar */}
-      <div style={{ display: 'flex', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '2px', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '2px', gap: '0.5rem' }}>
         <RippleButton rippleColor="rgba(92,168,255,0.15)" duration="600ms"
           onClick={() => setActiveTab('traces')}
           style={{
@@ -287,8 +361,8 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
                     style={{
                       padding: '0.85rem 1rem',
                       borderRadius: 'var(--radius-md)',
-                      background: selectedRun?.id === run.id ? 'rgba(92, 168, 255, 0.15)' : 'rgba(17, 34, 54, 0.55)',
-                      border: selectedRun?.id === run.id ? '1px solid #6366f1' : '1px solid rgba(255, 255, 255, 0.06)',
+                      background: selectedRun?.id === run.id ? 'rgba(99, 102, 241, 0.08)' : 'var(--bg-surface)',
+                      border: selectedRun?.id === run.id ? '1px solid #6366f1' : '1px solid var(--border-subtle)',
                       cursor: 'pointer',
                     }}
                   >
@@ -297,6 +371,15 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
                       <span className="glass-pill" style={{ color: 'var(--accent-emerald)', fontSize: '0.65rem' }}>{run.latency_ms}ms</span>
                     </div>
                     <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>&quot;{run.query}&quot;</div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleDeleteLog(run.id); }}
+                        title="Delete log — blocked until Mem0 history for this project is deleted"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: '0.62rem', fontWeight: 700, background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)', borderRadius: 999, padding: '0.2rem 0.45rem', cursor: 'pointer' }}
+                      >
+                        <Trash2 size={11} /> Delete log
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -311,7 +394,7 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
                           <span style={{ fontSize: '0.62rem', fontWeight: 800, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6d28d9', background: '#f5f3ff', border: '1px solid rgba(109,40,217,0.18)', borderRadius: 999, padding: '0.18rem 0.5rem' }}>Workflow routing map</span>
-                          <span style={{ fontSize: '0.62rem', fontFamily: 'monospace', color: 'rgba(255,255,255,0.55)', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6, padding: '0.15rem 0.4rem' }}>{selectedRun.trace_id} · {selectedRun.id.slice(0,12)}</span>
+                          <span style={{ fontSize: '0.62rem', fontFamily: 'monospace', color: 'var(--text-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 6, padding: '0.15rem 0.4rem' }}>{selectedRun.trace_id} · {selectedRun.id.slice(0,12)}</span>
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: '0.62rem', fontWeight: 800, color: '#86efac', background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 999, padding: '0.16rem 0.45rem' }}><span style={{ width: 6, height: 6, borderRadius: 999, background: '#22c55e', boxShadow: '0 0 8px rgba(34,197,94,0.7)' }} /> Live</span>
                         </div>
                         <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={selectedRun.query}>"{selectedRun.query}"</div>
@@ -502,7 +585,7 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
                   </div>
 
                   {/* Footer: legend + raw */}
-                  <div style={{ padding: '0.7rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                  <div style={{ padding: '0.7rem 1.25rem', borderTop: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                     <div style={{ display: 'flex', gap: 10, fontSize: '0.62rem', color: 'var(--text-muted)', alignItems: 'center', flexWrap: 'wrap' }}>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 3, borderRadius: 999, background: '#8b5cf6' }} /> Intake</span>
                       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><span style={{ width: 10, height: 3, borderRadius: 999, background: '#6366f1' }} /> Classify</span>
@@ -511,11 +594,11 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
                     </div>
                     <span style={{ fontSize: '0.62rem', color: 'var(--text-faint)', fontFamily: 'monospace' }}>Top → Bottom • Animated rail • Fallback-aware</span>
                   </div>
-                  <details style={{ margin: '0 1.25rem 1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '0.55rem 0.75rem' }}>
+                  <details style={{ margin: '0 1.25rem 1rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 10, padding: '0.55rem 0.75rem' }}>
                     <summary style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-secondary)', cursor: 'pointer', listStyle: 'none' }}>View raw step payloads (debug)</summary>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, maxHeight: 160, overflow: 'auto' }}>
                       {selectedRun.steps?.map((s: any, i: number) => (
-                        <div key={i} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.4, fontFamily: 'monospace', background: 'rgba(0,0,0,0.18)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 8, padding: '0.4rem 0.5rem' }}><span style={{ color: 'var(--accent-blue)', fontWeight: 700 }}>{i+1}. {s.title}</span> — {s.description} <span style={{ color: 'var(--text-faint)' }}>({s.duration_ms}ms {s.stage})</span></div>
+                        <div key={i} style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.4, fontFamily: 'monospace', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 8, padding: '0.4rem 0.5rem' }}><span style={{ color: 'var(--accent-blue)', fontWeight: 700 }}>{i+1}. {s.title}</span> — {s.description} <span style={{ color: 'var(--text-faint)' }}>({s.duration_ms}ms {s.stage})</span></div>
                       ))}
                     </div>
                   </details>
@@ -533,34 +616,108 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
         {activeTab === 'skills_memory' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <RippleButton rippleColor="rgba(255,255,255,0.15)" duration="600ms" onClick={() => setActiveSubTab('skills')} style={{ background: activeSubTab === 'skills' ? 'rgba(99,102,241,0.12)' : 'transparent', border: 'none', padding: '0.4rem 0.85rem', borderRadius: 'var(--radius-sm)', color: activeSubTab === 'skills' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Skills Manifest</RippleButton>
-              <RippleButton rippleColor="rgba(255,255,255,0.15)" duration="600ms" onClick={() => setActiveSubTab('mem0')} style={{ background: activeSubTab === 'mem0' ? 'rgba(99,102,241,0.12)' : 'transparent', border: 'none', padding: '0.4rem 0.85rem', borderRadius: 'var(--radius-sm)', color: activeSubTab === 'mem0' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Mem0 Memory Logs</RippleButton>
-              <RippleButton rippleColor="rgba(255,255,255,0.15)" duration="600ms" onClick={() => setActiveSubTab('qdrant')} style={{ background: activeSubTab === 'qdrant' ? 'rgba(99,102,241,0.12)' : 'transparent', border: 'none', padding: '0.4rem 0.85rem', borderRadius: 'var(--radius-sm)', color: activeSubTab === 'qdrant' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Qdrant Analytics</RippleButton>
+              <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" onClick={() => setActiveSubTab('skills')} style={{ background: activeSubTab === 'skills' ? 'rgba(99,102,241,0.12)' : 'transparent', border: 'none', padding: '0.4rem 0.85rem', borderRadius: 'var(--radius-sm)', color: activeSubTab === 'skills' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Skills Manifest</RippleButton>
+              <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" onClick={() => setActiveSubTab('mem0')} style={{ background: activeSubTab === 'mem0' ? 'rgba(99,102,241,0.12)' : 'transparent', border: 'none', padding: '0.4rem 0.85rem', borderRadius: 'var(--radius-sm)', color: activeSubTab === 'mem0' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Mem0 Memory Logs</RippleButton>
+              <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" onClick={() => setActiveSubTab('qdrant')} style={{ background: activeSubTab === 'qdrant' ? 'rgba(99,102,241,0.12)' : 'transparent', border: 'none', padding: '0.4rem 0.85rem', borderRadius: 'var(--radius-sm)', color: activeSubTab === 'qdrant' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Qdrant Analytics</RippleButton>
             </div>
 
             {activeSubTab === 'skills' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1.5rem' }}>
-                <div className="glass-panel" style={{ padding: '1rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <div className="glass-panel" style={{ padding: '1rem', display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>Playbooks ({skills.length})</span>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <input ref={fileInputRef} type="file" accept=".md" onChange={handleUploadSkill} style={{ display: 'none' }} />
+                      <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" onClick={() => fileInputRef.current?.click()} style={{ fontSize: '0.65rem', fontWeight: 700, background: 'rgba(34,197,94,0.12)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 999, padding: '0.2rem 0.6rem', color: '#10b981', cursor: 'pointer' }}>Upload</RippleButton>
+                      <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" onClick={() => { setIsCreatingSkill(true); setEditingSkill(null); setSkillForm({ name: '', description: '', version: '1.0.0', author: '', instructions: '' }); }} style={{ fontSize: '0.65rem', fontWeight: 700, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', borderRadius: 999, padding: '0.2rem 0.6rem', color: '#6366f1', cursor: 'pointer' }}>+ New</RippleButton>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1, overflowY: 'auto' }}>
                     {skills.map((s) => (
-                      <div key={s.name} onClick={() => setSelectedSkill(s)} style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: selectedSkill?.name === s.name ? 'rgba(99, 102, 241, 0.1)' : 'transparent', cursor: 'pointer', border: '1px solid var(--border-subtle)' }}>
-                        <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>{s.name}</div>
-                        <div style={{ fontSize: '0.675rem', color: 'var(--text-muted)' }}>v{s.version} • {s.author}</div>
+                      <div key={s.name} onClick={() => { setSelectedSkill(s); setEditingSkill(null); setIsCreatingSkill(false); }} style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: selectedSkill?.name === s.name ? 'rgba(99, 102, 241, 0.1)' : 'transparent', cursor: 'pointer', border: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>{s.name}</div>
+                          <div style={{ fontSize: '0.675rem', color: 'var(--text-muted)' }}>v{s.version} • {s.author}</div>
+                        </div>
+                        <button onClick={(e) => { e.stopPropagation(); handleDeleteSkill(s.name); }} title="Delete skill" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 999, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', cursor: 'pointer', flexShrink: 0 }}><Trash2 size={12} /></button>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 <div className="glass-panel" style={{ padding: '1.25rem' }}>
-                  {selectedSkill ? (
+                  {isCreatingSkill ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                      <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{selectedSkill.name} playbooks instructions</h4>
-                      <pre style={{ background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', maxHeight: '350px', overflowY: 'auto' }}>
+                      <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Create New Skill</h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                        <div>
+                          <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4 }}>Name</label>
+                          <input value={skillForm.name} onChange={e => setSkillForm(p => ({ ...p, name: e.target.value }))} placeholder="e.g. data_governance" style={{ width: '100%', padding: '0.45rem 0.6rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.75rem', outline: 'none', fontFamily: 'monospace' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4 }}>Version</label>
+                          <input value={skillForm.version} onChange={e => setSkillForm(p => ({ ...p, version: e.target.value }))} placeholder="1.0.0" style={{ width: '100%', padding: '0.45rem 0.6rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.75rem', outline: 'none', fontFamily: 'monospace' }} />
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4 }}>Description</label>
+                        <input value={skillForm.description} onChange={e => setSkillForm(p => ({ ...p, description: e.target.value }))} placeholder="What this skill does" style={{ width: '100%', padding: '0.45rem 0.6rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.75rem', outline: 'none' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4 }}>Author</label>
+                        <input value={skillForm.author} onChange={e => setSkillForm(p => ({ ...p, author: e.target.value }))} placeholder="Team name" style={{ width: '100%', padding: '0.45rem 0.6rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.75rem', outline: 'none' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4 }}>Instructions (Markdown)</label>
+                        <textarea value={skillForm.instructions} onChange={e => setSkillForm(p => ({ ...p, instructions: e.target.value }))} placeholder="# Skill Title&#10;&#10;## When to Activate&#10;- ..." rows={12} style={{ width: '100%', padding: '0.65rem 0.75rem', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.75rem', fontFamily: 'monospace', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                        <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" onClick={() => setIsCreatingSkill(false)} style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.35rem 0.85rem', borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text-muted)', cursor: 'pointer' }}>Cancel</RippleButton>
+                        <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" onClick={handleCreateSkill} className="glass-btn glass-btn-primary" style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.35rem 0.85rem', borderRadius: 8, cursor: 'pointer' }}>Create Skill</RippleButton>
+                      </div>
+                    </div>
+                  ) : editingSkill ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>Editing: {editingSkill.name}</h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                        <div>
+                          <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4 }}>Version</label>
+                          <input value={skillForm.version} onChange={e => setSkillForm(p => ({ ...p, version: e.target.value }))} style={{ width: '100%', padding: '0.45rem 0.6rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.75rem', outline: 'none', fontFamily: 'monospace' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4 }}>Author</label>
+                          <input value={skillForm.author} onChange={e => setSkillForm(p => ({ ...p, author: e.target.value }))} style={{ width: '100%', padding: '0.45rem 0.6rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.75rem', outline: 'none' }} />
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4 }}>Description</label>
+                        <input value={skillForm.description} onChange={e => setSkillForm(p => ({ ...p, description: e.target.value }))} style={{ width: '100%', padding: '0.45rem 0.6rem', background: 'var(--bg-surface)', border: '1px solid var(--border-subtle)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.75rem', outline: 'none' }} />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 4 }}>Instructions (Markdown)</label>
+                        <textarea value={skillForm.instructions} onChange={e => setSkillForm(p => ({ ...p, instructions: e.target.value }))} rows={14} style={{ width: '100%', padding: '0.65rem 0.75rem', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 8, color: 'var(--text-primary)', fontSize: '0.75rem', fontFamily: 'monospace', outline: 'none', resize: 'vertical', lineHeight: 1.5 }} />
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                        <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" onClick={() => setEditingSkill(null)} style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.35rem 0.85rem', borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-surface)', color: 'var(--text-muted)', cursor: 'pointer' }}>Cancel</RippleButton>
+                        <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" onClick={handleSaveSkill} className="glass-btn glass-btn-primary" style={{ fontSize: '0.72rem', fontWeight: 700, padding: '0.35rem 0.85rem', borderRadius: 8, cursor: 'pointer' }}>Save Changes</RippleButton>
+                      </div>
+                    </div>
+                  ) : selectedSkill ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>{selectedSkill.name}</h4>
+                          <div style={{ fontSize: '0.675rem', color: 'var(--text-muted)', marginTop: 2 }}>v{selectedSkill.version} • {selectedSkill.author}</div>
+                        </div>
+                        <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" onClick={() => { setEditingSkill(selectedSkill); setSkillForm({ name: selectedSkill.name, description: selectedSkill.description, version: selectedSkill.version, author: selectedSkill.author, instructions: selectedSkill.instructions }); }} style={{ fontSize: '0.65rem', fontWeight: 700, padding: '0.25rem 0.65rem', borderRadius: 999, border: '1px solid rgba(99,102,241,0.25)', background: 'rgba(99,102,241,0.1)', color: '#6366f1', cursor: 'pointer', flexShrink: 0 }}>Edit</RippleButton>
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontStyle: 'italic' }}>{selectedSkill.description}</div>
+                      <pre style={{ background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', fontSize: '0.75rem', fontFamily: 'monospace', color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', maxHeight: '400px', overflowY: 'auto', lineHeight: 1.6 }}>
                         {selectedSkill.instructions}
                       </pre>
                     </div>
                   ) : (
-                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-faint)' }}>Select a playbook to inspect specifications.</div>
+                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-faint)' }}>Select a playbook to inspect, or click + New to create one.</div>
                   )}
                 </div>
               </div>
@@ -576,11 +733,22 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', maxHeight: '400px', overflowY: 'auto' }}>
                   {filteredMemories.map((m) => (
                     <div key={m.id} style={{ padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.725rem', marginBottom: '0.25rem' }}>
-                        <span style={{ color: 'var(--accent-blue)', fontWeight: 700 }}>{m.title}</span>
-                        <span style={{ color: 'var(--text-muted)' }}>Confidence: {Math.round(m.confidence * 100)}%</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.725rem', marginBottom: '0.25rem', gap: 8 }}>
+                        <span style={{ color: 'var(--accent-blue)', fontWeight: 700, flex: 1 }}>{m.title}</span>
+                        <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>Confidence: {Math.round(m.confidence * 100)}%</span>
+                        <button
+                          onClick={async () => {
+                            if (!confirm(`Delete Mem0 memory "${m.title}"? This also unlocks its trace log for deletion.`)) return;
+                            try { await api.deleteMem0Memory(m.id); setMemories(prev => prev.filter(x => x.id !== m.id)); } catch (e:any){ alert(e?.message||'Delete failed'); }
+                          }}
+                          title="Delete — removes from Mem0 project DB and cloud"
+                          style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: 999, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#ef4444', cursor: 'pointer', flexShrink: 0 }}
+                        >
+                          <Trash2 size={11} />
+                        </button>
                       </div>
                       <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-secondary)', margin: 0 }}>{m.content}</p>
+                      <div style={{ fontSize: '0.62rem', color: 'var(--text-faint)', marginTop: 4, fontFamily: 'monospace' }}>{m.project_id || 'global'} · {new Date(m.validity_from).toLocaleDateString()}</div>
                     </div>
                   ))}
                 </div>
@@ -628,7 +796,7 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
                     <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Excerpt Extract</div>
                     <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-secondary)', lineHeight: 1.4, margin: 0 }}>{selectedEvidence.excerpt}</p>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
                     <span>Author: <strong>{selectedEvidence.author || 'Lead architect'}</strong></span>
                     <span>Authority: {selectedEvidence.authority}</span>
                   </div>
@@ -645,8 +813,8 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <RippleButton rippleColor="rgba(255,255,255,0.15)" duration="600ms" onClick={() => setActiveMcpTab('git')} style={{ background: activeMcpTab === 'git' ? 'rgba(99,102,241,0.12)' : 'transparent', border: 'none', padding: '0.4rem 0.85rem', borderRadius: 'var(--radius-sm)', color: activeMcpTab === 'git' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Git Commits</RippleButton>
-                <RippleButton rippleColor="rgba(255,255,255,0.15)" duration="600ms" onClick={() => setActiveMcpTab('jira')} style={{ background: activeMcpTab === 'jira' ? 'rgba(99,102,241,0.12)' : 'transparent', border: 'none', padding: '0.4rem 0.85rem', borderRadius: 'var(--radius-sm)', color: activeMcpTab === 'jira' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Jira Issues</RippleButton>
+                <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" onClick={() => setActiveMcpTab('git')} style={{ background: activeMcpTab === 'git' ? 'rgba(99,102,241,0.12)' : 'transparent', border: 'none', padding: '0.4rem 0.85rem', borderRadius: 'var(--radius-sm)', color: activeMcpTab === 'git' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Git Commits</RippleButton>
+                <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" onClick={() => setActiveMcpTab('jira')} style={{ background: activeMcpTab === 'jira' ? 'rgba(99,102,241,0.12)' : 'transparent', border: 'none', padding: '0.4rem 0.85rem', borderRadius: 'var(--radius-sm)', color: activeMcpTab === 'jira' ? 'var(--text-primary)' : 'var(--text-muted)' }}>Jira Issues</RippleButton>
               </div>
 
               <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms" className="glass-btn" onClick={handleExportJsonl} disabled={datasetRecords.length === 0}>
@@ -681,42 +849,109 @@ export const DeveloperDiagnosticsView: React.FC<DeveloperDiagnosticsViewProps> =
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>CI/CD Regression &amp; Guardrails test</h3>
-              <RippleButton rippleColor="rgba(255,255,255,0.3)" duration="600ms" className="glass-btn glass-btn-primary" onClick={handleRunBenchmarks} disabled={isEvalRunning}>
+              <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms" className="glass-btn glass-btn-primary" onClick={handleRunBenchmarks} disabled={isEvalRunning}>
                 {isEvalRunning ? 'Executing Benchmarks...' : 'Run Golden Benchmarks'}
               </RippleButton>
             </div>
 
             {/* Quality Metrics Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
               <div className="glass-card">
                 <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Claim Groundedness</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>{benchmarkResult ? `${benchmarkResult.metrics.groundedness_rate}%` : 'N/A'}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: benchmarkResult && benchmarkResult.metrics.groundedness_rate >= 90 ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>{benchmarkResult ? `${benchmarkResult.metrics.groundedness_rate}%` : 'N/A'}</div>
+                {benchmarkResult && <div style={{ fontSize: '0.6rem', color: 'var(--text-faint)', marginTop: 2 }}>target: {benchmarkResult.metrics.target_groundedness}%</div>}
               </div>
               <div className="glass-card">
                 <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Citation Accuracy</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-blue)' }}>{benchmarkResult ? `${benchmarkResult.metrics.citation_accuracy_rate}%` : 'N/A'}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: benchmarkResult && benchmarkResult.metrics.citation_accuracy_rate >= 90 ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>{benchmarkResult ? `${benchmarkResult.metrics.citation_accuracy_rate}%` : 'N/A'}</div>
+                {benchmarkResult && <div style={{ fontSize: '0.6rem', color: 'var(--text-faint)', marginTop: 2 }}>target: {benchmarkResult.metrics.target_citation_accuracy}%</div>}
+              </div>
+              <div className="glass-card">
+                <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Entity Coverage</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: benchmarkResult && benchmarkResult.metrics.entity_coverage_rate >= 80 ? 'var(--accent-emerald)' : 'var(--accent-amber)' }}>{benchmarkResult ? `${benchmarkResult.metrics.entity_coverage_rate}%` : 'N/A'}</div>
               </div>
               <div className="glass-card">
                 <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Conflict Detection</div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-amber)' }}>{benchmarkResult ? `${benchmarkResult.metrics.conflict_detection_rate}%` : 'N/A'}</div>
+                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--accent-blue)' }}>{benchmarkResult ? `${benchmarkResult.metrics.conflict_detection_rate}%` : 'N/A'}</div>
               </div>
+              {benchmarkResult && (
+                <div className="glass-card">
+                  <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Results</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: benchmarkResult.failed_count === 0 ? 'var(--accent-emerald)' : 'var(--accent-rose)' }}>{benchmarkResult.passed_count}/{benchmarkResult.total_benchmarks_run} passed</div>
+                </div>
+              )}
             </div>
 
-            {/* Benchmark results table */}
-            <div className="glass-panel" style={{ padding: '1rem', maxHeight: '350px', overflowY: 'auto' }}>
+            {/* Benchmark results — expandable per case */}
+            <div className="glass-panel" style={{ padding: '1rem' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                 {(benchmarkResult?.detailed_results || []).map((t) => (
-                  <div key={t.case_id} style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-primary)' }}><strong>{t.case_id}</strong>: {t.question}</div>
-                    <span style={{ fontSize: '0.65rem', color: 'var(--accent-emerald)', fontWeight: 700 }}>{t.status}</span>
-                  </div>
+                  <EvalCaseRow key={t.case_id} result={t} />
                 ))}
+                {!benchmarkResult && <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-faint)' }}>Click "Run Golden Benchmarks" to execute real evaluation.</div>}
               </div>
             </div>
           </div>
         )}
 
       </div>
+    </div>
+  );
+};
+
+const EvalCaseRow: React.FC<{ result: any }> = ({ result }) => {
+  const [expanded, setExpanded] = useState(false);
+  const passed = result.status === 'PASSED';
+  return (
+    <div style={{ borderRadius: 'var(--radius-sm)', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', overflow: 'hidden' }}>
+      <div onClick={() => setExpanded(!expanded)} style={{ padding: '0.75rem 1rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-primary)' }}><strong>{result.case_id}</strong>: {result.question}</div>
+          <div style={{ display: 'flex', gap: 12, marginTop: 4, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.6rem', color: passed ? 'var(--accent-emerald)' : 'var(--accent-rose)', fontWeight: 700 }}>{result.status}</span>
+            <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Groundedness: {result.groundedness}%</span>
+            <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Entities: {result.entity_coverage}%</span>
+            <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>Citations: {result.citations_accuracy}%</span>
+            <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>{result.latency_ms}ms</span>
+          </div>
+        </div>
+        {expanded ? <ChevronUp size={14} color="var(--text-muted)" /> : <ChevronDown size={14} color="var(--text-muted)" />}
+      </div>
+      {expanded && (
+        <div style={{ padding: '0 1rem 1rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* Answer preview */}
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>Answer</div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.5, background: 'var(--bg-surface)', padding: '0.5rem 0.65rem', borderRadius: 8, border: '1px solid var(--border-subtle)' }}>{result.answer_preview}</div>
+          </div>
+          {/* Entity check */}
+          <div>
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>Entity Coverage ({result.entity_coverage}%)</div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {(result.entities_found || []).map((e: string) => <span key={e} style={{ fontSize: '0.6rem', padding: '0.12rem 0.4rem', borderRadius: 999, background: 'rgba(16,185,129,0.12)', color: 'var(--accent-emerald)', border: '1px solid rgba(16,185,129,0.25)', fontWeight: 700 }}>{e}</span>)}
+              {(result.entities_missing || []).map((e: string) => <span key={e} style={{ fontSize: '0.6rem', padding: '0.12rem 0.4rem', borderRadius: 999, background: 'rgba(239,68,68,0.12)', color: 'var(--accent-rose)', border: '1px solid rgba(239,68,68,0.25)', fontWeight: 700 }}>{e}</span>)}
+            </div>
+          </div>
+          {/* Claims */}
+          <div>
+            <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 3 }}>Claims ({result.claims_supported}/{result.claim_count} supported)</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {(result.claim_details || []).map((c: any, i: number) => (
+                <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: '0.68rem' }}>
+                  <span style={{ flexShrink: 0, width: 8, height: 8, borderRadius: 999, background: c.verdict === 'supported' ? 'var(--accent-emerald)' : c.verdict === 'refuted' ? 'var(--accent-rose)' : 'var(--accent-amber)', marginTop: 3 }} />
+                  <span style={{ color: 'var(--text-secondary)', flex: 1 }}>{c.claim}</span>
+                  <span style={{ fontSize: '0.6rem', color: 'var(--text-faint)', flexShrink: 0 }}>{c.verdict} ({Math.round(c.confidence * 100)}%)</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Conflict */}
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <span style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Conflict:</span>
+            <span style={{ fontSize: '0.68rem', color: result.conflict_detected ? 'var(--accent-amber)' : 'var(--text-secondary)' }}>{result.conflict_detected ? `Detected (${Math.round(result.conflict_confidence * 100)}% confidence)` : 'None detected'}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

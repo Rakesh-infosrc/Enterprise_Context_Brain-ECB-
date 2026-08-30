@@ -80,3 +80,36 @@ class SkillLoader:
 
     def list_skills(self) -> List[SkillMetadata]:
         return list(self.skills.values())
+
+    def save_skill(self, name: str, description: str, version: str, author: str, instructions: str) -> SkillMetadata:
+        skill_dir = os.path.join(self.skills_dir, name)
+        os.makedirs(skill_dir, exist_ok=True)
+        skill_file = os.path.join(skill_dir, "SKILL.md")
+        content = f"""---
+name: {name}
+description: {description}
+version: {version}
+author: {author}
+---
+
+{instructions}
+"""
+        with open(skill_file, "w", encoding="utf-8") as f:
+            f.write(content)
+        self.load_skills()
+        return self.skills[name]
+
+    def create_skill(self, name: str, description: str, version: str, author: str, instructions: str) -> SkillMetadata:
+        skill_dir = os.path.join(self.skills_dir, name)
+        if os.path.exists(skill_dir):
+            raise ValueError(f"Skill '{name}' already exists")
+        return self.save_skill(name, description, version, author, instructions)
+
+    def delete_skill(self, name: str) -> bool:
+        import shutil
+        skill_dir = os.path.join(self.skills_dir, name)
+        if not os.path.exists(skill_dir):
+            return False
+        shutil.rmtree(skill_dir)
+        self.load_skills()
+        return True

@@ -206,7 +206,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
             <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.1rem' }}>
               {project.owner_name}
             </div>
-            <RippleButton rippleColor="rgba(255,255,255,0.15)" duration="600ms"
+            <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms"
               className="glass-btn"
               onClick={() => onAskQuestion(`Why is ${project.name} delayed?`)}
               style={{ marginTop: 'var(--fs-xs)', fontSize: 'var(--fs-sm)', padding: '0.45rem 0.9rem' }}
@@ -219,7 +219,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
       </div>
 
       {/* Sub navigation Tabs */}
-      <div style={{ display: 'flex', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '2px', gap: '0.5rem' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '2px', gap: '0.5rem' }}>
         <RippleButton rippleColor="rgba(92,168,255,0.15)" duration="600ms"
           onClick={() => setActiveTab('sprints')}
           style={{
@@ -782,7 +782,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                     Roadmap update request sent to Approval Center!
                   </div>
                 ) : (
-                  <RippleButton rippleColor="rgba(255,255,255,0.3)" duration="600ms"
+                  <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms"
                     className="glass-btn glass-btn-primary"
                     style={{ width: '100%', justifyContent: 'center', fontSize: 'var(--fs-xs)' }}
                     onClick={() => setActionProposed(true)}

@@ -24,6 +24,14 @@ class ECBSettings(BaseSettings):
     gemini_model: str = Field(default="gemini-1.5-flash", alias="GEMINI_MODEL")
     groq_model: str = Field(default="qwen/qwen3.8-27b", alias="GROQ_MODEL")
 
+    # Database
+    database_url: Optional[str] = Field(default=None, alias="DATABASE_URL")
+    postgres_user: Optional[str] = Field(default="ecb_user", alias="POSTGRES_USER")
+    postgres_password: Optional[str] = Field(default="ecb_password", alias="POSTGRES_PASSWORD")
+    postgres_db: Optional[str] = Field(default="ecb_db", alias="POSTGRES_DB")
+    postgres_host: Optional[str] = Field(default="localhost", alias="POSTGRES_HOST")
+    postgres_port: Optional[str] = Field(default="5432", alias="POSTGRES_PORT")
+
     # LLM Mode
     ecb_llm_mode: Literal["auto", "gemini", "groq", "simulated"] = Field(
         default="auto", alias="ECB_LLM_MODE"

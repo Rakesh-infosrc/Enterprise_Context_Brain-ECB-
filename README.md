@@ -1,3 +1,4 @@
+
 # Enterprise Context Brain (ECB) v2.2
 
 > **Governed GenAI Decision Intelligence & Organizational Memory Operating Console**

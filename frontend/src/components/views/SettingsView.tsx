@@ -311,7 +311,7 @@ export const SettingsView: React.FC = () => {
                     {allWebhookProjects.length === 0 ? (
                       <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>No Git webhooks detected. Send a push / pull-request webhook event to auto-register.</div>
                     ) : activeWebhooks.length === 0 ? (
-                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', padding: '0.75rem', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 'var(--radius-sm)', background: 'rgba(0,0,0,0.15)' }}>
+                      <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', padding: '0.75rem', textAlign: 'center', border: '1px dashed var(--border-subtle)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-surface)' }}>
                         All webhooks are disconnected — none will show in your POC. Click <span style={{ color: '#6366f1', fontWeight: 700 }}>Connect</span> below to re-enable.
                       </div>
                     ) : (
@@ -452,7 +452,7 @@ export const SettingsView: React.FC = () => {
             ))}
           </div>
 
-          <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
+          <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms"
             onClick={handleSave}
             className="glass-btn glass-btn-primary"
             style={{ width: '100%', padding: '0.65rem' }}

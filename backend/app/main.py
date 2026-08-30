@@ -26,13 +26,18 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Enable CORS for Next.js frontend
+# CORS — restricted to frontend origins (env FRONTEND_URL) + localhost for dev
+_frontend_urls = [u.strip() for u in os.getenv("FRONTEND_URL", "http://localhost:3000,http://127.0.0.1:3000,http://localhost:3001").split(",") if u.strip()]
+# In debug mode allow any localhost port; in prod require explicit FRONTEND_URL
+if os.getenv("ECB_ENV", "development") == "development":
+    _frontend_urls += [f"http://localhost:{p}" for p in [3000, 3001, 5173] if f"http://localhost:{p}" not in _frontend_urls]
+    _frontend_urls += [f"http://127.0.0.1:{p}" for p in [3000, 3001, 5173] if f"http://127.0.0.1:{p}" not in _frontend_urls]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # Allow local development from Next.js on any port
+    allow_origins=_frontend_urls,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-API-Key", "X-Request-ID"],
 )
 
 app.include_router(router)
@@ -54,4 +59,4 @@ def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8001, reload=True)

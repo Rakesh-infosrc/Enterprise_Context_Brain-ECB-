@@ -230,3 +230,27 @@ class Mem0MemoryService:
     def get_all(self) -> List[Mem0MemoryItem]:
         self._init_from_canonical()
         return list(self.memories.values())
+
+    def delete_memory(self, memory_id: str) -> bool:
+        """Delete from cloud (if configured) and DB. Returns True if DB row removed."""
+        # Cloud
+        if self.client:
+            try:
+                self.client.delete(memory_id)
+            except Exception as e:
+                logger.warning(f"Mem0 cloud delete {memory_id} failed (continuing DB delete): {e}")
+        # Local dict
+        self.memories.pop(memory_id, None)
+        # DB
+        try:
+            with self.store._get_db() as db:  # type: ignore
+                from ..db.models import DBMemoryItem
+                row = db.query(DBMemoryItem).filter(DBMemoryItem.id == memory_id).first()
+                if row:
+                    db.delete(row)
+                    db.commit()
+                    self._init_from_canonical()
+                    return True
+        except Exception as e:
+            logger.warning(f"DB delete {memory_id} failed: {e}")
+        return False

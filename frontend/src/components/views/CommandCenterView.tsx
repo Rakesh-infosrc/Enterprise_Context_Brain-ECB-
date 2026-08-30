@@ -209,7 +209,7 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
                 </h3>
               </div>
 
-              <RippleButton rippleColor="rgba(255,255,255,0.35)" duration="600ms"
+              <RippleButton rippleColor="rgba(99,102,241,0.15)" duration="600ms"
                 onClick={() => onAskQuestion(`What is the current status of ${activeProject.name}?`)}
                 className="glass-btn glass-btn-primary"
                 style={{ fontSize: 'var(--fs-sm)', padding: '0.45rem 0.9rem' }}

@@ -249,6 +249,7 @@ class LangGraphOrchestrator:
             diag_run = AgentRunModel(
                 id=run_id, trace_id=trace_id, org_id="org-acme-fintech", user_id=user_id or "system",
                 workflow=wf_val, query=req.query, status="COMPLETED",
+                project_id=plan.project_ids[0] if plan.project_ids else req.project_id,
                 confidence=agent_run.confidence, confidence_label=agent_run.confidence_label,
                 answer=agent_run.answer, steps=steps, latency_ms=total_latency_ms,
                 total_tokens=agent_run.total_tokens, prompt_tokens=agent_run.prompt_tokens,
@@ -426,6 +427,7 @@ class LangGraphOrchestrator:
             diag_run = AgentRunModel(
                 id=run_id, trace_id=trace_id, org_id="org-acme-fintech", user_id=user_id or "system",
                 workflow=wf_val, query=req.query, status="COMPLETED",
+                project_id=plan.project_ids[0] if plan.project_ids else req.project_id,
                 confidence=agent_run.confidence if agent_run else 0.95,
                 confidence_label="High", answer=agent_run.answer if agent_run else "",
                 steps=steps, latency_ms=total_latency_ms,

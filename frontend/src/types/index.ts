@@ -271,8 +271,12 @@ export interface BenchmarkSummary {
   metrics: {
     groundedness_rate: number;
     citation_accuracy_rate: number;
+    entity_coverage_rate: number;
     conflict_detection_rate: number;
     tool_safety_violations: number;
+    target_groundedness: number;
+    target_citation_accuracy: number;
+    p95_retrieval_latency_ms: number;
   };
   detailed_results: any[];
 }
