@@ -41,6 +41,7 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
     { id: 'adr', label: 'ADR Decisions' },
     { id: 'document', label: 'Architecture Docs' },
     { id: 'slack', label: 'Slack Channels' },
+    { id: 'databricks', label: 'Databricks' },
   ];
 
   const agentOptions: Array<{ id: AgentWorkflow | 'auto'; label: string }> = [
@@ -51,42 +52,97 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
     { id: 'decision_intelligence', label: 'Decision Specialist' },
   ];
 
-  // Dynamically filter projects in the dropdown list based on active selected sources
-  const filteredProjects = projects.filter((p) => {
-    // Completely exclude any example projects
-    if (p.name.toLowerCase().includes('(example)') || p.id === 'prj-sam1') {
-      return false;
-    }
+  const DEFAULT_DOCS: Project[] = [
+    { id: 'doc-01_enterprise_context_brain_architecture', name: '📄 01 Enterprise Context Brain Architecture', code: 'DOC', description: '', status: 'on_track' as any, health_score: 100, owner_id: 'sys', owner_name: 'sys', target_completion_date: '', created_at: '', updated_at: '', active_risks_count: 0, open_tickets_count: 0, recent_decisions_count: 0, milestones: [] },
+    { id: 'doc-02_databricks_mcp_agent_architecture', name: '📄 02 Databricks Agent MCP Architecture', code: 'DOC', description: '', status: 'on_track' as any, health_score: 100, owner_id: 'sys', owner_name: 'sys', target_completion_date: '', created_at: '', updated_at: '', active_risks_count: 0, open_tickets_count: 0, recent_decisions_count: 0, milestones: [] },
+    { id: 'doc-03_airflow_mcp_openwebui_architecture', name: '📄 03 Airflow MCP OpenWebUI Architecture', code: 'DOC', description: '', status: 'on_track' as any, health_score: 100, owner_id: 'sys', owner_name: 'sys', target_completion_date: '', created_at: '', updated_at: '', active_risks_count: 0, open_tickets_count: 0, recent_decisions_count: 0, milestones: [] },
+    { id: 'doc-04_virtual_receptionist_clara_bot_architecture', name: '📄 04 Virtual Receptionist Clara Bot Architecture', code: 'DOC', description: '', status: 'on_track' as any, health_score: 100, owner_id: 'sys', owner_name: 'sys', target_completion_date: '', created_at: '', updated_at: '', active_risks_count: 0, open_tickets_count: 0, recent_decisions_count: 0, milestones: [] },
+    { id: 'doc-github_poc_master_architecture', name: '📄 GitHub POC Master Architecture', code: 'DOC', description: '', status: 'on_track' as any, health_score: 100, owner_id: 'sys', owner_name: 'sys', target_completion_date: '', created_at: '', updated_at: '', active_risks_count: 0, open_tickets_count: 0, recent_decisions_count: 0, milestones: [] },
+  ];
 
-    const nameLower = p.name.toLowerCase();
+  // Dynamically filter projects in the dropdown list based on active selected sources
+  const filteredProjects = React.useMemo(() => {
+    const isDocSelected = selectedSources.includes('document');
     const isJiraSelected = selectedSources.includes('jira');
     const isGitSelected = selectedSources.includes('git');
+    const isDatabricksSelected = selectedSources.includes('databricks');
+    const isOtherSourceSelected = isJiraSelected || isGitSelected || isDatabricksSelected;
 
-    // If both Jira and Git are selected or neither is selected, show all active non-example projects
-    if ((isJiraSelected && isGitSelected) || (!isJiraSelected && !isGitSelected)) {
+    const baseList = projects.filter((p) => {
+      // Completely exclude any example projects
+      if (p.name.toLowerCase().includes('(example)') || p.id === 'prj-sam1') {
+        return false;
+      }
+
+      const nameLower = p.name.toLowerCase();
+      const isGitRepo = p.name.includes('/') || (p as any).source_type === 'github' || (p as any).source_type === 'git';
+
+      // For Git repos: only include if active webhook connection
+      if (isGitRepo) {
+        const isWebhookActive = (p as any).webhook_status === 'active' || (p as any).is_connected === true;
+        if ((p as any).webhook_status && !isWebhookActive) {
+          return false;
+        }
+      }
+
+      const sourceTypeRaw = ((p as any).source_type || '').toLowerCase();
+      const isDatabricksProject = sourceTypeRaw === 'databricks';
+
+      const relevantFilterActive = isJiraSelected || isGitSelected || isDatabricksSelected;
+
+      if (!relevantFilterActive) {
+        return true;
+      }
+
+      if (isJiraSelected && isGitSelected && isDatabricksSelected) {
+        return true;
+      }
+
+      if (isJiraSelected && !isGitSelected && !isDatabricksSelected) {
+        return nameLower.includes('jira') || nameLower.includes('kan') || p.id.includes('kan') || sourceTypeRaw === 'jira';
+      }
+      if (!isJiraSelected && isGitSelected && !isDatabricksSelected) {
+        return isGitRepo || nameLower.includes('git') || nameLower.includes('github') || nameLower.includes('clara') || p.id.includes('clara') || p.id.includes('ecb');
+      }
+      if (!isJiraSelected && !isGitSelected && isDatabricksSelected) {
+        return isDatabricksProject;
+      }
+
+      if (isJiraSelected && isGitSelected && !isDatabricksSelected) {
+        const isJiraProject = nameLower.includes('jira') || nameLower.includes('kan') || p.id.includes('kan') || sourceTypeRaw === 'jira';
+        return isJiraProject || isGitRepo;
+      }
+      if (isJiraSelected && !isGitSelected && isDatabricksSelected) {
+        const isJiraProject = nameLower.includes('jira') || nameLower.includes('kan') || p.id.includes('kan') || sourceTypeRaw === 'jira';
+        return isJiraProject || isDatabricksProject;
+      }
+      if (!isJiraSelected && isGitSelected && isDatabricksSelected) {
+        return isGitRepo || isDatabricksProject;
+      }
+
       return true;
-    }
+    });
 
-    // If only Jira is selected: show Jira projects
-    if (isJiraSelected && !isGitSelected) {
-      return nameLower.includes('jira') || nameLower.includes('kan') || p.id.includes('kan');
-    }
+    const combined = isDocSelected
+      ? (isOtherSourceSelected ? [...DEFAULT_DOCS, ...baseList] : DEFAULT_DOCS)
+      : baseList;
 
-    // If only Git is selected: show Git projects
-    if (isGitSelected && !isJiraSelected) {
-      return nameLower.includes('git') || nameLower.includes('github') || nameLower.includes('clara') || nameLower.includes('databricks') || p.id.includes('clara') || p.id.includes('databricks') || p.id.includes('ecb');
-    }
-
-    return true;
-  });
+    // Deduplicate options by id and normalized name
+    const seenIds = new Set<string>();
+    const seenNames = new Set<string>();
+    return combined.filter((p) => {
+      const normName = p.name.trim().toLowerCase();
+      if (seenIds.has(p.id) || seenNames.has(normName)) return false;
+      seenIds.add(p.id);
+      seenNames.add(normName);
+      return true;
+    });
+  }, [projects, selectedSources]);
 
   return (
     <div
+      className="glass-panel"
       style={{
-        background: 'rgba(13, 27, 42, 0.75)',
-        backdropFilter: 'blur(16px)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        borderRadius: '14px',
         padding: '0.85rem 1.25rem',
         display: 'flex',
         flexWrap: 'wrap',
@@ -100,53 +156,52 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
       <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--fs-xs)' }}>
         {/* Project Chip */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: 'var(--fs-sm)', color: 'var(--text-muted)' }}>
-          <Layers size={15} color="#5ca8ff" />
+          <Layers size={15} color="#6366f1" />
           <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>Project:</span>
           <select
             value={selectedProjectId}
             onChange={(e) => onSelectProject(e.target.value)}
             style={{
-              background: 'rgba(7, 17, 31, 0.8)',
-              border: '1px solid rgba(92, 168, 255, 0.3)',
+              background: 'var(--bg-input)',
+              border: '1px solid var(--border-medium)',
               borderRadius:'var(--radius-sm)',
-              color: '#ffffff',
+              color: 'var(--text-primary)',
               padding: '0.25rem 0.5rem',
               fontSize: 'var(--fs-sm)',
               fontWeight: 600,
               outline: 'none',
             }}
           >
-            <option value="all" style={{ background: '#07111f', color: '#ffffff' }}>
-              All Connected Projects
-            </option>
+            <option value="all">All Connected Projects</option>
             {filteredProjects.map((p) => (
-              <option key={p.id} value={p.id} style={{ background: '#07111f', color: '#ffffff' }}>
+              <option key={p.id} value={p.id}>
                 {p.name}
               </option>
             ))}
           </select>
         </div>
 
-        <div style={{ width: '1px', height: '20px', background: 'rgba(255, 255, 255, 0.1)' }} />
+        <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)' }} />
 
         {/* Time Scope Pills */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
           <Clock size={14} color="#94a3b8" />
           <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', fontWeight: 500 }}>Temporal Scope:</span>
           {[7, 30, 90].map((days) => (
-            <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
+            <RippleButton rippleColor="rgba(99,102,241,0.2)" duration="600ms"
               key={days}
               onClick={() => onSelectTimeRange(days)}
               style={{
-                background: timeRangeDays === days ? 'rgba(92, 168, 255, 0.2)' : 'rgba(255, 255, 255, 0.04)',
-                border: timeRangeDays === days ? '1px solid #5ca8ff' : '1px solid rgba(255, 255, 255, 0.08)',
-                color: timeRangeDays === days ? 'var(--accent-blue)' : 'var(--text-muted)',
+                background: timeRangeDays === days ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-input)',
+                border: timeRangeDays === days ? '1.5px solid #6366f1' : '1px solid var(--border-subtle)',
+                color: timeRangeDays === days ? '#6366f1' : 'var(--text-muted)',
                 borderRadius:'var(--radius-sm)',
                 padding: '0.2rem 0.55rem',
                 fontSize: 'var(--fs-xs)',
                 fontWeight: 600,
                 cursor: 'pointer',
-                transition: 'all 0.15s',
+                transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                boxShadow: timeRangeDays === days ? '0 0 0 3px rgba(99, 102, 241, 0.1)' : 'none',
               }}
             >
               {days}d
@@ -154,7 +209,7 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
           ))}
         </div>
 
-        <div style={{ width: '1px', height: '20px', background: 'rgba(255, 255, 255, 0.1)' }} />
+        <div style={{ width: '1px', height: '20px', background: 'var(--border-subtle)' }} />
 
         {/* Source Toggles */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -163,13 +218,13 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
           {allSources.map((src) => {
             const isSelected = selectedSources.includes(src.id);
             return (
-              <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
+              <RippleButton rippleColor="rgba(99,102,241,0.2)" duration="600ms"
                 key={src.id}
                 onClick={() => onToggleSource(src.id)}
                 style={{
-                  background: isSelected ? 'rgba(53, 208, 127, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                  border: isSelected ? '1px solid rgba(53, 208, 127, 0.4)' : '1px solid rgba(255, 255, 255, 0.06)',
-                  color: isSelected ? 'var(--accent-emerald)' : 'var(--text-faint)',
+                  background: isSelected ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-input)',
+                  border: isSelected ? '1.5px solid rgba(99, 102, 241, 0.45)' : '1px solid var(--border-subtle)',
+                  color: isSelected ? '#6366f1' : 'var(--text-muted)',
                   borderRadius:'var(--radius-sm)',
                   padding: '0.2rem 0.5rem',
                   fontSize: 'var(--fs-xs)',
@@ -178,6 +233,8 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.25rem',
+                  transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                  boxShadow: isSelected ? '0 0 0 3px rgba(99, 102, 241, 0.08)' : 'none',
                 }}
               >
                 {isSelected && <Check size={11} />}
@@ -190,7 +247,7 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
 
       {/* Right: Specialist Agent Selector */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <Bot size={15} color="#c084fc" />
+        <Bot size={15} color="#8b5cf6" />
         <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', fontWeight: 500 }}>Agent:</span>
         <select
           value={selectedWorkflow || 'auto'}
@@ -199,10 +256,10 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
             onSelectWorkflow(val === 'auto' ? undefined : (val as AgentWorkflow));
           }}
           style={{
-            background: 'rgba(155, 124, 255, 0.15)',
-            border: '1px solid rgba(155, 124, 255, 0.4)',
+            background: 'rgba(99, 102, 241, 0.1)',
+            border: '1px solid rgba(99, 102, 241, 0.3)',
             borderRadius:'var(--radius-sm)',
-            color: '#e9d5ff',
+            color: '#6366f1',
             padding: '0.25rem 0.6rem',
             fontSize: 'var(--fs-xs)',
             fontWeight: 600,
@@ -211,7 +268,7 @@ export const ContextScopeBar: React.FC<ContextScopeBarProps> = ({
           }}
         >
           {agentOptions.map((opt) => (
-            <option key={opt.id} value={opt.id} style={{ background: '#07111f', color: '#ffffff' }}>
+            <option key={opt.id} value={opt.id}>
               {opt.label}
             </option>
           ))}

@@ -740,65 +740,64 @@ html.dark .recharts-tooltip-wrapper, html.dark .recharts-default-tooltip {
 }
 
 /* ==========================================================================
-   Light Mode — activated via html:not(.dark) or .light-mode (for View Transition)
-   Magic UI AnimatedThemeToggler toggles .dark on <html>
+   Light Mode — Design System: Indigo / Violet / Cyan / Emerald
+   Clean, modern, eye-friendly with soft surfaces and subtle depth
    ========================================================================== */
 html:not(.dark), html.light-mode {
-  --bg-primary: #f8fafc;
+  /* Surfaces */
+  --bg-primary: #f8f9fc;
   --bg-secondary: #ffffff;
-  --bg-card: rgba(255, 255, 255, 0.9);
-  --bg-card-hover: #f1f5f9;
-  --bg-input: #f1f5f9;
+  --bg-card: rgba(255, 255, 255, 0.82);
+  --bg-card-hover: #f1f3f8;
+  --bg-input: #f1f3f8;
 
-  --accent-blue: #1d9bf0;
-  --accent-blue-glow: rgba(29, 155, 240, 0.25);
-  --accent-violet: #6366f1;
-  --accent-violet-glow: rgba(99, 102, 241, 0.2);
-  --accent-cyan: #0ea5e9;
+  /* Brand accents — from design system */
+  --accent-indigo: #6366f1;
+  --accent-violet: #8b5cf6;
+  --accent-cyan: #22d3ee;
   --accent-emerald: #10b981;
-  --accent-emerald-glow: rgba(16, 185, 129, 0.2);
   --accent-amber: #f59e0b;
-  --accent-amber-glow: rgba(245, 158, 11, 0.2);
   --accent-rose: #ef4444;
-  --accent-rose-glow: rgba(239, 68, 68, 0.25);
 
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
-  --text-faint: #94a3b8;
+  /* Text hierarchy */
+  --text-primary: #1e293b;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --text-faint: #cbd5e1;
 
-  --border-subtle: #e2e8f0;
-  --border-medium: #cbd5e1;
-  --border-focus: #1d9bf0;
+  /* Borders — subtle, clean */
+  --border-subtle: #e8ecf1;
+  --border-medium: #d1d9e6;
+  --border-focus: #6366f1;
 }
 
 html:not(.dark) body,
 html.light-mode body {
-  background-color: #f8fafc !important;
+  background-color: #f8f9fc !important;
   background-image:
-    radial-gradient(at 0% 0%, rgba(29, 155, 240, 0.08) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(99, 102, 241, 0.06) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.04) 0px, transparent 50%) !important;
-  color: #0f172a !important;
+    radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.05) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.04) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(34, 211, 238, 0.03) 0px, transparent 50%) !important;
+  color: #1e293b !important;
 }
 
 html:not(.dark) header, html.light-mode header {
-  background: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(20px) !important;
-  border-bottom: 1px solid #e2e8f0 !important;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
+  background: rgba(248, 249, 252, 0.85) !important;
+  backdrop-filter: blur(24px) saturate(1.5) !important;
+  border-bottom: 1px solid #e8ecf1 !important;
+  box-shadow: 0 1px 3px rgba(99, 102, 241, 0.04) !important;
 }
 
 html:not(.dark) header h1, html.light-mode header h1,
 html:not(.dark) header select {
-  color: #0f172a !important;
+  color: #1e293b !important;
 }
 
 html:not(.dark) aside, html.light-mode aside {
-  background: rgba(255, 255, 255, 0.96) !important;
-  backdrop-filter: blur(20px) !important;
-  border-right: 1px solid #e2e8f0 !important;
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.02) !important;
+  background: rgba(248, 249, 252, 0.9) !important;
+  backdrop-filter: blur(24px) saturate(1.4) !important;
+  border-right: 1px solid #e8ecf1 !important;
+  box-shadow: 1px 0 8px rgba(99, 102, 241, 0.03) !important;
 }
 
 html:not(.dark) aside span,
@@ -807,15 +806,16 @@ html:not(.dark) aside div,
 html.light-mode aside span,
 html.light-mode aside p,
 html.light-mode aside div {
-  color: #0f172a;
+  color: #475569;
 }
 
 html:not(.dark) .glass-panel, html.light-mode .glass-panel {
-  background: rgba(255, 255, 255, 0.9) !important;
-  backdrop-filter: blur(20px) !important;
-  border: 1px solid #e2e8f0 !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 4px 10px -2px rgba(0, 0, 0, 0.02) !important;
-  color: #0f172a !important;
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(1.4) !important;
+  border: 1px solid #e8ecf1 !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.05), 0 1px 4px rgba(0, 0, 0, 0.02) !important;
+  color: #1e293b !important;
 }
 
 html:not(.dark) .glass-panel h2,
@@ -824,63 +824,69 @@ html:not(.dark) .glass-panel h4,
 html.light-mode .glass-panel h2,
 html.light-mode .glass-panel h3,
 html.light-mode .glass-panel h4 {
-  color: #0f172a !important;
+  color: #1e293b !important;
 }
 
 html:not(.dark) .glass-card, html.light-mode .glass-card {
-  background: #ffffff !important;
-  border: 1px solid #e2e8f0 !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03) !important;
-  color: #0f172a !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(12px) !important;
+  border: 1px solid #e8ecf1 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 2px 12px rgba(99, 102, 241, 0.04) !important;
+  color: #1e293b !important;
 }
 
 html:not(.dark) .glass-card-hover:hover, html.light-mode .glass-card-hover:hover {
-  background: #f8fafc !important;
-  border-color: #1d9bf0 !important;
-  box-shadow: 0 8px 24px -4px rgba(29, 155, 240, 0.18) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: #6366f1 !important;
+  box-shadow: 0 8px 28px rgba(99, 102, 241, 0.1) !important;
 }
 
 html:not(.dark) .glass-btn, html.light-mode .glass-btn {
-  background: #f1f5f9 !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #0f172a !important;
-}
-
-html:not(.dark) .glass-btn:hover, html.light-mode .glass-btn:hover {
-  background: #e2e8f0 !important;
-  color: #1d9bf0 !important;
-  border-color: #1d9bf0 !important;
-}
-
-html:not(.dark) .glass-btn-primary, html.light-mode .glass-btn-primary {
-  background: linear-gradient(135deg, #1d9bf0 0%, #0284c7 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid #1d9bf0 !important;
-  box-shadow: 0 4px 14px rgba(29, 155, 240, 0.35) !important;
-}
-
-html:not(.dark) .glass-input, html.light-mode .glass-input {
-  background: #f1f5f9 !important;
-  border: 1px solid #cbd5e1 !important;
-  color: #0f172a !important;
-}
-
-html:not(.dark) .glass-input:focus, html.light-mode .glass-input:focus {
-  border-color: #1d9bf0 !important;
-  box-shadow: 0 0 0 3px rgba(29, 155, 240, 0.25) !important;
-  background: #ffffff !important;
-}
-
-html:not(.dark) .glass-pill, html.light-mode .glass-pill {
-  background: #f1f5f9 !important;
-  border: 1px solid #e2e8f0 !important;
+  background: #f1f3f8 !important;
+  border: 1px solid #d1d9e6 !important;
+  border-radius: 10px !important;
   color: #475569 !important;
 }
 
+html:not(.dark) .glass-btn:hover, html.light-mode .glass-btn:hover {
+  background: #e8ecf1 !important;
+  color: #6366f1 !important;
+  border-color: #6366f1 !important;
+}
+
+html:not(.dark) .glass-btn-primary, html.light-mode .glass-btn-primary {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #6366f1 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.3) !important;
+}
+
+html:not(.dark) .glass-input, html.light-mode .glass-input {
+  background: #f1f3f8 !important;
+  border: 1px solid #d1d9e6 !important;
+  border-radius: 10px !important;
+  color: #1e293b !important;
+}
+
+html:not(.dark) .glass-input:focus, html.light-mode .glass-input:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+  background: rgba(255, 255, 255, 0.9) !important;
+}
+
+html:not(.dark) .glass-pill, html.light-mode .glass-pill {
+  background: #f1f3f8 !important;
+  border: 1px solid #e8ecf1 !important;
+  border-radius: 9999px !important;
+  color: #64748b !important;
+}
+
 html:not(.dark) .glass-pill.active, html.light-mode .glass-pill.active {
-  background: rgba(29, 155, 240, 0.12) !important;
-  border-color: rgba(29, 155, 240, 0.4) !important;
-  color: #1d9bf0 !important;
+  background: rgba(99, 102, 241, 0.1) !important;
+  border-color: rgba(99, 102, 241, 0.35) !important;
+  color: #6366f1 !important;
 }
 
 /* ==========================================================================

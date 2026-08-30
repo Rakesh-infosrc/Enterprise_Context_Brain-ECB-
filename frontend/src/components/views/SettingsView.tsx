@@ -174,7 +174,7 @@ export const SettingsView: React.FC = () => {
             Governance Profiles, Ingestion Connectors &amp; Gateway Settings
           </span>
         </div>
-        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff' }}>
+        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
           Settings &amp; Data Plane Connectors
         </h2>
       </div>
@@ -201,7 +201,7 @@ export const SettingsView: React.FC = () => {
         {/* Left: Ingestion Connectors */}
         <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
               Canonical Ingestion Connectors (Credentials &amp; Settings)
             </h3>
           </div>
@@ -211,13 +211,13 @@ export const SettingsView: React.FC = () => {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {/* Databricks Connector */}
-              <div style={{ background: 'rgba(17, 34, 54, 0.55)', borderRadius: 'var(--radius-md)', padding: '1.25rem', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+              <div className="glass-card" style={{ padding: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <h4 style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.95rem' }}>Databricks Integration</h4>
-                  <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.95rem' }}>Databricks Integration</h4>
+                  <RippleButton rippleColor="rgba(99,102,241,0.25)" duration="600ms"
                     onClick={() => handleSync('databricks')}
                     disabled={syncing === 'databricks'}
-                    style={{ fontSize: 'var(--fs-xs)', padding: '0.3rem 0.7rem', borderRadius: '9999px', background: syncing === 'databricks' ? 'rgba(100,116,139,0.2)' : 'rgba(92,168,255,0.15)', color: syncing === 'databricks' ? '#64748b' : '#5ca8ff', border: '1px solid rgba(92,168,255,0.3)', cursor: syncing === 'databricks' ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                    style={{ fontSize: 'var(--fs-xs)', padding: '0.3rem 0.7rem', borderRadius: '9999px', background: syncing === 'databricks' ? 'rgba(100,116,139,0.2)' : 'rgba(99,102,241,0.15)', color: syncing === 'databricks' ? '#64748b' : '#6366f1', border: '1px solid rgba(99,102,241,0.3)', cursor: syncing === 'databricks' ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                   >
                     <RefreshCw size={12} className={syncing === 'databricks' ? 'animate-spin' : ''} />
                     {syncing === 'databricks' ? 'Syncing...' : 'Sync'}
@@ -226,23 +226,23 @@ export const SettingsView: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Workspace Host URL</label>
-                    <input type="text" value={dbxHost} onChange={(e) => setDbxHost(e.target.value)} className="glass-input" style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.45rem', color: '#ffffff', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="text" value={dbxHost} onChange={(e) => setDbxHost(e.target.value)} className="glass-input" style={{ width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-medium)', padding: '0.45rem', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Personal Access Token (PAT)</label>
-                    <input type="password" value={dbxToken} onChange={(e) => setDbxToken(e.target.value)} className="glass-input" style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.45rem', color: '#ffffff', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="password" value={dbxToken} onChange={(e) => setDbxToken(e.target.value)} className="glass-input" style={{ width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-medium)', padding: '0.45rem', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                 </div>
               </div>
 
               {/* Jira Connector */}
-              <div style={{ background: 'rgba(17, 34, 54, 0.55)', borderRadius: 'var(--radius-md)', padding: '1.25rem', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+              <div className="glass-card" style={{ padding: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <h4 style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.95rem' }}>Jira Enterprise Integration</h4>
-                  <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.95rem' }}>Jira Enterprise Integration</h4>
+                  <RippleButton rippleColor="rgba(99,102,241,0.25)" duration="600ms"
                     onClick={() => handleSync('jira')}
                     disabled={syncing === 'jira'}
-                    style={{ fontSize: 'var(--fs-xs)', padding: '0.3rem 0.7rem', borderRadius: '9999px', background: syncing === 'jira' ? 'rgba(100,116,139,0.2)' : 'rgba(92,168,255,0.15)', color: syncing === 'jira' ? '#64748b' : '#5ca8ff', border: '1px solid rgba(92,168,255,0.3)', cursor: syncing === 'jira' ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                    style={{ fontSize: 'var(--fs-xs)', padding: '0.3rem 0.7rem', borderRadius: '9999px', background: syncing === 'jira' ? 'rgba(100,116,139,0.2)' : 'rgba(99,102,241,0.15)', color: syncing === 'jira' ? '#64748b' : '#6366f1', border: '1px solid rgba(99,102,241,0.3)', cursor: syncing === 'jira' ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                   >
                     <RefreshCw size={12} className={syncing === 'jira' ? 'animate-spin' : ''} />
                     {syncing === 'jira' ? 'Syncing...' : 'Sync'}
@@ -251,27 +251,27 @@ export const SettingsView: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Jira Base URL</label>
-                    <input type="text" value={jiraUrl} onChange={(e) => setJiraUrl(e.target.value)} className="glass-input" style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.45rem', color: '#ffffff', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="text" value={jiraUrl} onChange={(e) => setJiraUrl(e.target.value)} className="glass-input" style={{ width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-medium)', padding: '0.45rem', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>User Email Address</label>
-                    <input type="text" value={jiraEmail} onChange={(e) => setJiraEmail(e.target.value)} className="glass-input" style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.45rem', color: '#ffffff', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="text" value={jiraEmail} onChange={(e) => setJiraEmail(e.target.value)} className="glass-input" style={{ width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-medium)', padding: '0.45rem', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>API Token</label>
-                    <input type="password" value={jiraToken} onChange={(e) => setJiraToken(e.target.value)} className="glass-input" style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.45rem', color: '#ffffff', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="password" value={jiraToken} onChange={(e) => setJiraToken(e.target.value)} className="glass-input" style={{ width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-medium)', padding: '0.45rem', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                 </div>
               </div>
 
               {/* GitHub Connector */}
-              <div style={{ background: 'rgba(17, 34, 54, 0.55)', borderRadius: 'var(--radius-md)', padding: '1.25rem', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+              <div className="glass-card" style={{ padding: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                  <h4 style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.95rem' }}>GitHub Integration</h4>
-                  <RippleButton rippleColor="rgba(92,168,255,0.25)" duration="600ms"
+                  <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.95rem' }}>GitHub Integration</h4>
+                  <RippleButton rippleColor="rgba(99,102,241,0.25)" duration="600ms"
                     onClick={() => handleSync('github')}
                     disabled={syncing === 'github'}
-                    style={{ fontSize: 'var(--fs-xs)', padding: '0.3rem 0.7rem', borderRadius: '9999px', background: syncing === 'github' ? 'rgba(100,116,139,0.2)' : 'rgba(92,168,255,0.15)', color: syncing === 'github' ? '#64748b' : '#5ca8ff', border: '1px solid rgba(92,168,255,0.3)', cursor: syncing === 'github' ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                    style={{ fontSize: 'var(--fs-xs)', padding: '0.3rem 0.7rem', borderRadius: '9999px', background: syncing === 'github' ? 'rgba(100,116,139,0.2)' : 'rgba(99,102,241,0.15)', color: syncing === 'github' ? '#64748b' : '#6366f1', border: '1px solid rgba(99,102,241,0.3)', cursor: syncing === 'github' ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
                   >
                     <RefreshCw size={12} className={syncing === 'github' ? 'animate-spin' : ''} />
                     {syncing === 'github' ? 'Syncing...' : 'Sync'}
@@ -280,15 +280,15 @@ export const SettingsView: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>GitHub Host URL</label>
-                    <input type="text" value={githubHost} onChange={(e) => setGithubHost(e.target.value)} placeholder="https://github.com" className="glass-input" style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.45rem', color: '#ffffff', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="text" value={githubHost} onChange={(e) => setGithubHost(e.target.value)} placeholder="https://github.com" className="glass-input" style={{ width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-medium)', padding: '0.45rem', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Personal Access Token</label>
-                    <input type="password" value={githubToken} onChange={(e) => setGithubToken(e.target.value)} className="glass-input" style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.45rem', color: '#ffffff', borderRadius: 'var(--radius-sm)' }} />
+                    <input type="password" value={githubToken} onChange={(e) => setGithubToken(e.target.value)} className="glass-input" style={{ width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-medium)', padding: '0.45rem', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)' }} />
                   </div>
                   <div>
                     <label style={{ display: 'block', fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Repositories to Sync (comma-separated, e.g. owner/repo1, owner/repo2)</label>
-                    <textarea value={githubRepos} onChange={(e) => setGithubRepos(e.target.value)} placeholder="Leave empty to sync all accessible repositories" rows={2} className="glass-input" style={{ width: '100%', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', padding: '0.45rem', color: '#ffffff', borderRadius: 'var(--radius-sm)', resize: 'vertical' }} />
+                    <textarea value={githubRepos} onChange={(e) => setGithubRepos(e.target.value)} placeholder="Leave empty to sync all accessible repositories" rows={2} className="glass-input" style={{ width: '100%', background: 'var(--bg-input)', border: '1px solid var(--border-medium)', padding: '0.45rem', color: 'var(--text-primary)', borderRadius: 'var(--radius-sm)', resize: 'vertical' }} />
                   </div>
                 </div>
               </div>
@@ -300,10 +300,10 @@ export const SettingsView: React.FC = () => {
                 const disconnectedWebhooks = allWebhookProjects.filter((p: any) => hiddenIds.includes(p.id));
 
                 return (
-                  <div style={{ background: 'linear-gradient(180deg, rgba(15,23,42,0.85) 0%, rgba(10,18,32,0.9) 100%)', borderRadius: 'var(--radius-md)', padding: '1.25rem', border: '1px solid rgba(148,163,184,0.12)', boxShadow: '0 8px 24px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.04)', backdropFilter: 'blur(12px)' }}>
+                  <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', padding: '1.25rem', border: '1px solid var(--border-subtle)', backdropFilter: 'blur(12px)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
-                      <h4 style={{ color: '#f8fafc', fontWeight: 700, fontSize: '0.95rem', letterSpacing: '-0.01em' }}>Active Webhook Integrations</h4>
-                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '9999px', background: activeWebhooks.length ? 'rgba(34,197,94,0.15)' : 'rgba(100,116,139,0.12)', color: activeWebhooks.length ? '#86efac' : '#94a3b8', border: `1px solid ${activeWebhooks.length ? 'rgba(34,197,94,0.25)' : 'rgba(255,255,255,0.08)'}`, boxShadow: activeWebhooks.length ? '0 0 10px rgba(34,197,94,0.15)' : 'none' }}>
+                      <h4 style={{ color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.95rem', letterSpacing: '-0.01em' }}>Active Webhook Integrations</h4>
+                      <span style={{ fontSize: '11px', fontWeight: 700, padding: '0.2rem 0.6rem', borderRadius: '9999px', background: activeWebhooks.length ? 'rgba(99, 102, 241, 0.12)' : 'rgba(100,116,139,0.12)', color: activeWebhooks.length ? '#6366f1' : '#94a3b8', border: `1px solid ${activeWebhooks.length ? 'rgba(99, 102, 241, 0.3)' : 'var(--border-subtle)'}`, boxShadow: activeWebhooks.length ? '0 0 10px rgba(99, 102, 241, 0.1)' : 'none' }}>
                         {activeWebhooks.length} Active
                       </span>
                     </div>
@@ -312,16 +312,16 @@ export const SettingsView: React.FC = () => {
                       <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>No Git webhooks detected. Send a push / pull-request webhook event to auto-register.</div>
                     ) : activeWebhooks.length === 0 ? (
                       <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', padding: '0.75rem', textAlign: 'center', border: '1px dashed rgba(255,255,255,0.08)', borderRadius: 'var(--radius-sm)', background: 'rgba(0,0,0,0.15)' }}>
-                        All webhooks are disconnected — none will show in your POC. Click <span style={{ color: '#5ca8ff', fontWeight: 700 }}>Connect</span> below to re-enable.
+                        All webhooks are disconnected — none will show in your POC. Click <span style={{ color: '#6366f1', fontWeight: 700 }}>Connect</span> below to re-enable.
                       </div>
                     ) : (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {activeWebhooks.map((p: any) => (
-                          <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', background: 'linear-gradient(135deg, rgba(30,41,59,0.85) 0%, rgba(15,23,42,0.9) 100%)', padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(148,163,184,0.14)', boxShadow: '0 4px 14px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.05)' }}>
+                          <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', background: 'var(--bg-card)', padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                             <div style={{ minWidth: 0, flex: 1 }}>
-                              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
-                              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--accent-emerald)', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.15rem' }}>
-                                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#35d07f', display: 'inline-block', flexShrink: 0 }} />
+                              <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</div>
+                              <div style={{ fontSize: 'var(--fs-xs)', color: '#6366f1', display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.15rem' }}>
+                                <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#6366f1', display: 'inline-block', flexShrink: 0 }} />
                                 Webhook Active
                               </div>
                             </div>
@@ -360,14 +360,14 @@ export const SettingsView: React.FC = () => {
 
                     {/* Disconnected — shows Connect to re-enable in POC */}
                     {disconnectedWebhooks.length > 0 && (
-                      <div style={{ marginTop: '1.1rem', paddingTop: '0.9rem', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ marginTop: '1.1rem', paddingTop: '0.9rem', borderTop: '1px solid var(--border-subtle)' }}>
                         <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                           <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#64748b' }} />
                           Disconnected — hidden from POC ({disconnectedWebhooks.length})
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                           {disconnectedWebhooks.map((p: any) => (
-                            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', background: 'rgba(0,0,0,0.28)', padding: '0.6rem 0.85rem', borderRadius: 'var(--radius-sm)', border: '1px dashed rgba(100,116,139,0.25)', opacity: 0.9 }}>
+                            <div key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem', background: 'var(--bg-card)', padding: '0.6rem 0.85rem', borderRadius: 'var(--radius-sm)', border: '1px dashed rgba(100,116,139,0.25)', opacity: 0.9 }}>
                               <div style={{ minWidth: 0, flex: 1 }}>
                                 <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textDecoration: 'line-through' }}>{p.name}</div>
                                 <div style={{ fontSize: 'var(--fs-xs)', color: '#64748b', marginTop: '0.15rem' }}>Hidden from POC</div>
@@ -412,7 +412,7 @@ export const SettingsView: React.FC = () => {
 
         {/* Right: Policy & Security Profile */}
         <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
             Governance &amp; Policy Profile
           </h3>
 
@@ -425,15 +425,24 @@ export const SettingsView: React.FC = () => {
               <div
                 key={prof.id}
                 onClick={() => setPolicyProfile(prof.id)}
+                className="glass-card"
                 style={{
                   padding: '0.85rem 1rem',
-                  borderRadius: 'var(--radius-md)',
-                  background: policyProfile === prof.id ? 'rgba(92, 168, 255, 0.15)' : 'rgba(17, 34, 54, 0.4)',
-                  border: policyProfile === prof.id ? '1px solid #5ca8ff' : '1px solid rgba(255, 255, 255, 0.05)',
+                  background: policyProfile === prof.id
+                    ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%)'
+                    : undefined,
+                  border: policyProfile === prof.id
+                    ? '1.5px solid rgba(99, 102, 241, 0.5)'
+                    : undefined,
+                  borderLeft: policyProfile === prof.id ? '3.5px solid #6366f1' : '3.5px solid transparent',
+                  boxShadow: policyProfile === prof.id
+                    ? '0 0 0 3px rgba(99, 102, 241, 0.1), 0 4px 12px rgba(99, 102, 241, 0.12)'
+                    : 'none',
                   cursor: 'pointer',
+                  transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
                 }}
               >
-                <div style={{ fontSize: 'var(--fs-base)', fontWeight: 700, color: policyProfile === prof.id ? 'var(--accent-blue)' : '#ffffff', marginBottom: '0.2rem' }}>
+                <div style={{ fontSize: 'var(--fs-base)', fontWeight: 700, color: policyProfile === prof.id ? '#6366f1' : 'var(--text-primary)', marginBottom: '0.2rem' }}>
                   {prof.name}
                 </div>
                 <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', lineHeight: 1.4 }}>

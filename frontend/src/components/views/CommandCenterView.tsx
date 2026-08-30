@@ -204,7 +204,7 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
                     ● {activeProject.status.replace('_', ' ').toUpperCase()}
                   </span>
                 </div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                   {activeProject.name}
                 </h3>
               </div>
@@ -230,7 +230,7 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
               </div>
 
               {!activeProject.milestones?.length ? (
-                <div role="status" aria-live="polite" style={{ padding:'1.25rem', textAlign:'center', border:'1px dashed var(--border-subtle)', borderRadius:'var(--radius-md)', background:'rgba(255,255,255,0.02)' }}>
+                <div role="status" aria-live="polite" style={{ padding:'1.25rem', textAlign:'center', border:'1px dashed var(--border-subtle)', borderRadius:'var(--radius-md)', background:'var(--bg-card)' }}>
                   <p style={{ fontSize:'var(--fs-sm)', fontWeight:600, color:'var(--text-secondary)', marginBottom:'0.25rem' }}>No milestones defined</p>
                   <p style={{ fontSize:'var(--fs-xs)', color:'var(--text-muted)' }}>Add milestones in Project Settings to track execution progress.</p>
                 </div>
@@ -240,15 +240,14 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
                 return (
                   <div
                     key={m.id}
+                    className="glass-card"
                     style={{
-                      background: 'rgba(10, 20, 32, 0.6)',
-                      borderRadius:'var(--radius-md)',
                       padding: '0.85rem 1rem',
-                      border: isDelayed ? '1px solid rgba(251, 146, 60, 0.3)' : '1px solid rgba(255, 255, 255, 0.05)',
+                      borderLeft: isDelayed ? '3.5px solid #f59e0b' : '3.5px solid #6366f1',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                      <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: '#ffffff' }}>
+                      <span style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--text-primary)' }}>
                         {m.name}
                       </span>
                       <span
@@ -266,7 +265,7 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
                     <div
                       style={{
                         height: '6px',
-                        background: 'rgba(255, 255, 255, 0.08)',
+                        background: 'var(--border-subtle)',
                         borderRadius: '9999px',
                         overflow: 'hidden',
                       }}
@@ -277,7 +276,7 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
                           height: '100%',
                           background: isDelayed
                             ? 'linear-gradient(90deg, #fb923c, #f97316)'
-                            : 'linear-gradient(90deg, #5ca8ff, #35d07f)',
+                            : 'linear-gradient(90deg, #6366f1, #8b5cf6)',
                           borderRadius: '9999px',
                           transition: 'width 0.4s ease',
                         }}
@@ -293,8 +292,8 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
         {/* Right: Quick Launch Prompts */}
         <div className="glass-panel" style={{ padding: '1.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
-            <Sparkles size={18} color="#9b7cff" />
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff' }}>
+            <Sparkles size={18} color="#8b5cf6" />
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
               Instant Context Queries
             </h3>
           </div>
@@ -327,7 +326,7 @@ export const CommandCenterView: React.FC<CommandCenterViewProps> = ({
                       {qp.badge}
                     </span>
                   </div>
-                  <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600, color: '#ffffff', lineHeight: 1.3 }}>
+                  <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.3 }}>
                     &quot;{qp.prompt}&quot;
                   </div>
                 </div>

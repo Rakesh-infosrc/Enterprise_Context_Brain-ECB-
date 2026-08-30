@@ -69,8 +69,8 @@ def get_dashboard_stats(current_user = Depends(get_current_user)):
     pending_approvals = [a for a in actions if a.status == "pending_approval"]
 
     # Compute live evidence-backed rate from store
-    from ...domain.schemas import SourceType
-    all_evidence = store.get_evidence()
+    from app.domain.schemas import SourceType
+    all_evidence = store.get_evidence_list()
     grounded_count = len([e for e in all_evidence if e.authority in ("high", "medium")])
     total_evidence = len(all_evidence) if all_evidence else 1
     evidence_rate = round((grounded_count / total_evidence) * 100, 1) if total_evidence > 0 else 0.0

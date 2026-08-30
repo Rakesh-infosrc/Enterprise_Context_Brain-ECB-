@@ -36,8 +36,8 @@
   box-shadow: 0 0 12px rgba(92, 168, 255, 0.15);
 }
 html:not(.dark) .ecb-header-search {
-  background: #f1f5f9 !important;
-  border-color: #e2e8f0 !important;
+  background: #f1f3f8 !important;
+  border-color: #e8ecf1 !important;
 }
 
 /* Sidebar nav button → CSS instead of JS onMouseEnter mutation */
@@ -61,9 +61,9 @@ html:not(.dark) .ecb-header-search {
 .ecb-nav-btn:hover { background: rgba(255,255,255,0.05); color: #f1f5f9; }
 .ecb-nav-btn[data-active="true"] { background: rgba(92,168,255,0.14); border-color: rgba(92,168,255,0.35); color: #ffffff; font-weight: 700; }
 .ecb-nav-btn[data-variant="ai"][data-active="true"] { background: linear-gradient(90deg, rgba(155,124,255,0.25) 0%, rgba(92,168,255,0.18) 100%); border-color: rgba(155,124,255,0.45); color: #c084fc; }
-html:not(.dark) .ecb-nav-btn { color: #475569; }
-html:not(.dark) .ecb-nav-btn:hover { background: #f1f5f9; color: #0f172a; }
-html:not(.dark) .ecb-nav-btn[data-active="true"] { background: #e0f2fe; border-color: #38bdf8; color: #0c4a6e; }
+html:not(.dark) .ecb-nav-btn { color: #64748b; }
+html:not(.dark) .ecb-nav-btn:hover { background: #f1f3f8; color: #1e293b; }
+html:not(.dark) .ecb-nav-btn[data-active="true"] { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); color: #4338ca; }
 
 /* Risk heatmap cell base */
 .risk-cell {
@@ -79,7 +79,7 @@ html:not(.dark) .ecb-nav-btn[data-active="true"] { background: #e0f2fe; border-c
   min-height: 65px;
   text-align: center;
 }
-.risk-cell:focus-visible { outline: 2px solid #5ca8ff; outline-offset: 2px; }
+.risk-cell:focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
 .risk-cell[data-selected="true"] { transform: scale(1.05); z-index: 2; }
 
 /* Responsive grids — migrate from inline gridTemplateColumns */

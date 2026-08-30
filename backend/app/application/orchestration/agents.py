@@ -545,7 +545,7 @@ class AgentOrchestrator:
                 supporting.append(Evidence(
                     id=f"evi-dbx-catalogs-{uuid.uuid4().hex[:6]}",
                     source_record_id="rec-dbx-catalogs",
-                    source_type=SourceType.DOCUMENT,
+                    source_type=SourceType.DATABRICKS,
                     source_title="Databricks Unity Catalogs list",
                     external_id="unity-catalogs",
                     project_id="prj-databricks",
@@ -560,8 +560,8 @@ class AgentOrchestrator:
                 supporting.append(Evidence(
                     id=f"evi-dbx-schemas-{uuid.uuid4().hex[:6]}",
                     source_record_id="rec-dbx-schemas",
-                    source_type=SourceType.DOCUMENT,
-                    source_title=f"Schemas in Databricks catalog {matched_catalog}",
+                    source_type=SourceType.DATABRICKS,
+                        source_title=f"Schemas in Databricks catalog {matched_catalog}",
                     external_id="unity-schemas",
                     project_id="prj-databricks",
                     excerpt=f"Live Schemas found inside Databricks catalog '{matched_catalog}': {', '.join(schema_names)}",
@@ -575,8 +575,8 @@ class AgentOrchestrator:
                 supporting.append(Evidence(
                     id=f"evi-dbx-tables-{uuid.uuid4().hex[:6]}",
                     source_record_id="rec-dbx-tables",
-                    source_type=SourceType.DOCUMENT,
-                    source_title=f"Tables in Databricks schema {matched_catalog}.{matched_schema}",
+                    source_type=SourceType.DATABRICKS,
+                        source_title=f"Tables in Databricks schema {matched_catalog}.{matched_schema}",
                     external_id="unity-tables",
                     project_id="prj-databricks",
                     excerpt=f"Live Tables found inside Databricks schema '{matched_catalog}.{matched_schema}': {', '.join(table_names)}",
@@ -590,7 +590,7 @@ class AgentOrchestrator:
                 supporting.append(Evidence(
                     id=f"evi-dbx-clusters-{uuid.uuid4().hex[:6]}",
                     source_record_id="rec-dbx-clusters",
-                    source_type=SourceType.DOCUMENT,
+                    source_type=SourceType.DATABRICKS,
                     source_title="Databricks Clusters status",
                     external_id="compute-clusters",
                     project_id="prj-databricks",
@@ -605,7 +605,7 @@ class AgentOrchestrator:
                 supporting.append(Evidence(
                     id=f"evi-dbx-jobs-{uuid.uuid4().hex[:6]}",
                     source_record_id="rec-dbx-jobs",
-                    source_type=SourceType.DOCUMENT,
+                    source_type=SourceType.DATABRICKS,
                     source_title="Databricks Workflows",
                     external_id="jobs-workflows",
                     project_id="prj-databricks",
@@ -620,8 +620,8 @@ class AgentOrchestrator:
                 supporting.append(Evidence(
                     id=f"evi-dbx-objects-{uuid.uuid4().hex[:6]}",
                     source_record_id="rec-dbx-objects",
-                    source_type=SourceType.DOCUMENT,
-                    source_title=f"Databricks workspace objects in {target_path}",
+                    source_type=SourceType.DATABRICKS,
+                        source_title=f"Databricks workspace objects in {target_path}",
                     external_id="workspace-objects",
                     project_id="prj-databricks",
                     excerpt=f"Live files/folders in path {target_path}: {', '.join(obj_paths)}",
@@ -985,7 +985,7 @@ class AgentOrchestrator:
                 supporting.append(Evidence(
                     id=f"evi-dbx-catalogs-{uuid.uuid4().hex[:6]}",
                     source_record_id="rec-dbx-catalogs",
-                    source_type=SourceType.DOCUMENT,
+                    source_type=SourceType.DATABRICKS,
                     source_title="Databricks Unity Catalogs list",
                     external_id="unity-catalogs",
                     project_id="prj-databricks",
@@ -1000,8 +1000,8 @@ class AgentOrchestrator:
                 supporting.append(Evidence(
                     id=f"evi-dbx-schemas-{uuid.uuid4().hex[:6]}",
                     source_record_id="rec-dbx-schemas",
-                    source_type=SourceType.DOCUMENT,
-                    source_title=f"Schemas in Databricks catalog {matched_catalog}",
+                    source_type=SourceType.DATABRICKS,
+                        source_title=f"Schemas in Databricks catalog {matched_catalog}",
                     external_id="unity-schemas",
                     project_id="prj-databricks",
                     excerpt=f"Live Schemas found inside Databricks catalog '{matched_catalog}': {', '.join(schema_names)}",
@@ -1015,8 +1015,8 @@ class AgentOrchestrator:
                 supporting.append(Evidence(
                     id=f"evi-dbx-tables-{uuid.uuid4().hex[:6]}",
                     source_record_id="rec-dbx-tables",
-                    source_type=SourceType.DOCUMENT,
-                    source_title=f"Tables in Databricks schema {matched_catalog}.{matched_schema}",
+                    source_type=SourceType.DATABRICKS,
+                        source_title=f"Tables in Databricks schema {matched_catalog}.{matched_schema}",
                     external_id="unity-tables",
                     project_id="prj-databricks",
                     excerpt=f"Live Tables found inside Databricks schema '{matched_catalog}.{matched_schema}': {', '.join(table_names)}",
@@ -1030,7 +1030,7 @@ class AgentOrchestrator:
                 supporting.append(Evidence(
                     id=f"evi-dbx-clusters-{uuid.uuid4().hex[:6]}",
                     source_record_id="rec-dbx-clusters",
-                    source_type=SourceType.DOCUMENT,
+                    source_type=SourceType.DATABRICKS,
                     source_title="Databricks Clusters status",
                     external_id="compute-clusters",
                     project_id="prj-databricks",
@@ -1045,7 +1045,7 @@ class AgentOrchestrator:
                 supporting.append(Evidence(
                     id=f"evi-dbx-jobs-{uuid.uuid4().hex[:6]}",
                     source_record_id="rec-dbx-jobs",
-                    source_type=SourceType.DOCUMENT,
+                    source_type=SourceType.DATABRICKS,
                     source_title="Databricks Workflows",
                     external_id="jobs-workflows",
                     project_id="prj-databricks",
@@ -1060,8 +1060,8 @@ class AgentOrchestrator:
                 supporting.append(Evidence(
                     id=f"evi-dbx-objects-{uuid.uuid4().hex[:6]}",
                     source_record_id="rec-dbx-objects",
-                    source_type=SourceType.DOCUMENT,
-                    source_title=f"Databricks workspace objects in {target_path}",
+                    source_type=SourceType.DATABRICKS,
+                        source_title=f"Databricks workspace objects in {target_path}",
                     external_id="workspace-objects",
                     project_id="prj-databricks",
                     excerpt=f"Live files/folders in path {target_path}: {', '.join(obj_paths)}",

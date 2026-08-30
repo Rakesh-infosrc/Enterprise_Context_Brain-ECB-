@@ -172,6 +172,9 @@ export const api = {
   getProjects: (): Promise<Project[]> =>
     fetchJson<Project[]>('/projects'),
 
+  getArchitectureDocs: (): Promise<Array<{ id: string; title: string; filename: string }>> =>
+    fetchJson<Array<{ id: string; title: string; filename: string }>>('/architecture-docs'),
+
   getProject: (id: string): Promise<Project> =>
     fetchJson<Project>(`/projects/${id}`),
 

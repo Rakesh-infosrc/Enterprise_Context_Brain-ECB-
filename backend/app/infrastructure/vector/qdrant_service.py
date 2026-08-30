@@ -48,8 +48,24 @@ class QdrantVectorService:
         results = []
         for ev in all_evidence:
             # Metadata payload filters
-            if project_ids and ev.project_id not in project_ids:
-                continue
+            if project_ids:
+                doc_filters = [pid for pid in project_ids if pid.startswith("doc-")]
+                normal_pids = [pid for pid in project_ids if not pid.startswith("doc-")]
+                
+                if doc_filters:
+                    if "doc-all" not in doc_filters and "all" not in doc_filters:
+                        matching_doc = any(
+                            df.replace("doc-", "").lower() in (ev.external_id or "").lower()
+                            or df.replace("doc-", "").lower() in (ev.source_record_id or "").lower()
+                            or df.replace("doc-", "").lower() in (ev.id or "").lower()
+                            for df in doc_filters
+                        )
+                        if not matching_doc and ev.project_id not in doc_filters:
+                            continue
+                elif normal_pids:
+                    if ev.project_id not in normal_pids and ev.source_type != SourceType.DOCUMENT:
+                        continue
+
             if source_types and ev.source_type not in source_types:
                 continue
 

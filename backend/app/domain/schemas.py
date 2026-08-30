@@ -22,6 +22,7 @@ class SourceType(str, Enum):
     MEETING = "meeting"
     CONFLUENCE = "confluence"
     DOC = "doc"
+    DATABRICKS = "databricks"
 
 
 class AuthorityLevel(str, Enum):
@@ -266,6 +267,7 @@ class Project(BaseModel):
     open_tickets_count: int = 0
     recent_decisions_count: int = 0
     source_type: str = "unknown"
+    webhook_status: Optional[str] = "inactive"
 
 
 # --- Governance, Policy, Actions & Approvals ---

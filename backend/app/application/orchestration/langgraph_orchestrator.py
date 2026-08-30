@@ -227,10 +227,15 @@ class LangGraphOrchestrator:
 
         # NODE 7: Mem0 Dynamic Memory Write
         _t7 = datetime.utcnow()
+        from ...domain.schemas import MemoryType as _MT
+        _mem_type = _MT.DECISION if plan.planned_agent.value == "decision_intelligence" else _MT.SEMANTIC if "architecture" in plan.intent.lower() else _MT.EPISODIC
         self.mem0.add_memory(
             user_id=user_id or "usr-sarah-jenkins",
-            content=f"Query regarding {plan.target_entities} synthesized with {cove_res.groundedness_score*100:.0f}% groundedness.",
+            content=f"[{plan.intent}] {plan.target_entities} :: {req.query[:180]} | Ans: {agent_run.answer[:180]} | {cove_res.groundedness_score*100:.0f}% grounded",
+            memory_type=_mem_type,
+            title=f"{plan.intent} — {plan.target_entities[0] if plan.target_entities else req.query[:40]}",
             project_id=plan.project_ids[0] if plan.project_ids else None,
+            metadata={"intent": plan.intent, "groundedness": cove_res.groundedness_score, "query": req.query[:200]},
         )
         _d7 = int((datetime.utcnow() - _t7).total_seconds() * 1000)
 
@@ -400,10 +405,15 @@ class LangGraphOrchestrator:
             ))
 
         # NODE 7: Mem0 Dynamic Memory Write
+        from ...domain.schemas import MemoryType as _MT2
+        _mem_type2 = _MT2.DECISION if plan.planned_agent.value == "decision_intelligence" else _MT2.SEMANTIC if "architecture" in plan.intent.lower() else _MT2.EPISODIC
         self.mem0.add_memory(
             user_id=user_id or "usr-sarah-jenkins",
-            content=f"Query regarding {plan.target_entities} synthesized with {cove_res.groundedness_score*100:.0f}% groundedness.",
+            content=f"[{plan.intent}] {plan.target_entities} :: {req.query[:180]} | Ans: {agent_run.answer[:180] if agent_run else ''} | {cove_res.groundedness_score*100:.0f}% grounded",
+            memory_type=_mem_type2,
+            title=f"{plan.intent} — {plan.target_entities[0] if plan.target_entities else req.query[:40]}",
             project_id=plan.project_ids[0] if plan.project_ids else None,
+            metadata={"intent": plan.intent, "groundedness": cove_res.groundedness_score, "query": req.query[:200]},
         )
 
         total_latency_ms = int((datetime.utcnow() - start_time).total_seconds() * 1000)

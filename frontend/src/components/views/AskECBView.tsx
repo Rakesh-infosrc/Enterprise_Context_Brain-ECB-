@@ -77,13 +77,13 @@ const FormattedMarkdown: React.FC<{ text: string }> = ({ text }) => {
           const boldContent = bPart.slice(2, -2);
           if (boldContent.startsWith('*') && boldContent.endsWith('*') && boldContent.length > 1) {
             return (
-              <strong key={bIdx} style={{ color: '#ffffff', fontWeight: 700, fontStyle: 'italic' }}>
+              <strong key={bIdx} style={{ color: 'var(--text-primary)', fontWeight: 700, fontStyle: 'italic' }}>
                 {boldContent.slice(1, -1)}
               </strong>
             );
           }
           return (
-            <strong key={bIdx} style={{ color: '#ffffff', fontWeight: 700 }}>
+            <strong key={bIdx} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
               {boldContent}
             </strong>
           );
@@ -122,7 +122,7 @@ const FormattedMarkdown: React.FC<{ text: string }> = ({ text }) => {
               style={{
                 fontSize: '1.08rem',
                 fontWeight: 800,
-                color: '#ffffff',
+                color: 'var(--text-primary)',
                 borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                 paddingBottom: '0.35rem',
                 marginTop: idx === 0 ? 0 : '0.9rem',
@@ -141,7 +141,7 @@ const FormattedMarkdown: React.FC<{ text: string }> = ({ text }) => {
               style={{
                 fontSize: '1.2rem',
                 fontWeight: 800,
-                color: '#ffffff',
+                color: 'var(--text-primary)',
                 borderBottom: '1px solid rgba(92, 168, 255, 0.2)',
                 paddingBottom: '0.45rem',
                 marginTop: idx === 0 ? 0 : '1.1rem',
@@ -202,13 +202,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
 }) => {
   const [query, setQuery] = useState(initialQuestion || `What are the critical risks and live Jira issues for ${projects[0]?.name || 'this project'}?`);
   const [timeRangeDays, setTimeRangeDays] = useState(30);
-  const [selectedSources, setSelectedSources] = useState<SourceType[]>([
-    'jira',
-    'git',
-    'adr',
-    'slack',
-    'confluence',
-  ]);
+  const [selectedSources, setSelectedSources] = useState<SourceType[]>([]);
   const [selectedWorkflow, setSelectedWorkflow] = useState<AgentWorkflow | undefined>(undefined);
 
     const [isStreaming, setIsStreaming] = useState(false);
@@ -355,13 +349,11 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
         className="glass-panel"
         style={{
           padding: '1.5rem 1.75rem',
-          background: 'linear-gradient(135deg, rgba(13, 27, 42, 0.85) 0%, rgba(17, 34, 54, 0.7) 100%)',
-          border: '1px solid rgba(92, 168, 255, 0.25)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 'var(--fs-xs)' }}>
-          <Sparkles size={16} color="#9b7cff" />
-          <span style={{ fontSize: 'var(--fs-base)', fontWeight: 700, color: '#ffffff' }}>
+          <Sparkles size={16} color="#8b5cf6" />
+          <span style={{ fontSize: 'var(--fs-base)', fontWeight: 700, color: 'var(--text-primary)' }}>
             Ask ECB Command Prompt
           </span>
           <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
@@ -418,7 +410,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
               onMouseEnter={(e) => {
                 e.currentTarget.style.background = 'rgba(92, 168, 255, 0.15)';
                 e.currentTarget.style.borderColor = 'rgba(92, 168, 255, 0.35)';
-                e.currentTarget.style.color = '#ffffff';
+                e.currentTarget.style.color = 'var(--text-primary)';
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
@@ -463,7 +455,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
           {agentSteps.length > 0 && (
             <div style={{ marginBottom: '1.5rem', paddingBottom: '1rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                <Zap size={16} color="#00f0ff" />
+                <Zap size={16} color="#22d3ee" />
                 <span style={{ fontSize: 'var(--fs-base)', fontWeight: 600, color: 'var(--accent-cyan)' }}>Live Agent Trace</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--fs-xs)' }}>
@@ -564,7 +556,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                         {response.recommendation.risk_class.toUpperCase()}
                       </span>
                     </div>
-                    <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                       {response.recommendation.summary}
                     </h4>
                   </div>
@@ -641,7 +633,7 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
           {/* Right Column: Live Evidence Rail with Supporting / Conflicting Tabs */}
           <div className="glass-panel" style={{ padding: '1.25rem', position: 'sticky', top: '90px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 Live Evidence Rail
               </h3>
               <span style={{ fontSize: '0.7rem', color: 'var(--text-faint)' }}>
@@ -714,18 +706,18 @@ export const AskECBView: React.FC<AskECBViewProps> = ({
                   style={{
                     padding: '0.75rem 0.85rem',
                     borderRadius:'var(--radius-sm)',
-                    background: selectedEvidenceDetail?.id === ev.id ? 'rgba(92, 168, 255, 0.15)' : 'rgba(10, 20, 32, 0.6)',
+                    background: selectedEvidenceDetail?.id === ev.id ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-card)',
                     border: ev.is_conflicting
                       ? '1px solid rgba(251, 146, 60, 0.4)'
                       : selectedEvidenceDetail?.id === ev.id
-                      ? '1px solid #5ca8ff'
+                      ? '1px solid #6366f1'
                       : '1px solid rgba(255, 255, 255, 0.05)',
                     cursor: 'pointer',
                     transition: 'all 0.15s',
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                    <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: '#ffffff' }}>
+                    <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--text-primary)' }}>
                       {ev.source_title}
                     </span>
                     <span className="glass-pill" style={{ fontSize: '0.62rem' }}>

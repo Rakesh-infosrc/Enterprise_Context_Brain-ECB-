@@ -113,7 +113,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       >
         {/* Search Input Bar */}
         <div style={{ display: 'flex', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-          <Search size={20} color="#5ca8ff" style={{ marginRight: 'var(--fs-xs)' }} />
+          <Search size={20} color="#6366f1" style={{ marginRight: 'var(--fs-xs)' }} />
           <input
             ref={inputRef}
             autoFocus
@@ -218,7 +218,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                  <Sparkles size={14} color="#5ca8ff" />
+                  <Sparkles size={14} color="#6366f1" />
                   <span>{q}</span>
                 </div>
                 <kbd style={{ fontSize: '0.65rem', color: 'var(--text-faint)' }}>Enter</kbd>

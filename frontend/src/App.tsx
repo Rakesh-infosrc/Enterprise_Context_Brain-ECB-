@@ -148,7 +148,26 @@ export function App() {
       window.removeEventListener('storage', syncHidden);
     };
   }, []);
-  const visibleProjects = projects.filter((p: any) => !(typeof p.name === 'string' && p.name.includes('/') && hiddenWebhookIds.includes(p.id)));
+  const visibleProjects = React.useMemo(() => {
+    const filtered = projects.filter((p: any) => {
+      if (hiddenWebhookIds.includes(p.id)) return false;
+      const isGitRepo = typeof p.name === 'string' && (p.name.includes('/') || p.source_type === 'github' || p.source_type === 'git');
+      if (isGitRepo) {
+        if (p.webhook_status && p.webhook_status !== 'active') return false;
+      }
+      return true;
+    });
+
+    const seenIds = new Set<string>();
+    const seenNames = new Set<string>();
+    return filtered.filter((p: any) => {
+      const normName = typeof p.name === 'string' ? p.name.trim().toLowerCase() : p.id;
+      if (seenIds.has(p.id) || seenNames.has(normName)) return false;
+      seenIds.add(p.id);
+      seenNames.add(normName);
+      return true;
+    });
+  }, [projects, hiddenWebhookIds]);
   // If active project was disconnected, auto-switch to first visible
   useEffect(() => {
     if (hiddenWebhookIds.includes(activeProjectId)) {

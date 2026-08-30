@@ -46,7 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'command_center' as NavItem, label: 'Command Center', icon: LayoutDashboard },
     { id: 'ask_ecb' as NavItem, label: 'Ask ECB (AI Console)', icon: Sparkles, isPrimaryAi: true },
     { id: 'project_intelligence' as NavItem, label: 'Project Intelligence', icon: Layers },
-    { id: 'approval_center' as NavItem, label: 'Approval Center', icon: CheckCircle2, badge: pendingApprovalsCount, badgeColor: '#5ca8ff' },
+    { id: 'approval_center' as NavItem, label: 'Approval Center', icon: CheckCircle2, badge: pendingApprovalsCount, badgeColor: '#6366f1' },
   ];
 
   const deepDiagnosticsItems = [
@@ -105,7 +105,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, flex: 1 }}>
                 <Icon
                   size={18}
-                  color={isActive ? (item.isPrimaryAi ? '#c084fc' : '#5ca8ff') : '#64748b'}
+                  color={isActive ? (item.isPrimaryAi ? '#c084fc' : '#6366f1') : '#64748b'}
                   style={{ flexShrink: 0 } as React.CSSProperties}
                 />
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
@@ -117,7 +117,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     fontWeight: 700,
                     padding: '0.15rem 0.5rem',
                     borderRadius: '9999px',
-                    background: (item as any).badgeColor || '#5ca8ff',
+                    background: (item as any).badgeColor || '#6366f1',
                     color: '#07111f',
                     flexShrink: 0,
                     whiteSpace: 'nowrap',
@@ -153,7 +153,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               style={{ fontSize: '0.825rem' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, flex: 1 }}>
-                <Icon size={17} color={isActive ? '#5ca8ff' : '#64748b'} style={{ flexShrink: 0 } as React.CSSProperties} />
+                <Icon size={17} color={isActive ? '#6366f1' : '#64748b'} style={{ flexShrink: 0 } as React.CSSProperties} />
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>{item.label}</span>
               </div>
               {/* @ts-ignore - badge may be string like '92%' */}
@@ -164,7 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     fontWeight: 700,
                     padding: '0.15rem 0.5rem',
                     borderRadius: '9999px',
-                    background: (item as any).badgeColor || '#5ca8ff',
+                    background: (item as any).badgeColor || '#6366f1',
                     color: '#07111f',
                     flexShrink: 0,
                     whiteSpace: 'nowrap',
@@ -195,7 +195,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               style={{ fontSize: '0.825rem' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0, flex: 1 }}>
-                <Icon size={17} color={isActive ? '#5ca8ff' : '#64748b'} style={{ flexShrink: 0 } as React.CSSProperties} />
+                <Icon size={17} color={isActive ? '#6366f1' : '#64748b'} style={{ flexShrink: 0 } as React.CSSProperties} />
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3 }}>{settingsItem.label}</span>
               </div>
             </RippleButton>

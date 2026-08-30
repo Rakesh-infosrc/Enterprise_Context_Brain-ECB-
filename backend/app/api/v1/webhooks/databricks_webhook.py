@@ -109,7 +109,7 @@ class DatabricksWebhookHandler:
         evidence = Evidence(
             id=evidence_id,
             source_record_id=f"rec-dbx-{run_id}",
-            source_type=SourceType.DOCUMENT,
+            source_type=SourceType.DATABRICKS,
             source_title=f"Databricks run {run_id}",
             external_id=run_id,
             project_id=project_id,

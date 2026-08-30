@@ -96,8 +96,12 @@ class DBMemoryItem(Base):
     __tablename__ = "memory_items"
     id = Column(String, primary_key=True)
     type = Column(String, nullable=False)
+    title = Column(String, nullable=True)
     content = Column(String, nullable=False)
     project_id = Column(String, nullable=True)
+    confidence = Column(Float, default=0.98)
+    validity_from = Column(DateTime, default=datetime.utcnow)
+    metadata_json = Column(Text, nullable=True)
 
 class DBActionPreview(Base):
     __tablename__ = "actions"

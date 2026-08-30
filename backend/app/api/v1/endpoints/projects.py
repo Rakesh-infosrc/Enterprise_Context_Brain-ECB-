@@ -69,3 +69,21 @@ def get_project_decisions(project_id: str, current_user = Depends(get_current_us
     else:
         team = current_user.team
     return store.get_decisions(project_id=project_id, team=team)
+
+@router.get("/architecture-docs")
+def get_architecture_docs():
+    import os
+    base_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", ".."))
+    doc_dir = os.path.join(base_root, "Architecture Docs")
+    docs = [{"id": "all", "title": "All Architecture Docs", "filename": "all"}]
+    if os.path.exists(doc_dir):
+        for fn in sorted(os.listdir(doc_dir)):
+            if fn.endswith(".md"):
+                doc_id = f"doc-{fn.replace('.md', '').lower()}"
+                clean_title = fn.replace(".md", "").replace("_", " ").title()
+                docs.append({
+                    "id": doc_id,
+                    "title": clean_title,
+                    "filename": fn
+                })
+    return docs

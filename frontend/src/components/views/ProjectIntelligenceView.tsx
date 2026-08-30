@@ -128,39 +128,39 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
 
   const getCellStyles = (prob: number, impact: number, count: number, isSelected: boolean) => {
     const score = prob * impact;
-    let bg = 'rgba(30, 41, 59, 0.4)';
-    let border = '1px solid rgba(255, 255, 255, 0.08)';
+    let bg = 'var(--bg-card)';
+    let border = '1px solid var(--border-subtle)';
     let textColor = 'var(--text-muted)';
     let glow = 'none';
 
     if (score >= 18) {
       bg = isSelected
-        ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.45), rgba(225, 29, 72, 0.35))'
-        : 'linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(153, 27, 27, 0.15))';
-      border = isSelected ? '2px solid #ef4444' : '1px solid rgba(239, 68, 68, 0.4)';
-      textColor = '#fca5a5';
-      glow = count > 0 ? '0 0 15px rgba(239, 68, 68, 0.35)' : 'none';
+        ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.35), rgba(225, 29, 72, 0.25))'
+        : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(153, 27, 27, 0.1))';
+      border = isSelected ? '2px solid #ef4444' : '1px solid rgba(239, 68, 68, 0.3)';
+      textColor = '#ef4444';
+      glow = isSelected ? '0 0 0 4px rgba(239, 68, 68, 0.15), 0 4px 16px rgba(239, 68, 68, 0.25)' : count > 0 ? '0 0 10px rgba(239, 68, 68, 0.15)' : 'none';
     } else if (score >= 12) {
       bg = isSelected
-        ? 'linear-gradient(135deg, rgba(249, 115, 22, 0.4), rgba(217, 119, 6, 0.3))'
-        : 'linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(180, 83, 9, 0.12))';
-      border = isSelected ? '2px solid #f97316' : '1px solid rgba(249, 115, 22, 0.35)';
-      textColor = '#fdba74';
-      glow = count > 0 ? '0 0 12px rgba(249, 115, 22, 0.25)' : 'none';
+        ? 'linear-gradient(135deg, rgba(249, 115, 22, 0.3), rgba(217, 119, 6, 0.2))'
+        : 'linear-gradient(135deg, rgba(249, 115, 22, 0.12), rgba(180, 83, 9, 0.08))';
+      border = isSelected ? '2px solid #f97316' : '1px solid rgba(249, 115, 22, 0.25)';
+      textColor = '#f97316';
+      glow = isSelected ? '0 0 0 4px rgba(249, 115, 22, 0.12), 0 4px 16px rgba(249, 115, 22, 0.2)' : count > 0 ? '0 0 8px rgba(249, 115, 22, 0.12)' : 'none';
     } else if (score >= 6) {
       bg = isSelected
-        ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.35), rgba(217, 119, 6, 0.25))'
-        : 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(146, 64, 14, 0.1))';
-      border = isSelected ? '2px solid #f59e0b' : '1px solid rgba(245, 158, 11, 0.3)';
-      textColor = '#fde68a';
-      glow = count > 0 ? '0 0 10px rgba(245, 158, 11, 0.2)' : 'none';
+        ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15))'
+        : 'linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(146, 64, 14, 0.06))';
+      border = isSelected ? '2px solid #f59e0b' : '1px solid rgba(245, 158, 11, 0.2)';
+      textColor = '#f59e0b';
+      glow = isSelected ? '0 0 0 4px rgba(245, 158, 11, 0.1), 0 4px 16px rgba(245, 158, 11, 0.18)' : count > 0 ? '0 0 6px rgba(245, 158, 11, 0.1)' : 'none';
     } else {
       bg = isSelected
-        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.3), rgba(5, 150, 105, 0.2))'
-        : 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(4, 120, 87, 0.08))';
-      border = isSelected ? '2px solid #10b981' : '1px solid rgba(16, 185, 129, 0.25)';
-      textColor = '#6ee7b7';
-      glow = count > 0 ? '0 0 10px rgba(16, 185, 129, 0.2)' : 'none';
+        ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.12))'
+        : 'linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05))';
+      border = isSelected ? '2px solid #6366f1' : '1px solid rgba(99, 102, 241, 0.15)';
+      textColor = '#6366f1';
+      glow = isSelected ? '0 0 0 4px rgba(99, 102, 241, 0.1), 0 4px 16px rgba(99, 102, 241, 0.18)' : count > 0 ? '0 0 6px rgba(99, 102, 241, 0.1)' : 'none';
     }
 
     return { bg, border, textColor, glow };
@@ -190,10 +190,10 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                 {project.status.toUpperCase()}
               </span>
               <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>
-                Health Score: <strong style={{ color: '#ffffff' }}>{project.health_score}/100</strong>
+                Health Score: <strong style={{ color: 'var(--text-primary)' }}>{project.health_score}/100</strong>
               </span>
             </div>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: '#ffffff' }}>
+            <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)' }}>
               {project.name}
             </h2>
             <p style={{ fontSize: 'var(--fs-base)', color: 'var(--text-muted)', maxWidth: '750px', marginTop: '0.35rem', lineHeight: 1.5 }}>
@@ -203,7 +203,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
 
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)' }}>Project Owner</div>
-            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#ffffff', marginTop: '0.1rem' }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: '0.1rem' }}>
               {project.owner_name}
             </div>
             <RippleButton rippleColor="rgba(255,255,255,0.15)" duration="600ms"
@@ -301,8 +301,8 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Calendar size={18} color="#5ca8ff" />
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff' }}>
+                  <Calendar size={18} color="#6366f1" />
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                     Execution Milestones &amp; Gating Schedule
                   </h3>
                 </div>
@@ -313,7 +313,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {!project.milestones?.length ? (
-                  <div role="status" aria-live="polite" style={{ padding:'1.5rem', textAlign:'center', border:'1px dashed var(--border-subtle)', borderRadius:'var(--radius-md)', background:'rgba(255,255,255,0.02)' }}>
+                  <div role="status" aria-live="polite" style={{ padding:'1.5rem', textAlign:'center', border:'1px dashed var(--border-subtle)', borderRadius:'var(--radius-md)', background:'var(--bg-card)' }}>
                     <p style={{ fontSize:'var(--fs-sm)', fontWeight:600, color:'var(--text-secondary)', marginBottom:'0.25rem' }}>No milestones defined</p>
                     <p style={{ fontSize:'var(--fs-xs)', color:'var(--text-muted)' }}>Add milestones in Project Settings to track execution progress.</p>
                   </div>
@@ -321,11 +321,9 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                   project.milestones.map((m) => (
                     <div
                       key={m.id}
+                      className="glass-card"
                       style={{
                         padding: '1rem 1.25rem',
-                        borderRadius: 'var(--radius-md)',
-                        background: 'rgba(10, 20, 32, 0.4)',
-                        border: '1px solid rgba(255, 255, 255, 0.05)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
@@ -334,7 +332,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                     >
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.25rem' }}>
-                          <span style={{ fontSize: 'var(--fs-base)', fontWeight: 700, color: '#ffffff' }}>
+                          <span style={{ fontSize: 'var(--fs-base)', fontWeight: 700, color: 'var(--text-primary)' }}>
                             {m.name}
                           </span>
                           <span
@@ -367,16 +365,17 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
 
                       {/* Micro Progress Bar */}
                       <div style={{ width: '120px', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-faint)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
                           <span>Progress</span>
                           <span>{m.progress_pct ?? m.progress_percentage ?? 0}%</span>
                         </div>
-                        <div style={{ width: '100%', height: '4px', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ width: '100%', height: '4px', background: 'var(--border-subtle)', borderRadius: '2px', overflow: 'hidden' }}>
                           <div
                             style={{
                               width: `${m.progress_pct ?? m.progress_percentage ?? 0}%`,
                               height: '100%',
-                              background: m.status === 'delayed' ? 'var(--accent-rose)' : 'var(--accent-blue)',
+                              background: m.status === 'delayed' ? 'var(--accent-rose)' : 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+                              borderRadius: '2px',
                             }}
                           />
                         </div>
@@ -392,7 +391,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
               {/* Backlog */}
               <div className="glass-panel" style={{ padding: '1.25rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '1rem' }}>
-                  <FileText size={16} color="#5ca8ff" />
+                  <FileText size={16} color="#6366f1" />
                   <h4 style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                     Active Jira Epics &amp; Backlog
                   </h4>
@@ -405,16 +404,16 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                     </div>
                   ) : (
                     jiraEvidence.map((e) => (
-                      <div key={e.id} style={{ padding: '0.85rem', borderRadius: 'var(--radius-md)', background: 'rgba(15, 23, 42, 0.45)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div key={e.id} className="glass-card" style={{ padding: '0.85rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                          <span style={{ fontSize: '0.725rem', fontFamily: 'monospace', color: 'var(--accent-blue)' }}>
+                          <span style={{ fontSize: '0.725rem', fontFamily: 'monospace', color: 'var(--accent-indigo)' }}>
                             {e.external_id}
                           </span>
-                          <span style={{ fontSize: '0.675rem', color: 'var(--text-faint)' }}>
+                          <span style={{ fontSize: '0.675rem', color: 'var(--text-muted)' }}>
                             {new Date(e.observed_at).toLocaleDateString()}
                           </span>
                         </div>
-                        <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600, color: '#f1f5f9' }}>
+                        <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600, color: 'var(--text-primary)' }}>
                           {e.source_title}
                         </div>
                         <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginTop: '0.25rem', margin: 0, lineHeight: 1.4 }}>
@@ -442,16 +441,16 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                     </div>
                   ) : (
                     gitEvidence.map((e) => (
-                      <div key={e.id} style={{ padding: '0.85rem', borderRadius: 'var(--radius-md)', background: 'rgba(15, 23, 42, 0.45)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div key={e.id} className="glass-card" style={{ padding: '0.85rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
                           <span style={{ fontSize: '0.725rem', fontFamily: 'monospace', color: 'var(--accent-cyan)' }}>
                             {e.external_id.slice(0, 8)}
                           </span>
-                          <span style={{ fontSize: '0.675rem', color: 'var(--text-faint)' }}>
+                          <span style={{ fontSize: '0.675rem', color: 'var(--text-muted)' }}>
                             {new Date(e.observed_at).toLocaleDateString()}
                           </span>
                         </div>
-                        <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600, color: '#f1f5f9' }}>
+                        <div style={{ fontSize: 'var(--fs-base)', fontWeight: 600, color: 'var(--text-primary)' }}>
                           {e.source_title}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.35rem', fontSize: '0.7rem', color: 'var(--text-muted)' }}>
@@ -474,7 +473,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
             <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <ShieldAlert size={18} color="#f97316" />
                     Risk Exposure Heatmap Matrix
                   </h3>
@@ -494,7 +493,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
               </div>
 
               {/* Color legend bar */}
-              <div style={{ display: 'flex', gap: '10px', padding: '0.5rem 0.75rem', background: 'rgba(15, 23, 42, 0.6)', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.05)', fontSize: '0.675rem' }}>
+              <div style={{ display: 'flex', gap: '10px', padding: '0.5rem 0.75rem', background: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)', fontSize: '0.675rem' }}>
                 <span style={{ color: '#6ee7b7' }}>● Low (1-5)</span>
                 <span style={{ color: '#fde68a' }}>● Medium (6-11)</span>
                 <span style={{ color: '#fdba74' }}>● High (12-17)</span>
@@ -528,16 +527,16 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                             background: bg,
                             border: border,
                             boxShadow: glow,
-                            borderRadius: 'var(--radius-sm)',
+                            borderRadius: '10px',
                             padding: '0.65rem 0.35rem',
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
                             cursor: 'pointer',
-                            transition: 'all 0.15s ease',
+                            transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
                             minHeight: '52px',
-                            transform: isSelected ? 'scale(1.03)' : 'scale(1)',
+                            transform: isSelected ? 'scale(1.08)' : 'scale(1)',
                             zIndex: isSelected ? 2 : 1,
                           }}
                         >
@@ -564,17 +563,17 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
               {selectedRisk ? (
                 <div className="glass-panel" style={{ padding: '1.25rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <span className="glass-pill" style={{ color: selectedRisk.severity === 'critical' ? '#ef4444' : '#f59e0b', borderColor: 'rgba(255,255,255,0.08)' }}>
+                    <span className="glass-pill" style={{ color: selectedRisk.severity === 'critical' ? '#ef4444' : '#f59e0b', borderColor: 'var(--border-subtle)' }}>
                       {selectedRisk.severity.toUpperCase()} SCORE: {selectedRisk.score}/25
                     </span>
                   </div>
-                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: '#ffffff', marginBottom: '0.5rem' }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                     {selectedRisk.title}
                   </h4>
                   <p style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-secondary)', lineHeight: 1.4, marginBottom: '1rem' }}>
                     {selectedRisk.description}
                   </p>
-                  <div style={{ background: 'rgba(15, 23, 42, 0.7)', borderRadius: 'var(--radius-md)', padding: '0.85rem', border: '1px solid rgba(56, 189, 248, 0.2)', marginBottom: '1rem' }}>
+                  <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', padding: '0.85rem', border: '1px solid var(--border-subtle)', marginBottom: '1rem' }}>
                     <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#38bdf8', marginBottom: '0.25rem' }}>
                       Mitigation Strategy
                     </div>
@@ -604,17 +603,26 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                       key={r.id}
                       onClick={() => setSelectedRisk(r)}
                       style={{
-                        padding: '0.55rem 0.75rem',
-                        borderRadius: 'var(--radius-sm)',
-                        background: selectedRisk?.id === r.id ? 'rgba(255,255,255,0.06)' : 'rgba(10,20,32,0.4)',
-                        border: '1px solid rgba(255,255,255,0.05)',
+                        padding: '0.6rem 0.85rem',
+                        borderRadius: '10px',
+                        background: selectedRisk?.id === r.id
+                          ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%)'
+                          : 'var(--bg-card)',
+                        border: selectedRisk?.id === r.id
+                          ? '1.5px solid rgba(99, 102, 241, 0.5)'
+                          : '1px solid var(--border-subtle)',
+                        boxShadow: selectedRisk?.id === r.id
+                          ? '0 0 0 3px rgba(99, 102, 241, 0.1), 0 4px 12px rgba(99, 102, 241, 0.12)'
+                          : 'none',
                         cursor: 'pointer',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
+                        transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                        borderLeft: selectedRisk?.id === r.id ? '3.5px solid #6366f1' : '3.5px solid transparent',
                       }}
                     >
-                      <span style={{ fontSize: 'var(--fs-sm)', color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>{r.title}</span>
+                      <span style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>{r.title}</span>
                       <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Score: {r.score}</span>
                     </div>
                   ))}
@@ -629,7 +637,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '1.5rem' }}>
             {/* Left list */}
             <div className="glass-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 ADR Timeline Timeline
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '450px', overflowY: 'auto' }}>
@@ -646,19 +654,27 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                         key={d.id}
                         onClick={() => setSelectedDecision(d)}
                         style={{
-                          padding: '0.85rem',
-                          borderRadius: 'var(--radius-md)',
-                          background: isSelected ? 'rgba(92, 168, 255, 0.15)' : 'rgba(15,23,42,0.45)',
-                          border: isSelected ? '1px solid #5ca8ff' : '1px solid rgba(255,255,255,0.05)',
+                          padding: '0.85rem 1rem',
+                          borderRadius: '12px',
+                          background: isSelected
+                            ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(139, 92, 246, 0.08) 100%)'
+                            : 'var(--bg-card)',
+                          border: isSelected
+                            ? '1.5px solid rgba(99, 102, 241, 0.5)'
+                            : '1px solid var(--border-subtle)',
+                          boxShadow: isSelected
+                            ? '0 0 0 3px rgba(99, 102, 241, 0.1), 0 4px 12px rgba(99, 102, 241, 0.12)'
+                            : 'none',
                           cursor: 'pointer',
-                          transition: 'all 0.15s ease',
+                          transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                          borderLeft: isSelected ? '3.5px solid #6366f1' : '3.5px solid transparent',
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                           <span style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--accent-blue)' }}>{d.adr_number}</span>
                           <span style={{ fontSize: '0.65rem', color: isSuperseded ? 'var(--accent-rose)' : 'var(--accent-emerald)' }}>{d.status.toUpperCase()}</span>
                         </div>
-                        <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: '#ffffff' }}>{d.title}</div>
+                        <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>{d.title}</div>
                       </div>
                     );
                   })
@@ -672,7 +688,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   <div>
                     <span className="glass-pill active" style={{ fontSize: 'var(--fs-xs)', marginBottom: '0.35rem' }}>{selectedDecision.adr_number}</span>
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>{selectedDecision.title}</h3>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>{selectedDecision.title}</h3>
                   </div>
                   <div>
                     <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Context</div>
@@ -680,11 +696,11 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                   </div>
                   <div>
                     <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent-blue)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Rationale</div>
-                    <div style={{ background: 'rgba(0,0,0,0.25)', borderRadius: 'var(--radius-sm)', padding: '0.85rem', fontSize: 'var(--fs-sm)', color: '#f1f5f9', lineHeight: 1.4, border: '1px solid rgba(255,255,255,0.04)' }}>
+                    <div style={{ background: 'var(--bg-card)', borderRadius: 'var(--radius-sm)', padding: '0.85rem', fontSize: 'var(--fs-sm)', color: 'var(--text-primary)', lineHeight: 1.4, border: '1px solid var(--border-subtle)' }}>
                       {selectedDecision.rationale || selectedDecision.decision}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.75rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem' }}>
                     <span>Decided By: <strong>{selectedDecision.decided_by || selectedDecision.author || 'Architecture Board'}</strong></span>
                     <span>Date: {new Date(selectedDecision.decided_at).toLocaleDateString()}</span>
                   </div>
@@ -703,7 +719,7 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem' }}>
             {/* List */}
             <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 Roadmap target date discrepancies
               </h3>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -716,17 +732,26 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
                     }}
                     style={{
                       padding: '1rem',
-                      borderRadius: 'var(--radius-md)',
-                      background: selectedContradiction.id === c.id ? 'rgba(239, 68, 68, 0.12)' : 'rgba(10,20,32,0.4)',
-                      border: selectedContradiction.id === c.id ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255,255,255,0.05)',
+                      borderRadius: '12px',
+                      background: selectedContradiction.id === c.id
+                        ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%)'
+                        : 'var(--bg-card)',
+                      border: selectedContradiction.id === c.id
+                        ? '1.5px solid rgba(239, 68, 68, 0.5)'
+                        : '1px solid var(--border-subtle)',
+                      boxShadow: selectedContradiction.id === c.id
+                        ? '0 0 0 3px rgba(239, 68, 68, 0.08), 0 4px 12px rgba(239, 68, 68, 0.1)'
+                        : 'none',
                       cursor: 'pointer',
+                      transition: 'all 0.2s cubic-bezier(0.4,0,0.2,1)',
+                      borderLeft: selectedContradiction.id === c.id ? '3.5px solid #ef4444' : '3.5px solid transparent',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', marginBottom: '0.25rem' }}>
                       <span style={{ color: 'var(--accent-blue)', fontWeight: 700 }}>{c.jiraKey}</span>
                       <span style={{ color: 'var(--accent-rose)' }}>+{c.delayDays} Days Delay</span>
                     </div>
-                    <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: '#ffffff', marginBottom: '0.5rem' }}>{c.title}</div>
+                    <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>{c.title}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)' }}>
                       <span>Jira Target: {c.jiraTargetDate}</span>
                       <span>Commit Target: {c.gitTargetDate}</span>
@@ -739,13 +764,13 @@ export const ProjectIntelligenceView: React.FC<ProjectIntelligenceViewProps> = (
             {/* Inspector & MCP action proposal */}
             <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Zap size={16} color="#00f0ff" />
-                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff', margin: 0 }}>Timeline Contradiction Details</h4>
+                <Zap size={16} color="#22d3ee" />
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Timeline Contradiction Details</h4>
               </div>
-              <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ background: 'var(--bg-card)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                 <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-secondary)', lineHeight: 1.4 }}>{selectedContradiction.rationale}</div>
               </div>
-              <div style={{ background: 'rgba(92, 168, 255, 0.08)', borderRadius: 'var(--radius-md)', padding: '1rem', border: '1px solid rgba(92, 168, 255, 0.2)' }}>
+              <div style={{ background: 'rgba(99, 102, 241, 0.08)', borderRadius: 'var(--radius-md)', padding: '1rem', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
                 <div style={{ fontSize: 'var(--fs-sm)', fontWeight: 700, color: 'var(--accent-blue)', marginBottom: '0.35rem' }}>
                   Propose Roadmap Date Alignment
                 </div>

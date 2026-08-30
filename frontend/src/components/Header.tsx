@@ -190,7 +190,7 @@ export const Header: React.FC<HeaderProps> = ({
             style={{ padding: '0.45rem 0.65rem' }}
             aria-label="Launch guided tour"
           >
-            <HelpCircle size={15} color="#5ca8ff" aria-hidden="true" />
+            <HelpCircle size={15} color="#6366f1" aria-hidden="true" />
           </RippleButton>
         </Tooltip>
 
@@ -221,7 +221,9 @@ export const Header: React.FC<HeaderProps> = ({
               <option value="all" style={{ background: '#07111f', color: '#ffffff' }}>
                 All Connected Projects
               </option>
-              {projects.map((p) => (
+              {projects.filter((p, index, self) => 
+                index === self.findIndex((t) => t.id === p.id || t.name.trim().toLowerCase() === p.name.trim().toLowerCase())
+              ).map((p) => (
                 <option key={p.id} value={p.id} style={{ background: '#07111f', color: '#ffffff' }}>
                   {p.code} — {p.name.split('-')[0].trim()}
                 </option>

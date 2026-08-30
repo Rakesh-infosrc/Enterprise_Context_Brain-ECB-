@@ -8,10 +8,22 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 import uuid
 import os
+import logging
 from pydantic import BaseModel
 from mem0 import MemoryClient
 from ...domain.schemas import MemoryType, MemoryItem
 from ..db.store import CanonicalStore
+
+logger = logging.getLogger("ecb.mem0")
+
+# Ensure .env is loaded even when service is imported without FastAPI startup
+try:
+    from dotenv import load_dotenv
+    _env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), ".env")
+    if os.path.exists(_env_path):
+        load_dotenv(_env_path, override=False)
+except Exception:
+    pass
 
 
 class Mem0MemoryItem(BaseModel):
@@ -33,13 +45,16 @@ class Mem0MemoryService:
     def __init__(self, store: Optional[CanonicalStore] = None):
         self.store = store or CanonicalStore.get_instance()
         self.memories: Dict[str, Mem0MemoryItem] = {}
-        self.api_key = os.getenv("MEM0_API_KEY")
+        self.api_key = os.getenv("MEM0_API_KEY") or os.getenv("MEM0_APIKEY")
         if self.api_key:
             try:
                 self.client = MemoryClient(api_key=self.api_key)
-            except Exception:
+                logger.info("Mem0 cloud client initialized")
+            except Exception as e:
+                logger.warning(f"Mem0 cloud init failed: {e}")
                 self.client = None
         else:
+            logger.warning("MEM0_API_KEY not set — using DB-only mode")
             self.client = None
         self._init_from_canonical()
 
@@ -90,18 +105,19 @@ class Mem0MemoryService:
         # Save to live Mem0 cloud client if configured
         if self.client:
             try:
+                # mem0 0.1.x expects messages (str or list), not content
                 self.client.add(
-                    content=content,
+                    messages=content,
                     user_id=user_id or "usr-sarah-jenkins",
                     metadata={
                         "type": memory_type.value,
                         "title": item.title,
                         "project_id": project_id or "",
                         "tags": item.tags
-                    }
+                    },
                 )
-            except Exception:
-                pass
+            except Exception as e:
+                logger.warning(f"Mem0 cloud add failed (will keep DB only): {e}")
 
         # Save to database
         m_item = MemoryItem(
@@ -129,16 +145,38 @@ class Mem0MemoryService:
         limit: int = 5,
     ) -> List[Mem0MemoryItem]:
         """Searches long-term memory matching query terms and scope."""
+        # Empty query means list-all — bypass cloud ranking which rejects empty query
+        if not query or not query.strip():
+            self._init_from_canonical()
+            # No cloud call for empty query; return filtered local
+            filtered = [
+                m for m in self.memories.values()
+                if (not user_id or m.user_id == user_id)
+                and (not project_id or not m.project_id or m.project_id == project_id)
+                and (not memory_type or m.type == memory_type)
+            ]
+            return filtered[:limit] if filtered else list(self.memories.values())[:limit]
+
         self._init_from_canonical()
         if self.client:
             try:
-                res = self.client.search(
-                    query=query,
-                    user_id=user_id or "usr-sarah-jenkins",
-                    limit=limit
-                )
+                # New mem0 client expects filters, not top-level user_id
+                try:
+                    res = self.client.search(
+                        query=query,
+                        filters={"user_id": user_id or "usr-sarah-jenkins"},
+                        limit=limit,
+                    )
+                except TypeError:
+                    res = self.client.search(
+                        query=query,
+                        user_id=user_id or "usr-sarah-jenkins",
+                        limit=limit
+                    )
+                # mem0 returns {"results": [...]} or list
+                raw_items = res.get("results") if isinstance(res, dict) else res
                 mem0_items = []
-                for item in res:
+                for item in raw_items or []:
                     m_id = item.get("id", f"mem0-{uuid.uuid4().hex[:8]}")
                     m_type = MemoryType.EPISODIC
                     try:
@@ -158,9 +196,11 @@ class Mem0MemoryService:
                         tags=item.get("metadata", {}).get("tags", [m_type.value]),
                         metadata=item.get("metadata", {})
                     ))
-                return mem0_items
-            except Exception:
-                pass
+                if mem0_items:
+                    return mem0_items
+                # cloud returned empty — fall through to local scoring
+            except Exception as e:
+                logger.warning(f"Mem0 cloud search failed, falling back to local: {e}")
 
         q_words = set(query.lower().split())
         scored = []

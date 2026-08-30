@@ -117,6 +117,9 @@ Return ONLY raw JSON, no markdown formatting."""
             ]
             if "chat" in q_lower or "slack" in q_lower or "discussed" in q_lower:
                 required_sources.append(SourceType.SLACK)
+            if any(k in q_lower for k in ["databricks", "catalog", "unity", "workspace", "cluster", "warehouse", "delta", "notebook"]):
+                if SourceType.DATABRICKS not in required_sources:
+                    required_sources.append(SourceType.DATABRICKS)
 
         # 5. Extract Named Entities
         target_entities = []

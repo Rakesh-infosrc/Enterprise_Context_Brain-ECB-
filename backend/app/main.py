@@ -1,7 +1,7 @@
 """
-Enterprise Context Brain (ECB) v2.2 - FastAPI Application Server
+Enterprise Context Brain# ECB v2.2 FastAPI Main Application Entry Point - Architecture Docs RAG Enabledver
 Runs on port 8001. Provides complete REST and OpenAPI interface.
-Added User/UserRole module import fix in mcp.py.
+Updated Git webhook filtering and project deduplication.
 """
 
 import os

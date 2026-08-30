@@ -67,7 +67,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
             Zero Autonomous Production Bypass Gate
           </span>
         </div>
-        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff' }}>
+        <h2 style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
           Governed Approval Center
         </h2>
         <p style={{ fontSize: 'var(--fs-base)', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
@@ -99,7 +99,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
           {/* Pending Approvals */}
           <div className="glass-panel" style={{ padding: '1.25rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--fs-base)' }}>
-              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: '#ffffff' }}>
+              <h3 style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                 Pending Review ({pendingActions.length})
               </h3>
               <span className="glass-pill" style={{ color: 'var(--accent-amber)', borderColor: 'rgba(251, 146, 60, 0.4)' }}>
@@ -121,7 +121,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
                       padding: '0.85rem 1rem',
                       borderRadius:'var(--radius-md)',
                       background: selectedAction?.id === a.id ? 'rgba(92, 168, 255, 0.15)' : 'rgba(17, 34, 54, 0.55)',
-                      border: selectedAction?.id === a.id ? '1px solid #5ca8ff' : '1px solid rgba(255, 255, 255, 0.06)',
+                      border: selectedAction?.id === a.id ? '1px solid #6366f1' : '1px solid rgba(255, 255, 255, 0.06)',
                       cursor: 'pointer',
                       transition: 'all 0.15s',
                     }}
@@ -134,7 +134,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
                         {a.target_system}
                       </span>
                     </div>
-                    <div style={{ fontSize: 'var(--fs-base)', fontWeight: 700, color: '#ffffff', marginBottom: '0.25rem' }}>
+                    <div style={{ fontSize: 'var(--fs-base)', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
                       {a.summary}
                     </div>
                     <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-secondary)' }}>
@@ -202,7 +202,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
                     {selectedAction.tool_name}
                   </span>
                 </div>
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                   {selectedAction.summary}
                 </h3>
               </div>
@@ -214,7 +214,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
 
             {/* Impact & Target System */}
             <div style={{
-              background: 'rgba(10, 20, 32, 0.7)',
+              background: 'var(--bg-card)',
               borderRadius:'var(--radius-md)',
               padding: '1rem',
               border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -223,7 +223,7 @@ export const ApprovalCenterView: React.FC<ApprovalCenterViewProps> = ({ actions,
               <div style={{ fontSize: 'var(--fs-xs)', fontWeight: 700, color: 'var(--accent-blue)', marginBottom: '0.3rem' }}>
                 Impact Assessment
               </div>
-              <div style={{ fontSize: 'var(--fs-sm)', color: '#f1f5f9' }}>
+              <div style={{ fontSize: 'var(--fs-sm)', color: 'var(--text-primary)' }}>
                 {selectedAction.impact_assessment}
               </div>
               <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', marginTop: '0.5rem' }}>

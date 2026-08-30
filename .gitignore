@@ -47,5 +47,6 @@ build/
 *.swp
 *.swo
 
-# PowerBI
+# Scratch temporary scripts
+scratch/
 *.pbix

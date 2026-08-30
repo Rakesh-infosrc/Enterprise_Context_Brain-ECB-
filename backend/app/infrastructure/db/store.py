@@ -28,7 +28,10 @@ is_test = (
     or any("pytest" in arg for arg in sys.argv)
     or bool(os.getenv("PYTEST_CURRENT_TEST"))
 )
-DATABASE_URL = "sqlite:///./ecb_database_test.db" if is_test else "sqlite:///./ecb_database.db"
+backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+db_filename = "ecb_database_test.db" if is_test else "ecb_database.db"
+db_path = os.path.join(backend_dir, db_filename)
+DATABASE_URL = f"sqlite:///{db_path}"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -55,17 +58,26 @@ def _cleanup_fixtures():
 
 def _migrate_db_columns():
     """Adds new columns to existing SQLite tables if they don't exist."""
+    from sqlalchemy import text
     migrations = [
         ("risks", "probability", "INTEGER DEFAULT 3"),
         ("risks", "impact", "INTEGER DEFAULT 3"),
         ("decisions", "adr_number", "TEXT"),
         ("decisions", "decided_by", "TEXT DEFAULT 'System'"),
+        ("projects", "team", "TEXT"),
+        ("projects", "webhook_status", "TEXT DEFAULT 'inactive'"),
+        ("projects", "source_type", "TEXT DEFAULT 'unknown'"),
+        ("evidence", "conflict_summary", "TEXT"),
+        ("memory_items", "title", "TEXT"),
+        ("memory_items", "confidence", "REAL DEFAULT 0.98"),
+        ("memory_items", "validity_from", "TEXT"),
+        ("memory_items", "metadata_json", "TEXT"),
     ]
     try:
         with engine.connect() as conn:
             for table, column, col_type in migrations:
                 try:
-                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+                    conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}"))
                 except Exception:
                     pass  # Column already exists
             conn.commit()
@@ -237,17 +249,27 @@ class CanonicalStore:
                     dbx_host = os.getenv("DATABRICKS_HOST", "")
                     dbx_tok = os.getenv("DATABRICKS_TOKEN", "")
                     dbx_configured = bool(dbx_host and dbx_tok and dbx_tok.strip())
+                    github_repos_raw = os.getenv("GITHUB_REPOS", "").strip()
+                    configured_repos = [r.strip().lower() for r in github_repos_raw.split(",") if r.strip()] if github_repos_raw else []
+
                     for proj in all_projects:
-                        src = getattr(proj, 'source_type', None) or 'unknown'
-                        if src == 'jira':
+                        raw_src = (getattr(proj, 'source_type', None) or '').strip().lower()
+                        p_name_lower = (proj.name or '').lower()
+                        p_id_lower = (proj.id or '').lower()
+                        
+                        if raw_src in ['github', 'git'] or '/' in proj.name:
+                            is_in_configured = any(cr in p_name_lower or cr in p_id_lower for cr in configured_repos) if configured_repos else False
+                            proj.webhook_status = "active" if is_in_configured else "inactive"
+                        elif raw_src == 'jira' or 'jira' in p_name_lower or 'project ecb' in p_name_lower or proj.id in ['prj-kan', 'prj-aegis']:
                             proj.webhook_status = "active" if jira_configured else "inactive"
-                        elif src == 'databricks':
+                        elif raw_src == 'databricks' or 'databricks' in p_name_lower:
                             proj.webhook_status = "active" if dbx_configured else "inactive"
-                        # GitHub: preserve — set by webhook handler on real events
+                        else:
+                            proj.webhook_status = "inactive"
 
                     db.commit()
-            except Exception:
-                pass
+            except Exception as err:
+                print(f"DEBUG: Exception in get_projects webhook_status update: {err}")
 
         with self._get_db() as db:
             query = db.query(DBProject)
@@ -257,11 +279,20 @@ class CanonicalStore:
                 github_repos_raw = os.getenv("GITHUB_REPOS", "").strip()
                 configured_repos = [r.strip().lower() for r in github_repos_raw.split(",") if r.strip()] if github_repos_raw else []
 
-                from sqlalchemy import or_, and_, func
                 # Only show projects with active webhooks (GitHub, Jira, Databricks)
                 query = query.filter(DBProject.webhook_status == "active")
             db_projects = query.all()
-            return [self._map_project(p) for p in db_projects]
+            
+            seen_ids = set()
+            seen_names = set()
+            unique_projects = []
+            for p in db_projects:
+                norm_name = p.name.strip().lower()
+                if p.id not in seen_ids and norm_name not in seen_names:
+                    seen_ids.add(p.id)
+                    seen_names.add(norm_name)
+                    unique_projects.append(self._map_project(p))
+            return unique_projects
 
     def get_project(self, project_id: str, team: Optional[str] = None) -> Optional[Project]:
         with self._get_db() as db:
@@ -278,7 +309,10 @@ class CanonicalStore:
                 existing.name = project.name
                 existing.status = project.status.value if hasattr(project.status, 'value') else project.status
             else:
-                db.add(DBProject(id=project.id, name=project.name, status=project.status.value if hasattr(project.status, 'value') else project.status, owner_id=project.owner_id, webhook_status="active", source_type=getattr(project, 'source_type', 'unknown')))
+                src = getattr(project, 'source_type', 'unknown')
+                is_git = src in ['github', 'git'] or '/' in project.name
+                default_webhook_status = "inactive" if is_git else "active"
+                db.add(DBProject(id=project.id, name=project.name, status=project.status.value if hasattr(project.status, 'value') else project.status, owner_id=project.owner_id, webhook_status=default_webhook_status, source_type=src))
             db.commit()
             return project
 
@@ -388,6 +422,9 @@ class CanonicalStore:
         except Exception:
             pass
 
+        src = getattr(p, 'source_type', None) or ('github' if '/' in p.name else 'unknown')
+        wh_status = getattr(p, 'webhook_status', None) or 'inactive'
+
         return Project(
             id=p.id, org_id="org-acme-fintech", name=p.name, code=proj_key,
             description=f"Live Jira project ({len(jira_issues)} issues, {done_ms} completed)",
@@ -402,6 +439,8 @@ class CanonicalStore:
             active_risks_count=active_risks_count,
             open_tickets_count=total_ms - done_ms,
             recent_decisions_count=recent_decisions_count,
+            source_type=src,
+            webhook_status=wh_status,
         )
 
     # --- Risk Queries ---
@@ -835,33 +874,48 @@ class CanonicalStore:
             m_type = MemoryType(m.type)
         except (ValueError, KeyError, AttributeError):
             m_type = MemoryType.EPISODIC
-        from datetime import timedelta
+        import json as _json
+        meta = {}
+        if getattr(m, 'metadata_json', None):
+            try:
+                meta = _json.loads(m.metadata_json)
+            except Exception:
+                meta = {}
         return MemoryItem(
             id=m.id,
             org_id="org-acme-fintech",
             project_id=m.project_id or "",
             type=m_type,
-            title=f"Memory: {m_type.value.upper()}",
+            title=getattr(m, 'title', None) or f"Memory: {m_type.value.upper()}",
             content=m.content,
-            confidence=0.98,
-            validity_from=datetime.utcnow() - timedelta(days=30),
+            confidence=getattr(m, 'confidence', None) or 0.98,
+            validity_from=getattr(m, 'validity_from', None) or datetime.utcnow(),
             validity_to=None,
-            metadata={}
+            metadata=meta
         )
 
     def add_memory(self, memory: MemoryItem) -> MemoryItem:
+        import json as _json
         with self._get_db() as db:
             existing = db.query(DBMemoryItem).filter(DBMemoryItem.id == memory.id).first()
             if existing:
                 existing.content = memory.content
                 existing.project_id = memory.project_id
                 existing.type = memory.type.value if hasattr(memory.type, 'value') else memory.type
+                existing.title = getattr(memory, 'title', None)
+                existing.confidence = getattr(memory, 'confidence', 0.98)
+                existing.validity_from = getattr(memory, 'validity_from', datetime.utcnow())
+                existing.metadata_json = _json.dumps(getattr(memory, 'metadata', {}) or {})
             else:
                 db.add(DBMemoryItem(
                     id=memory.id,
                     type=memory.type.value if hasattr(memory.type, 'value') else memory.type,
+                    title=getattr(memory, 'title', None),
                     content=memory.content,
-                    project_id=memory.project_id
+                    project_id=memory.project_id,
+                    confidence=getattr(memory, 'confidence', 0.98),
+                    validity_from=getattr(memory, 'validity_from', datetime.utcnow()),
+                    metadata_json=_json.dumps(getattr(memory, 'metadata', {}) or {}),
                 ))
             db.commit()
             return memory

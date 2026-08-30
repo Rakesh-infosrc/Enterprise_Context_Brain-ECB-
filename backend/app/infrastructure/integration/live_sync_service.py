@@ -302,7 +302,7 @@ class LiveDataIntegrationService:
                         evidence = Evidence(
                             id=evidence_id,
                             source_record_id=f"rec-dbx-catalog-{cat_name.lower()}",
-                            source_type=SourceType.DOCUMENT,
+                            source_type=SourceType.DATABRICKS,
                             source_title=f"Databricks Catalog: {cat_name}",
                             external_id=cat_name,
                             project_id=p_id,
@@ -319,10 +319,72 @@ class LiveDataIntegrationService:
 
         return results
 
+    def sync_architecture_docs(self) -> Dict[str, Any]:
+        results = {"docs_ingested": 0, "status": "success"}
+        base_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+        doc_dir = os.path.join(base_root, "Architecture Docs")
+        if not os.path.exists(doc_dir):
+            return results
+
+        for filename in os.listdir(doc_dir):
+            if filename.endswith(".md"):
+                filepath = os.path.join(doc_dir, filename)
+                try:
+                    with open(filepath, "r", encoding="utf-8") as f:
+                        content = f.read()
+
+                    doc_title = filename.replace(".md", "").replace("_", " ").title()
+                    for line in content.split("\n"):
+                        if line.startswith("# "):
+                            doc_title = line.replace("# ", "").strip()
+                            break
+
+                    # Resolve project ID based on document filename
+                    p_id = "prj-kan"
+                    fn_lower = filename.lower()
+                    if "databricks" in fn_lower:
+                        p_id = "prj-databricks"
+                    elif "airflow" in fn_lower:
+                        p_id = "prj-mcp-server-airflow"
+                    elif "receptionist" in fn_lower or "clara" in fn_lower:
+                        p_id = "prj-virtual-receptionist"
+
+                    # Chunk by H2 headers (##)
+                    sections = content.split("\n## ")
+                    for i, section in enumerate(sections):
+                        sec_text = section.strip()
+                        if not sec_text:
+                            continue
+                        sec_lines = sec_text.split("\n")
+                        sec_title = sec_lines[0].replace("## ", "").strip() if i > 0 else doc_title
+                        sec_content = "\n".join(sec_lines[1:]) if i > 0 else sec_text
+
+                        evidence_id = f"evi-doc-{filename.replace('.md', '').lower()}-{i}"
+                        evidence = Evidence(
+                            id=evidence_id,
+                            source_record_id=f"rec-doc-{filename.replace('.md', '').lower()}-{i}",
+                            source_type=SourceType.DOCUMENT,
+                            source_title=f"{doc_title} — {sec_title}",
+                            external_id=f"DOC-{filename.replace('.md', '').upper()}-{i}",
+                            project_id=p_id,
+                            excerpt=sec_content[:400].replace("\n", " "),
+                            authority=AuthorityLevel.HIGH,
+                            observed_at=datetime.utcnow(),
+                            url=f"file:///{filepath.replace('\\', '/')}",
+                            author="Enterprise Architecture Team",
+                        )
+                        self.store.add_evidence(evidence)
+                        results["docs_ingested"] += 1
+                except Exception as e:
+                    print(f"Error ingesting Architecture Doc {filename}: {e}")
+
+        return results
+
     def sync_all_sources(self) -> Dict[str, Any]:
         sync_results = {}
         sync_results["jira"] = self.sync_jira()
         sync_results["github"] = self.sync_github()
         sync_results["adrs"] = self.sync_adrs()
         sync_results["databricks"] = self.sync_databricks()
+        sync_results["architecture_docs"] = self.sync_architecture_docs()
         return sync_results

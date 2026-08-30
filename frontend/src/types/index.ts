@@ -1,6 +1,6 @@
 // frontend/src/types/index.ts
 
-export type SourceType = 'jira' | 'git' | 'adr' | 'slack' | 'confluence' | 'doc' | 'document';
+export type SourceType = 'jira' | 'git' | 'adr' | 'slack' | 'confluence' | 'doc' | 'document' | 'databricks';
 
 export type AuthorityLevel = 'high' | 'medium' | 'low';
 

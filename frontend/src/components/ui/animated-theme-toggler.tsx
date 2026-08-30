@@ -314,7 +314,7 @@ export const AnimatedThemeToggler = ({
       onClick={toggleTheme}
       aria-pressed={isDark}
       className={cn(
-        "theme-toggler-btn inline-flex items-center justify-center rounded-full p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#5ca8ff]",
+        "theme-toggler-btn inline-flex items-center justify-center rounded-full p-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#6366f1]",
         className
       )}
       aria-label={props['aria-label'] as string || "Toggle theme"}
