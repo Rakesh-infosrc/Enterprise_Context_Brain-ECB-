@@ -1,84 +1,58 @@
-
 # Enterprise Context Brain (ECB) v2.2
 
 > **Governed GenAI Decision Intelligence & Organizational Memory Operating Console**
-> LangGraph · A2A · MCP · Mem0 · Qdrant · Llama Guard 3 · CoVe · Jira · GitHub · Databricks · QLoRA
 
-[![Version](https://img.shields.io/badge/version-v2.2_bugFix-blue)](#)
-[![Tests](https://img.shields.io/badge/tests-57%2F57_PASS-brightgreen)](#-verification--testing)
-[![MCP Tools](https://img.shields.io/badge/MCP-19_tools-purple)](#-mcp-gateway--tool-catalog)
-[![Stack](https://img.shields.io/badge/stack-FastAPI%20%7C%20React%20%7C%20LangGraph-orange)](#-technology-stack)
+[![Version](https://img.shields.io/badge/version-v2.2_bugFix-blue.svg)](#)
+[![Tests](https://img.shields.io/badge/tests-57%2F57_PASS-brightgreen.svg)](#-verification--testing)
+[![MCP Tools](https://img.shields.io/badge/MCP-19_tools-purple.svg)](#-mcp-gateway--tool-catalog)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Stack](https://img.shields.io/badge/stack-FastAPI%20%7C%20React%20%7C%20LangGraph-orange.svg)](#-technology-stack)
 
-**Status:** POC Validated (`bugFix` branch · commit `d585746`) — Latency 200 s → **7.5 s** (96% ↓), Diagnostics waterfall fixed, Live sync 500 fixed
-**Repo:** `Rakesh-infosrc/Enterprise_Context_Brain-ECB-`
+**Enterprise Context Brain (ECB)** is a production-grade multi-agent AI framework designed for engineering leaders, enterprise architects, and technical project managers to unify context scattered across disparate organizational silos—such as GitHub repositories, Jira Cloud tickets, Databricks Unity Catalog assets, and Architecture Decision Records (ADRs). By orchestrating a deterministic 7-node LangGraph state machine powered by Qdrant hybrid vector search, Mem0 long-term memory, Llama Guard 3 safety filters, and a Human-in-the-Loop Policy Engine, ECB delivers real-time, zero-hallucination decision intelligence with verifiable claim citations (`[E1]`), automatic conflict detection, and governed tool execution.
 
 ---
 
-## Table of Contents
-- [Why ECB](#why-ecb)
-- [Highlights (bugFix)](#highlights-bugfix)
-- [Live Credentials](#-live-credentials--login)
+## 📋 Table of Contents
+
+- [Features and Functionality](#-features-and-functionality)
 - [Architecture](#-architecture)
 - [Technology Stack](#-technology-stack)
-- [7-Node LangGraph Pipeline](#-7-node-langgraph-pipeline)
-- [Agent Inventory](#-agent-inventory)
-- [MCP Gateway — 19 Tools](#-mcp-gateway--tool-catalog)
-- [Live Connectors & Sync](#-live-connectors--sync)
-- [Data Layer](#-data-layer)
-- [Frontend Console](#-frontend--glassmorphic-console)
-- [Backend API](#-backend-api)
-- [LLM & Fine-Tuning](#-llm--fine-tuning)
-- [Quick Start](#-quick-start)
-- [Environment (.env)](#-environment-variables)
-- [Verification & Testing](#-verification--testing)
-- [Troubleshooting](#-troubleshooting)
-- [Security & Hooks](#-security--hooks)
-- [Project Structure](#-project-structure)
-- [Documentation Index](#-documentation-index)
+- [Installation Instructions](#-installation-instructions)
+  - [Prerequisites](#prerequisites)
+  - [Environment Configuration](#environment-configuration)
+  - [Windows Setup](#windows-setup)
+  - [macOS & Linux Setup](#macos--linux-setup)
+  - [Docker Setup](#docker-setup-optional)
+- [Usage Examples](#-usage-examples)
+  - [One-Click Startup](#1-one-click-startup)
+  - [Querying via REST API](#2-querying-via-rest-api)
+  - [Server-Sent Events (SSE) Streaming](#3-server-sent-events-sse-streaming)
+  - [MCP Tool JSON-RPC Invocation](#4-mcp-tool-json-rpc-invocation)
+- [API Documentation](#-api-documentation)
+- [Contributing Guidelines](#-contributing-guidelines)
+  - [Commit Message Conventions](#commit-message-conventions)
+  - [Running Tests](#running-tests)
+- [License Information](#-license-information)
+- [Contact and Support](#-contact-and-support)
+- [Acknowledgments & Credits](#-acknowledgments--credits)
 
 ---
 
-## Why ECB
+## ✨ Features and Functionality
 
-| Pain | ECB Solves |
-|------|------------|
-| Jira ≠ Git ≠ ADRs ≠ Slack silos | Unified Canonical Store + hybrid retrieval with citations `[E1]` |
-| Timeline contradictions undetected | Cross-source verification (Jira due date vs Git tag) + CoVe NLI |
-| Hallucinated answers, no audit | Chain-of-Verification ≥95% groundedness + Policy Engine human gate |
-| Context re-derived per query | Mem0 long-term memory (5 categories, decay) + Qdrant payload filtering |
+### 🧠 Core Capabilities
 
-**Experience loop:** `ASK → UNDERSTAND → VERIFY → EXPLAIN → RECOMMEND → GOVERN → ACT → LEARN`
-
----
-
-## Highlights (bugFix)
-
-| Issue | Before | After | File |
-|-------|--------|-------|------|
-| Ask ECB latency | **200 s** | **6.5–7.6 s** | `agents.py:50` narrowed keywords + `ThreadPoolExecutor` (6 workers, 3s timeout) |
-| Diagnostics `0ms / empty waterfall` | No data | **7568 ms, 5 steps measured** | `store.py:770` ISO datetime fix + `langgraph_orchestrator.py` per-node timing |
-| `GET /agent-runs` 500 | `token_usage` dict vs fields | **200 OK, 3 runs** | `store.py:763` split to `total_tokens/prompt/completion` + `get_agent_run(id)` |
-| `POST /sync` 500 | duplicate `github_token`, missing `jira_token` | **200 OK** | `live_sync_service.py:30` |
-| Jira `GET /search` 410 Gone | Sync returned 0 issues | **20 issues ingested** | `live_sync_service.py:130` → `POST /search/jql` |
-| `Project` no `source_type` | `ValueError` | **16 projects (jira/github/databricks)** | `schemas.py:268` |
+- **Unified Context Synthesis**: Connects Jira Cloud, GitHub repositories, Databricks Lakehouse metadata, and Architecture Docs into a single canonical intelligence store.
+- **Zero-Hallucination Lineage**: Anchors every AI claim with clickable citation badges (`[E1]`, `[E2]`) mapping directly to verified source excerpts, author metadata, and timestamps.
+- **7-Node Deterministic Agent Machine**: Executes an end-to-end state machine comprising Llama Guard 3 safety inspection, Context Planner intent classification, Qdrant hybrid retrieval, A2A delegation, LLM synthesis, Chain-of-Verification (CoVe), and Mem0 persistence.
+- **Exclusive Architecture Docs RAG**: Gated retrieval mode that chunks enterprise markdown files by section headers (`## H2`) and searches official ADRs and design specs.
+- **Human-in-the-Loop Governance**: Evaluates requested system mutations (Jira updates, GitHub PR creation, Databricks job runs) against risk policies—requiring explicit approval from authorized engineering leads before execution.
+- **Fine-Tuning Dataset Generator**: Automatically extracts Git commit diffs and Jira issue histories into normalized Instruction-Target JSONL datasets for training open-weights LLMs (e.g., Llama 3.2).
+- **Automated AI Quality Benchmarks**: Includes a golden evaluation suite (`GOLD-01` to `GOLD-05`) measuring Claim Groundedness ($>95\%$), Citation Accuracy ($>95\%$), and Conflict Detection Rate.
 
 ---
 
-## 🔐 Live Credentials & Login
-
-Glassmorphic Console: **http://localhost:3000** · Swagger: **http://127.0.0.1:8001/docs**
-
-| Role | Email | Password | Permissions |
-|------|-------|----------|-------------|
-| **Project Manager** | `sarah.jenkins@acmefin.com` | `password123` | Portfolio health, risk heatmap, final MCP approvals |
-| **Engineering Lead** | `alex.mercer@acmefin.com` | `password123` | Sprint velocity, PR/commit graph, ADR supersession |
-| **Admin / Security Lead** | `admin@acmefin.com` | `password123` | Llama Guard policies, MCP gateway, connection health |
-
-> OAuth2 Bearer JWT. Any valid email issues a signed token (`POST /api/v1/token`). RBAC enforced via `get_current_user`.
-
----
-
-## 🌟 Architecture
+## 🏛️ Architecture
 
 ```mermaid
 flowchart TB
@@ -93,7 +67,7 @@ flowchart TB
         MCPV[MCP Dataset & Fine-Tune]
         SET[Settings — Per-Connector Sync]
     end
-    subgraph SAFETY [Safety]
+    subgraph SAFETY [Safety Layer]
         LG3[Llama Guard 3 — S1..S4 + PII]
         COVE[CoVe — Claim Entailment]
         POL[Policy Engine — LOW/HIGH/PROHIBITED]
@@ -102,8 +76,8 @@ flowchart TB
         CP[Context Planner]
         QD[Qdrant Hybrid Retrieval]
         A2A[A2A Delegation + SKILL.md]
-        AG[AgentOrchestrator — Concurrent Live Enrichment]
-        MEM[Mem0 Write]
+        AG[AgentOrchestrator — Live Enrichment]
+        MEM[Mem0 Persistence]
     end
     subgraph API [FastAPI :8001 — /api/v1/*]
         QRY[Query / Stream / Context-Plan]
@@ -112,16 +86,16 @@ flowchart TB
         MCP[MCP Gateway — 19 tools]
         WH[Webhooks — Jira/GitHub/Databricks/Slack]
     end
-    subgraph DATA [Persistence]
-        STORE[(Canonical Store — SQLite → Postgres16)]
-        QDRANT[(Qdrant — HNSW Cosine)]
-        MEM0[(Mem0 — 5 Categories)]
+    subgraph DATA [Persistence Layer]
+        STORE[(Canonical Store — SQLite → Postgres 16)]
+        QDRANT[(Qdrant Vector DB — HNSW Cosine)]
+        MEM0[(Mem0 Long-Term Memory)]
         SKILLS[(backend/skills/*/SKILL.md)]
     end
     subgraph LIVE [Live Connectors]
-        JIRA[Jira Cloud — reenams.atlassian.net]
-        GH[GitHub — 11 repos]
-        DBX[Databricks — 7 catalogs]
+        JIRA[Jira Cloud API]
+        GH[GitHub REST API]
+        DBX[Databricks Unity Catalog]
     end
 
     UI --> LG3 --> QRY --> CP --> QD --> A2A --> AG --> COVE --> POL --> MEM --> APP
@@ -131,389 +105,323 @@ flowchart TB
     MCP <--> LIVE
     MEM --> MEM0
     WH --> API
-    UI -. ngrok .-> WH
 ```
-
-**Request path:** `React → FastAPI → Llama Guard → Planner → Qdrant (0–10 ms) → A2A → AgentOrchestrator (live APIs + LLM) → CoVe (2.5–3.8 s) → Policy → Mem0 → Response (answer + citations + steps + latency)` — **Total ~7.5 s** (measured).
 
 ---
 
 ## 🧱 Technology Stack
 
-| Layer | Technology | Version / Notes |
-|-------|------------|-----------------|
-| Language | Python / TypeScript | 3.12 / 5.x |
-| API | FastAPI + Pydantic v2 + Uvicorn | `>=0.110.0`, SQLAlchemy 2.0, Alembic |
-| Agents | LangGraph + LangChain | `>=0.0.30`, `StateGraph` + checkpoint + `interrupt_before` |
-| Vector | Qdrant | HNSW, 384/768-dim, Cosine, payload indexes |
-| Memory | Mem0 | `mem0ai>=0.1.0` — semantic/episodic/procedural/decision/experiential |
-| Safety | Llama Guard 3 / CoVe | `llm/llama_guard.py` / `safety/hallucination_guard.py` (threshold 0.90) |
-| MCP | Anthropic MCP | `mcp>=1.0.0` JSON-RPC 2.0 (`/api/v1/mcp/rpc` + `stdio`) |
-| LLM | Groq `qwen/qwen3.8-27b` (primary) + Gemini `1.5-flash` fallback | `ECB_LLM_MODE=auto` (`llm/llm_provider.py`) |
-| Fine-Tune | PEFT QLoRA | `torch>=2.2.0`, Llama-3.2-3B-Instruct, r=16 α=32 lr=2e-4 |
-| Frontend | React 19 + Vite 8 + Tailwind 4 + Lucide | `frontend/package.json` |
-| DB | SQLite (`ecb_database.db`) → Postgres 16 + RLS | `docker-compose.yml` |
-| Observability | OpenTelemetry + Jaeger | `:16686` UI, `:4317/:4318` OTLP |
-| Tunnel | ngrok | `https://conjoined-trough-chrome.ngrok-free.dev` |
-
-> Full list: [`backend/requirements.txt`](backend/requirements.txt) (57 deps)
+| Layer | Technology | Version / Specification |
+|-------|------------|-------------------------|
+| **Backend Runtime** | Python | 3.10+ (Tested on Python 3.12) |
+| **API Framework** | FastAPI + Uvicorn | `fastapi>=0.110.0`, Pydantic v2, SQLAlchemy 2.0 |
+| **Agent Orchestration** | LangGraph + LangChain | `langgraph>=0.0.30`, `StateGraph` checkpointing |
+| **Vector Engine** | Qdrant | HNSW Cosine Indexing, 384/768-dim Embeddings |
+| **Organizational Memory** | Mem0 | `mem0ai>=0.1.0` (Semantic, Episodic, Procedural) |
+| **Safety & Governance** | Llama Guard 3 + CoVe | Policy Engine (Low Impact / High Impact / Prohibited) |
+| **Model Context Protocol** | Anthropic MCP | `mcp>=1.0.0` (JSON-RPC 2.0 & stdio transport) |
+| **Frontend Framework** | React 19 + Vite 8 | TypeScript 5.x, Tailwind CSS 4, Lucide Icons |
+| **Databases** | SQLite / Postgres 16 | Canonical Store with Row-Level Security (RLS) |
+| **Observability** | OpenTelemetry | OTLP traces (`:4317`) & Jaeger UI (`:16686`) |
 
 ---
 
-## 🔄 7-Node LangGraph Pipeline
+## 📦 Installation Instructions
 
-| # | Node | Function | Latency (measured) | File |
-|---|------|----------|--------------------|------|
-| 1 | **Llama Guard 3 In** | `inspect_prompt()` S1–S4 + PII | 0–1 ms | `llm/llama_guard.py:20` |
-| 2 | **Context Planner** | `plan(query)` → `AgentWorkflow` + entities | 3.7–6.8 s (LLM) | `intelligence/context_planner.py:23` |
-| 3 | **Qdrant Hybrid** | `search_hybrid(top_k=8)` dense+BM25+payload | 0–10 ms | `vector/qdrant_service.py` |
-| 4 | **A2A Delegation** | `delegate_subtask(MANAGER→specialist)` + 4 skills | <1 ms | `orchestration/a2a_protocol.py:38` |
-| 5 | **AgentOrchestrator** | Concurrent GitHub/Jira/Databricks + `_synthesize_live_llm()` | LLM-bound | `orchestration/agents.py:26` |
-| 6 | **CoVe + Policy** | `verify_answer()` + `PolicyEngine` → human gate | 2.5–3.8 s | `safety/hallucination_guard.py:35` |
-| 7 | **Mem0 Write** | `add_memory()` + persist `AgentRun` | <50 ms | `memory/mem0_memory.py` |
+### Prerequisites
 
-Persisted per-query: `DBAgentRun{steps_json (ISO dt), token_usage_json, latency_ms, confidence}` → `GET /api/v1/agent-runs`.
+Ensure you have the following installed on your system before proceeding:
+- **Python**: `v3.10` or higher
+- **Node.js**: `v18.0.0` or higher (with `npm` v9+)
+- **Git**: `v2.30+`
+- **Docker & Docker Compose** *(Optional, for containerized DB and Qdrant)*
 
 ---
 
-## 🤖 Agent Inventory
+### Environment Configuration
 
-### Core Orchestrators
-| Agent | Class | File |
-|-------|-------|------|
-| **LangGraphOrchestrator** | `LangGraphOrchestrator` | `orchestration/langgraph_orchestrator.py:61` |
-| **AgentOrchestrator** | `AgentOrchestrator` | `orchestration/agents.py:26` |
-| **ContextPlanner** | `ContextPlanner` | `intelligence/context_planner.py:23` |
-| **A2ACoordinator** | `A2ACoordinator` | `orchestration/a2a_protocol.py:38` |
+Create a file named `.env` inside the `backend/` directory using the provided template:
 
-### Specialist Workflows (`AgentWorkflow` enum — 7/7 routing PASS)
-| Specialist | Triggers (narrowed bugFix) | Skills |
-|------------|----------------------------|--------|
-| `manager` | default | all 4 |
-| `project_intelligence` | delay, block, late, timeline, milestone, sprint | `jira_ops` |
-| `risk_intelligence` | risk, severity, incident, vulnerability, pci | `risk_mitigation`, `security_compliance` |
-| `decision_intelligence` | adr, decision, architecture, kafka, postgres | `adr_architecture` |
-
----
-
-## 🔌 MCP Gateway — Tool Catalog
-
-**Gateway:** `infrastructure/mcp/mcp_gateway.py:21` · 19 tools · `GET /mcp/tools` · `POST /mcp/rpc` · `stdio` via `mcp_server.py`
-
-| Category | Tools | Purpose |
-|----------|-------|---------|
-| **Jira (2)** | `jira_update_issue`, `jira_create_issue` | Mutate Jira fields/tickets |
-| **GitHub (2)** | `git_tag_release`, `github_create_pull_request` | Tag release, open PR |
-| **Slack (1)** | `slack_send_briefing` | Executive briefing dispatch |
-| **Databricks (11)** | `databricks_list_clusters`, `databricks_get_cluster`, `databricks_list_jobs`, `databricks_run_job`, `databricks_get_job_run`, `databricks_execute_sql`, `databricks_list_workspace_objects`, `databricks_export_notebook`, `databricks_list_catalogs`, `databricks_list_schemas`, `databricks_list_tables` | Unity Catalog + compute + SQL + workspace |
-| **Export (3)** | `mcp_export_git_training_set`, `mcp_export_jira_training_set`, `mcp_get_data_collection_report` | JSONL dataset export + coverage |
-
-Extractors: `GitDatasetExtractor` · `JiraDatasetExtractor` · `DatabricksDatasetExtractor`
-Docs: [`GITHUB_MCP.md`](GITHUB_MCP.md) · [`JIRA_MCP.md`](JIRA_MCP.md) · [`DATABRICKS_MCP.md`](DATABRICKS_MCP.md)
-
-| Skill Playbook | Author | Triggers |
-|----------------|--------|----------|
-| `adr_architecture` | ECB Arch Review Board | ADR trade-off, supersession |
-| `jira_ops` | ECB Core Intelligence | ticket lifecycle, blocker triage |
-| `risk_mitigation` | ECB Risk Mgmt | 5×5 calc, cascading |
-| `security_compliance` | ECB Security & Gov | PCI-DSS 4.0, SOC2 |
-
----
-
-## 🌐 Live Connectors & Sync
-
-| Connector | Auth | Health Probe | Result (2026-08-30) |
-|-----------|------|--------------|---------------------|
-| **GitHub** | PAT `GITHUB_TOKEN` | `GET /user` | **PASS** `Rakesh-infosrc` · 11 repos via `GITHUB_REPOS` (token lacks `admin:repo_hook` → fallback ilike filter) |
-| **Jira** | Basic `JIRA_USER_EMAIL`+`JIRA_API_TOKEN` | `GET /rest/api/3/myself` | **PASS** `ProdTesting` · 2 projects (KAN, SAM1) · **POST `/search/jql`** (fixes 410) |
-| **Databricks** | Bearer `DATABRICKS_TOKEN` | `GET /api/2.1/unity-catalog/catalogs` | **PASS** 7 catalogs: `workspace`, `dbacademy`, `handson1`, `sample`, `wbd_catalog`, `samples`, `system` |
-
-**Sync service:** `infrastructure/integration/live_sync_service.py` — `sync_all_sources()` / `sync_jira|github|databricks()`
-
-| Endpoint | Use | UI Trigger |
-|----------|-----|------------|
-| `POST /api/v1/sync` | Full sync (Jira+GitHub+Databricks+ADRs) | Settings → Sync All |
-| `POST /api/v1/settings/connections/sync/{connector}` | Per-connector (`jira`/`github`/`databricks`) | Settings → Sync button per card |
-| `POST /api/v1/settings/connections` | Save creds → validate → auto-sync | Settings save |
-
-**DB after sync:** 16 projects (2 Jira + 11 GitHub + 1 Databricks + 2 duplicates), 63 evidence, 300 risks, 34 decisions, 14 agent runs.
-
-**Webhooks** (`api/v1/webhooks/routes.py`): `POST /webhooks/{github,jira,databricks,slack}` + `GET /diagnostics`
-
-**ngrok:** `ngrok http 8001` → `https://conjoined-trough-chrome.ngrok-free.dev` → `https://…/api/v1/webhooks/{jira,github}`
-
----
-
-## 💾 Data Layer
-
-| Store | Tech | Details |
-|-------|------|---------|
-| **Canonical Store** | SQLite → Postgres 16 + RLS | `infrastructure/db/store.py` · `DBProject(source_type)`, `DBEvidence(conflict_summary)`, `DBAgentRun(steps_json, token_usage_json, latency_ms)`, `_cleanup_fixtures()` removes `prj-aegis/orion/clara-v3/test` |
-| **Qdrant** | HNSW Cosine | Collection `ecb_canonical_evidence`, 384/768-dim, indexes: `project_id`, `source_type`, `authority`, `observed_at_timestamp`, `is_conflicting` |
-| **Mem0** | `mem0_memory.py` | `add_memory()` per query — 5 categories, decay, project/team scope |
-
----
-
-## 🎨 Frontend — Glassmorphic Console
-
-**Stack:** React 19 · Vite 8 · TypeScript 6 · Tailwind 4 · Lucide · Motion
-**Base:** `VITE_API_BASE_URL || http://127.0.0.1:8001/api/v1` · Client: `frontend/src/lib/api.ts`
-
-| View | File | Highlights |
-|------|------|------------|
-| **Command Center** | `views/CommandCenterView.tsx` | KPIs, risk count, evidence rail, milestone `No due date` / `Aug 29, 2026` fmt |
-| **Ask ECB** | `views/AskECBView.tsx` | `FormattedMarkdown` (headings/bold/code-pill glow), SSE streaming, citations `[E1]`, latency/tokens badge |
-| **Project Intelligence** | `views/ProjectIntelligenceView.tsx` | Milestones, sprint progress, blockers |
-| **Risk Intelligence** | `views/RiskIntelligenceView.tsx` | 5×5 likelihood×impact heatmap |
-| **Decision Intelligence** | ADR tree | Supersession graph (`Docs/adrs/`) |
-| **Developer Diagnostics** | `views/DeveloperDiagnosticsView.tsx` | **5 tabs:** Traces (waterfall **real ms**), Skills/Memories, Evidence, MCP Datasets, Eval · consumes `GET /agent-runs` |
-| **MCP / Fine-Tune** | `views/McpDatasetView.tsx` | 92% coverage badge, `.jsonl` export |
-| **Approval Center** | `views/ApprovalCenterView.tsx` | Approve/Reject HIGH_IMPACT actions |
-| **Settings** | `views/SettingsView.tsx` | 3-field GitHub form + per-connector Sync buttons (`api.syncConnector()`) |
-| **Shell** | `App.tsx`, `Header.tsx`, `WelcomeBanner.tsx`, `PersonaSwitcher.tsx` | Persona switch, project dropdown (filtered by `source_type`), `loadData()` 7 parallel fetches |
-
----
-
-## 🔗 Backend API
-
-Base: `/api/v1` (`api/v1/router.py`) · Docs: `http://127.0.0.1:8001/docs`
-
-| Group | Method | Path | Notes |
-|-------|--------|------|-------|
-| **Query** | POST | `/query` | `execute_graph()` → `QueryResponse` |
-| | POST | `/query/stream` | SSE `execute_graph_stream()` |
-| | POST | `/context-plan` | `ContextPlanner.plan()` |
-| **Projects** | GET | `/projects`, `/projects/{id}` | Filtered (ilike `GITHUB_REPOS`) |
-| | GET | `/risks`, `/projects/{id}/risks` | 300 risks |
-| | GET | `/decisions`, `/projects/{id}/decisions` | 34 decisions |
-| **Evidence** | GET | `/evidence`, `/evidence/{id}` | 63 evidence |
-| | GET | `/memories`, `/contradictions`, `/mem0/memories` | |
-| **MCP** | GET | `/mcp/tools` | 19 tools |
-| | POST | `/mcp/rpc` | JSON-RPC 2.0 |
-| | GET | `/mcp/dataset/git`, `/mcp/dataset/jira`, `/mcp/coverage` | |
-| | POST/GET | `/mcp/finetune/start`, `/mcp/finetune/status` | |
-| | GET/POST | `/actions`, `/actions/{id}/approve|reject` | |
-| **System** | POST | `/sync` | Full sync |
-| | GET | `/skills`, `/qdrant/stats`, `/agent-runs`, `/agent-runs/{id}`, `/audit-events`, `/stats`, `/health` | |
-| | POST | `/settings/connections` | Save + validate + auto-sync |
-| | POST | `/settings/connections/sync/{connector}` | Per-connector |
-| **Webhooks** | POST/GET | `/webhooks/{github,jira,databricks,slack}` | + `GET /diagnostics` |
-| **Auth** | POST | `/token` | JWT |
-
----
-
-## 🤖 LLM & Fine-Tuning
-
-**Provider:** `infrastructure/llm/llm_provider.py` — `ECB_LLM_MODE=auto` → Groq `qwen/qwen3.8-27b` → Gemini `gemini-1.5-flash` → simulated
-
-**Dataset pipeline:**
-- `GitDatasetExtractor` / `JiraDatasetExtractor` / `DatabricksDatasetExtractor` → normalized `instruction / context / target_synthesis` JSONL (`mcp_data_extractor.py`)
-- `GET /mcp/coverage` → **92%** overall
-
-**Training:** `domain/fine_tuning/train_lora.py` — `meta-llama/Llama-3.2-3B-Instruct`, QLoRA `r=16 α=32 lr=2e-4`, `backend/models/ecb-lora-adapter/`, loss `2.50 → 1.06 → 0.70`
-- `POST /api/v1/mcp/finetune/start` · `GET /api/v1/mcp/finetune/status`
-
----
-
-## 🏃 Quick Start
-
-### One-Click
-
-```powershell
-# Windows — launches backend :8001 + frontend :3000
-.\start.bat      # or .\start.ps1 (PowerShell)
-```
-Open **http://localhost:3000** · API **http://127.0.0.1:8001/docs**
-
-### Manual
-
-```powershell
-# 1) Backend — create & activate venv
-cd backend
-python -m venv venv
-.\venv\Scripts\Activate.ps1          # PowerShell
-# .\venv\Scripts\activate.bat        # CMD
-.\venv\Scripts\python.exe -m pip install --upgrade pip
-.\venv\Scripts\pip.exe install -r requirements.txt
-
-# 2) Run backend
-python -m uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
-
-# 3) Frontend — new terminal
-cd ..\frontend
-npm install
-npm run dev -- --port 3000 --host    # vite :3000
-# Production build check
-npm run build
+```bash
+cp backend/.env.example backend/.env
 ```
 
-### Webhook Tunnel (optional)
-
-```powershell
-ngrok http 8001
-# Public HTTPS: https://conjoined-trough-chrome.ngrok-free.dev
-# Jira webhook:  https://.../api/v1/webhooks/jira
-# GitHub webhook:https://.../api/v1/webhooks/github
-```
-
----
-
-## 🔧 Environment Variables
-
-Create `backend/.env` (gitignored). Template: `backend/.env.example`
+Edit `backend/.env` to configure your API keys and credentials:
 
 ```ini
-# LLM
-GEMINI_API_KEY=...
-GROQ_API_KEY=...
-ECB_LLM_MODE=auto                 # auto | gemini | groq | simulated
-GEMINI_MODEL=gemini-1.5-flash
+# LLM Providers
+GROQ_API_KEY=your_groq_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
+ECB_LLM_MODE=auto                         # Options: auto | groq | gemini | simulated
 GROQ_MODEL=qwen/qwen3.8-27b
+GEMINI_MODEL=gemini-1.5-flash
 
-# GitHub — PAT with repo scope; admin:repo_hook optional (fallback via GITHUB_REPOS)
-GITHUB_TOKEN=github_pat_...
-GITHUB_REPOS=Rakesh-infosrc/Enterprise_Context_Brain-ECB-,Rakesh-infosrc/Databricks_study_Plan
-GITHUB_HOST=https://github.com
+# GitHub Integration
+GITHUB_TOKEN=github_pat_your_personal_access_token
+GITHUB_REPOS=Rakesh-infosrc/Enterprise_Context_Brain-ECB-
 
-# Jira Cloud
-JIRA_BASE_URL=https://reenams.atlassian.net
-JIRA_USER_EMAIL=reenams2002@gmail.com
-JIRA_API_TOKEN=ATATT3x...
+# Jira Cloud Integration
+JIRA_BASE_URL=https://your-domain.atlassian.net
+JIRA_USER_EMAIL=your_email@domain.com
+JIRA_API_TOKEN=your_jira_api_token
 
-# Databricks
-DATABRICKS_HOST=https://dbc-3ae3d30d-6c76.cloud.databricks.com
-DATABRICKS_TOKEN=dapi...
-DATABRICKS_ACCESS_MODE=controlled-write
-
-# Databricks MCP (databricks-mcp.json) — token redacted to <SET_YOUR_DATABRICKS_TOKEN_HERE> for push protection
+# Databricks Unity Catalog Integration
+DATABRICKS_HOST=https://dbc-your-instance.cloud.databricks.com
+DATABRICKS_TOKEN=dapi_your_databricks_token
 ```
-
-> `app/main.py:12` loads via `load_dotenv(backend/.env)` before router import.
 
 ---
 
-## 🧪 Verification & Testing
+### Windows Setup
 
-### 57/57 PASS — `test_all_agents.py`
+#### 1. Clone the Repository
+```powershell
+git clone https://github.com/Rakesh-infosrc/Enterprise_Context_Brain-ECB-.git
+cd Enterprise_Context_Brain-ECB-
+```
 
+#### 2. Setup Backend Environment
 ```powershell
 cd backend
-.\venv\Scripts\python.exe test_all_agents.py
-# Import 18/18 · Planner 7/7 · Llama Guard 3/3 · CoVe 1/1 · Policy 3 levels · MCP 19/19 · A2A 1/1 · Skills 4/4 · Live Connectors 3/3
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+cd ..
 ```
 
-### Pytest Suites
-
+#### 3. Setup Frontend Environment
 ```powershell
-.\venv\Scripts\pytest -vv                    # all
-.\venv\Scripts\pytest tests/test_github_mcp_webhooks.py -vv
-.\venv\Scripts\pytest tests/test_jira_mcp_webhooks.py -vv
-.\venv\Scripts\pytest tests/test_databricks_mcp_webhooks.py -vv
+cd frontend
+npm install
+cd ..
 ```
 
-### Frontend Build
-
+#### 4. Run Launcher
 ```powershell
-cd frontend; npm run build   # tsc -b && vite build
-```
-
-### Live Smoke (after bugFix)
-
-```powershell
-# Sync
-curl -X POST http://127.0.0.1:8001/api/v1/sync
-# Ask ECB
-curl -X POST http://127.0.0.1:8001/api/v1/query -H "Content-Type: application/json" -d '{"query":"What are the project risks?"}'
-# Agent runs (should show latency ~7568 ms, 5 steps)
-curl http://127.0.0.1:8001/api/v1/agent-runs?limit=3
+.\start.bat      # Launches FastAPI on :8001 and React Console on :3000
 ```
 
 ---
 
-## 🛠 Troubleshooting
+### macOS & Linux Setup
 
-| Symptom | Cause | Fix |
-|---------|-------|-----|
-| `POST /symc` 404 | Wrong path | Use `POST /api/v1/sync` (not `/sync`) |
-| `POST /sync` 500 | Top-level `try` without `except` in `live_sync_service.py` / missing `jira_token` | Fixed in `bugFix: d585746` — `try/except` + `jira_token` prop + duplicate `github_token` removed |
-| `POST /search` 410 Gone | Jira deprecated `GET /rest/api/3/search` | Fixed → `POST /rest/api/3/search/jql` |
-| `latency_ms=0 / steps=0` | `datetime` not JSON-serializable | Fixed → ISO `isoformat()` in `add_agent_run()` |
-| `GET /agent-runs` 500 | `token_usage` dict vs `AgentRun` fields | Fixed → split to `total_tokens/prompt/completion` |
-| Ask ECB **200 s** | `_is_git_query` matched `"what"` → 7 sequential 8 s calls | Fixed → narrowed triggers + `ThreadPoolExecutor` 6×3 s |
-| `ERR_NGROK_8012` 502 | Backend not on :8001 | Check `http://127.0.0.1:8001/api/v1/health` is 200 |
-| `PUSH PROTECTION` blocked | `databricks-mcp.json` token | Redacted to `<SET_YOUR_DATABRICKS_TOKEN_HERE>` |
-| GitHub 403 on `/hooks` | Token lacks `admin:repo_hook` | Expected — uses `GITHUB_REPOS` env fallback |
-| `datetime.utcnow()` warnings | Deprecated | Cosmetic — planned `datetime.now(UTC)` in v2.3 |
-
----
-
-## 🔒 Security & Hooks
-
-- **Auth:** OAuth2 JWT (`core/security.py`, `python-jose`, `bcrypt`)
-- **Llama Guard 3:** S1 injection/jailbreak, S2 tool-param, S3 PII, S4 toxic — in/out
-- **Policy Engine:** `LOW_IMPACT` (slack) → no gate; `HIGH_IMPACT` (jira_create) → human interrupt; `PROHIBITED` → blocked
-- **Audit:** Append-only `DBAuditEvent` on every approval/execution
-- **Git hook:** `commit-msg` enforces Jira key (`AEGIS-|KAN-|CLARA-|INC-`) · pre-push secret scanning
-- **Branch:** `bugFix` (`b6de88f` + `d585746`) · Push target `origin/bugFix` → PR `https://github.com/Rakesh-infosrc/Enterprise_Context_Brain-ECB-/pull/new/bugFix`
-
----
-
-## 📁 Project Structure
-
+#### 1. Clone the Repository
+```bash
+git clone https://github.com/Rakesh-infosrc/Enterprise_Context_Brain-ECB-.git
+cd Enterprise_Context_Brain-ECB-
 ```
-ECB/
-├── AGENTS.md                           # Live health report (57/57)
-├── README.md                           # This file
-├── GITHUB_MCP.md / JIRA_MCP.md / DATABRICKS_MCP.md
-├── databricks-mcp.json                 # MCP server config (token placeholder)
-├── docker-compose.yml                  # postgres:16 + jaeger
-├── start.bat / start.ps1               # One-click launch
-├── Docs/
-│   ├── 01_ECB_PRD_v2.2.md              # PRD
-│   ├── 02_ECB_Technical_Requirements_v2.2.md
-│   ├── 03_ECB_Application_Flow_v2.2.md
-│   ├── 04_ECB_UI_UX_Product_Design_v2.2.md
-│   ├── 05_ECB_Backend_Schema_v2.2.md
-│   ├── 06_ECB_Implementation_Runbook_v2.2.md
-│   ├── 07_ECB_Project_Design_Document_v2.2.md  # PDD (new)
-│   ├── ENTERPRISE_CONTEXT_BRAIN_MASTER_DOCUMENTATION.md
-│   └── adrs/ (ADR-001..003)
-├── backend/
-│   ├── app/
-│   │   ├── main.py                     # FastAPI :8001 + load_dotenv
-│   │   ├── api/v1/{router, endpoints/*, webhooks/*}
-│   │   ├── application/{orchestration/*, intelligence/*, safety/*}
-│   │   ├── domain/{schemas.py, fine_tuning/train_lora.py}
-│   │   ├── infrastructure/{db/*, vector/*, memory/*, mcp/*, llm/*, integration/*}
-│   │   ├── core/{config.py, security.py, telemetry/*}
-│   │   └── skills/*/SKILL.md
-│   ├── requirements.txt
-│   ├── ecb_database.db                 # SQLite POC
-│   ├── test_all_agents.py              # 57 tests
-│   └── tests/
-└── frontend/
-    ├── src/
-    │   ├── App.tsx                     # Shell + loadData 7 parallel fetches
-    │   ├── lib/api.ts                  # fetchJson client
-    │   └── components/views/*          # 8 views
-    ├── package.json                    # React 19, Vite 8, Tailwind 4
-    └── vite.config.ts
+
+#### 2. Setup Backend Environment
+```bash
+cd backend
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+cd ..
+```
+
+#### 3. Setup Frontend Environment
+```bash
+cd frontend
+npm install
+cd ..
+```
+
+#### 4. Run System Services
+In Terminal 1 (Backend):
+```bash
+cd backend
+source venv/bin/activate
+python3 -m uvicorn app.main:app --host 127.0.0.1 --port 8001 --reload
+```
+
+In Terminal 2 (Frontend):
+```bash
+cd frontend
+npm run dev -- --port 3000 --host
 ```
 
 ---
 
-## 📚 Documentation Index
+### Docker Setup (Optional)
 
-| Doc | Purpose |
-|-----|---------|
-| [`Docs/07_ECB_Project_Design_Document_v2.2.md`](Docs/07_ECB_Project_Design_Document_v2.2.md) | Authoritative PDD (25 sections) |
-| [`Docs/01_ECB_PRD_v2.2.md`](Docs/01_ECB_PRD_v2.2.md) | Product Requirements |
-| [`Docs/02_ECB_Technical_Requirements_v2.2.md`](Docs/02_ECB_Technical_Requirements_v2.2.md) | Technical Requirements |
-| [`ENTERPRISE_CONTEXT_BRAIN_MASTER_DOCUMENTATION.md`](Docs/ENTERPRISE_CONTEXT_BRAIN_MASTER_DOCUMENTATION.md) | Master Ops Guide |
-| [`AGENTS.md`](AGENTS.md) | Agent Health Report |
-| [`backend/test_all_agents.py`](backend/test_all_agents.py) | Test runner |
-| Swagger | `http://127.0.0.1:8001/docs` |
+To launch the backend API, Qdrant vector database, and Jaeger observability using Docker Compose:
+
+```bash
+docker-compose up -d
+```
+- **Backend API**: `http://localhost:8001/docs`
+- **Jaeger UI**: `http://localhost:16686`
+- **Qdrant Dashboard**: `http://localhost:6333/dashboard`
 
 ---
 
-**Maintained by:** ECB Core Intelligence Team · **Branch:** `bugFix` · **Next:** v2.3 Hardening (OTEL dashboards, `datetime.now(UTC)`, Postgres RLS migration)
+## 💡 Usage Examples
+
+### 1. One-Click Startup
+Access the web console by opening your browser to:
+- **Glassmorphic Console**: `http://localhost:3000`
+- **Swagger OpenAPI Docs**: `http://127.0.0.1:8001/docs`
+
+---
+
+### 2. Querying via REST API
+
+Send a decision intelligence query to the backend `/api/v1/query` endpoint:
+
+```bash
+curl -X POST "http://127.0.0.1:8001/api/v1/query" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "query": "Why was synchronous REST replaced with Kafka in ADR-002?",
+           "project_id": "prj-kan"
+         }'
+```
+
+#### Sample Response Output:
+```json
+{
+  "trace_id": "tr-6e9f2a",
+  "query": "Why was synchronous REST replaced with Kafka in ADR-002?",
+  "answer": "Synchronous REST was replaced by Kafka in ADR-002 due to throughput limits under peak load [E1]. The event-driven architecture guarantees sub-50ms processing latency and eliminates cascading service timeouts during burst traffic [E2].",
+  "citations": [
+    {
+      "badge": "[E1]",
+      "source_title": "ADR-002 Event-Driven Architecture Migration",
+      "source_type": "document",
+      "url": "Docs/adrs/ADR-002.md"
+    },
+    {
+      "badge": "[E2]",
+      "source_title": "INC-892 Payment Event Stream Benchmark",
+      "source_type": "jira",
+      "url": "https://reenams.atlassian.net/browse/KAN-8"
+    }
+  ],
+  "confidence": 0.98,
+  "status": "ALL_GATES_PASSED",
+  "latency_ms": 7450
+}
+```
+
+---
+
+### 3. Server-Sent Events (SSE) Streaming
+
+Stream agent reasoning steps real-time:
+
+```bash
+curl -N -X POST "http://127.0.0.1:8001/api/v1/query/stream" \
+     -H "Content-Type: application/json" \
+     -d '{"query": "Show open security risks"}'
+```
+
+---
+
+### 4. MCP Tool JSON-RPC Invocation
+
+Invoke Model Context Protocol (MCP) tools via standard JSON-RPC 2.0 format:
+
+```bash
+curl -X POST "http://127.0.0.1:8001/api/v1/mcp/rpc" \
+     -H "Content-Type: application/json" \
+     -d '{
+           "jsonrpc": "2.0",
+           "method": "tools/call",
+           "params": {
+             "name": "databricks_list_catalogs",
+             "arguments": {}
+           },
+           "id": 1
+         }'
+```
+
+---
+
+## 📖 API Documentation
+
+Complete interactive documentation is auto-generated by FastAPI and accessible locally:
+- **Swagger UI**: [`http://127.0.0.1:8001/docs`](http://127.0.0.1:8001/docs)
+- **ReDoc**: [`http://127.0.0.1:8001/redoc`](http://127.0.0.1:8001/redoc)
+
+### Endpoint Summary
+
+| Category | HTTP Method | Endpoint Path | Description |
+|----------|-------------|---------------|-------------|
+| **Query Engine** | `POST` | `/api/v1/query` | Execute full 7-node LangGraph query pipeline |
+| | `POST` | `/api/v1/query/stream` | Stream real-time query execution via SSE |
+| | `POST` | `/api/v1/context-plan` | Inspect Context Planner intent routing |
+| **Projects & Data** | `GET` | `/api/v1/projects` | List connected projects filtered by webhooks |
+| | `GET` | `/api/v1/architecture-docs` | Retrieve exclusive Architecture Documents |
+| | `GET` | `/api/v1/risks` | Retrieve 5x5 categorized risk assessments |
+| | `GET` | `/api/v1/evidence` | Search canonical evidence index |
+| **MCP Governance** | `GET` | `/api/v1/mcp/tools` | List 19 available MCP tools |
+| | `POST` | `/api/v1/mcp/rpc` | Execute standard MCP JSON-RPC 2.0 calls |
+| | `GET` | `/api/v1/mcp/dataset/git` | Export Git commit instruction-target JSONL |
+| | `POST` | `/api/v1/actions/{id}/approve` | Human-in-the-Loop action approval |
+| **Diagnostics** | `GET` | `/api/v1/agent-runs` | Retrieve waterfall latency and trace logs |
+| | `POST` | `/api/v1/eval/run` | Execute Golden Evaluation Quality Suite |
+
+---
+
+## 🤝 Contributing Guidelines
+
+We welcome contributions from the community! To ensure high quality and traceability, please follow these guidelines:
+
+### Development Workflow
+1. **Fork the Repository** and create your topic branch (`git checkout -b feature/amazing-feature`).
+2. **Follow Code Standards**: Ensure clean Python code adhering to PEP 8 standard formatting and strict TypeScript typing on the frontend.
+3. **Write Unit Tests**: Add test cases under `backend/tests/` for any new connectors, endpoints, or agents.
+
+### Commit Message Conventions
+To maintain strict traceability across Jira and GitHub, **all commit messages must include a valid Jira issue key** (e.g., `KAN-6`, `AEGIS-108`, `CLARA-101`, `INC-892`). Commits lacking an issue key will be rejected by pre-commit hooks.
+
+#### Example Commit Format:
+```bash
+git commit -m "[KAN-6] feat(mcp): add Databricks Unity Catalog schema list tool"
+```
+
+### Running Tests
+Run the comprehensive 57-test suite to verify system health before submitting a pull request:
+
+```bash
+# Run complete multi-agent health runner (Must pass 57/57)
+cd backend
+python test_all_agents.py
+
+# Run Pytest suite
+pytest -vv
+```
+
+---
+
+## 📄 License Information
+
+This project is licensed under the **MIT License**.
+
+> **Summary**: You are free to use, modify, distribute, and sublicense this software for commercial or private use, provided that the original copyright notice and permission notice are included in all copies or substantial portions of the Software.
+
+See the full [`LICENSE`](LICENSE) file for complete details.
+
+---
+
+## 📞 Contact and Support
+
+- **Documentation**: Explore technical details in [`Docs/07_ECB_Project_Design_Document_v2.2.md`](Docs/07_ECB_Project_Design_Document_v2.2.md) and [`Docs/10_MINUTE_CLIENT_DEMO_SCRIPT.md`](Docs/10_MINUTE_CLIENT_DEMO_SCRIPT.md).
+- **Issue Tracker**: Report bugs or suggest feature requests on our [GitHub Issues Page](https://github.com/Rakesh-infosrc/Enterprise_Context_Brain-ECB-/issues).
+- **Maintainer Team**: Enterprise Context Brain Core Intelligence Team.
+- **Repository Link**: [GitHub Repository](https://github.com/Rakesh-infosrc/Enterprise_Context_Brain-ECB-)
+
+---
+
+## 👏 Acknowledgments & Credits
+
+Enterprise Context Brain is built on open-source innovation and enterprise standards:
+- **[LangGraph & LangChain](https://github.com/langchain-ai/langgraph)** for deterministic agent state machines.
+- **[Qdrant](https://qdrant.tech/)** for high-performance vector search.
+- **[Mem0](https://mem0.ai/)** for scalable organizational long-term memory.
+- **[Llama Guard 3](https://ai.meta.com/research/publications/llama-guard/)** by Meta AI for safety filtering.
+- **[Model Context Protocol (MCP)](https://modelcontextprotocol.io/)** by Anthropic for standardized tool integration.
+- **[FastAPI](https://fastapi.tiangolo.com/)** and **[React](https://react.dev/)** for backend and frontend framework engines.
